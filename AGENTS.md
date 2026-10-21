@@ -123,6 +123,12 @@ Log assumptions in the OpenSpec proposal instead of asking.
 | `frontend`    | The frontend type check, Vitest and the production build          |
 | `sqlc`        | `sqlc diff`, so committed generated code cannot drift from its SQL |
 
+Before the gate runs, `scripts/ship-change.sh` also runs
+`scripts/check-specs.sh <change>`, which fails when a change's proposal
+declares a capability it has no spec file for. `nix flake check` cannot see a
+spec that was never written, and `openspec validate` is satisfied by one delta,
+so without this a change can ship with a capability it only promised.
+
 `scripts/coverage-gate.sh` requires at least 70% statement coverage overall and
 at least 80% on each core package: `internal/model`, `internal/forms`,
 `internal/policy`, `internal/gitsync` and `internal/httpapi`. Generated files
