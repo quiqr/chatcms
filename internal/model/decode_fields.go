@@ -39,7 +39,7 @@ func decodeField(file, where string, tree map[string]any) (Field, error) {
 		Theme:                r.str("theme"),
 		Default:              r.raw("default"),
 		Hidden:               r.boolean("hidden"),
-		GroupData:            r.boolean("groupdata"),
+		GroupData:            r.booleanPtr("groupdata"),
 		ArrayTitle:           r.boolean("arrayTitle"),
 		AutoSave:             r.boolean("autoSave"),
 		FieldPromptTemplates: r.strList("field_prompt_templates"),

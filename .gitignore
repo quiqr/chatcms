@@ -14,3 +14,4 @@ coverage.html
 .env.local
 playwright-report/
 test-results/
+.golden-tools/

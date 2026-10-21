@@ -21,7 +21,8 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/policy`      | The single `Can(actor, action, resource)` function. Core package.             |
 | `internal/tenancy`     | Organisations, projects, memberships, invitations                             |
 | `internal/model`       | Reading a site's Quiqr model into a typed schema, and the navigation it implies. Core package. |
-| `internal/forms`       | Rendering values into a form and writing them back to front matter plus body. Core package. |
+| `internal/forms`       | Mapping a document's values onto a model's fields and back. Core package.    |
+| `internal/frontmatter` | Reading a content file, and writing front matter exactly as the reference does |
 | `internal/content`     | Collections and singles: list, create, rename, delete                         |
 | `internal/media`       | Upload, listing, thumbnails, alt text, usage lookup                           |
 | `internal/gitsync`     | The repository engine: clone, commit, fetch, push, conflict detection. Core package. |

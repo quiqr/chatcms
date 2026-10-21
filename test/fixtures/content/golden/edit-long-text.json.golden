@@ -1,0 +1,4 @@
+{
+  "title": "About",
+  "summary": "This is a fairly long summary that will certainly exceed the default line width that js-yaml uses when it dumps a document."
+}

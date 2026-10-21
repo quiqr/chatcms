@@ -1,0 +1,1099 @@
+{
+  "jsYaml": "4.1.0",
+  "tomlify": "3.0.0",
+  "cases": [
+    {
+      "name": "scalar-plain",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-numberish",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-floatish",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-negnumberish",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-yes",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-no",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-true",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-false",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-on",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-boolish-off",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-nullish-null",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-nullish-tilde",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-nullish-Null",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-apostrophe",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-double-quote",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-colon-space",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-colon-nospace",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-hash-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-hash-inner",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-dash-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-dash-inner",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-star-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-amp-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-bang-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-pipe-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-gt-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-brace-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-bracket-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-percent-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-at-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-backtick-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-question-leading",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-comma",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-trailing-space",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-leading-space",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-empty",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-space-only",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-unicode",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-accented",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-emoji",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-tab-inner",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-slash",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-date-like",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-time-like",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-version-like",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-sexagesimal",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-underscore-number",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-hex-like",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-inf",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-nan",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-dot",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-dotdot",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-triple-dash",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "scalar-long-word",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l69",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l71",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l72",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l73",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l76",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l77",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l78",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l81",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l82",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l83",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d0-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l69",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l71",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l72",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l73",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l76",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l77",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l78",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l81",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l82",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l83",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d1-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l69",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l71",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l72",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l73",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l76",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l77",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l78",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l81",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l82",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l83",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d2-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l69",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l71",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l72",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l73",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l74",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l76",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l77",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l78",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l79",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l81",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l82",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l83",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "fold-d3-l84",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "multiline-trailing",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "multiline-no-trailing",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "multiline-blank-inside",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "multiline-two-trailing",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "multiline-indented",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-of-scalars",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-empty",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-of-objects",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-of-lists",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-mixed",
+      "yaml": true,
+      "document": true,
+      "toml": false,
+      "tomlError": "things: Array cannot contain values of different types.",
+      "json": true
+    },
+    {
+      "name": "object-nested",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "object-empty",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "object-deep",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "list-nested-in-object",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "object-in-list-in-object",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "numbers",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "float-whole",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "float-small",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "booleans",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "null-value",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "date",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "key-ordering",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "key-needs-quoting",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "mixed-page",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-string",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-markdown",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-number",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-boolean",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-date",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-select",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-leaf-array",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-section",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-pull",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-accordion",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-cleared",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-added",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-long-text",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    },
+    {
+      "name": "edit-multiline",
+      "yaml": true,
+      "document": true,
+      "toml": true,
+      "json": true
+    }
+  ]
+}

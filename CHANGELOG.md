@@ -40,3 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   editing. Work that fails is tried again, and work that never finished is
   picked up after a restart rather than lost.
 - Nothing the system records about a failure carries a password or a key.
+- A page saved through ChatCMS comes out of the other end spelled exactly as
+  the Quiqr desktop app would have spelled it, down to which strings are
+  quoted and where a long line wraps. Adopting ChatCMS does not rewrite a
+  repository.
+- Editing one field changes one line. Values the model does not mention are
+  left exactly where they were, and a field the model declares but the file
+  lacks appears in the place the model implies.
+- A page whose front matter is TOML or JSON can be read but not saved, and
+  says so. The desktop app writes TOML in a layout it cannot read back, so
+  matching it would produce files nothing can open.

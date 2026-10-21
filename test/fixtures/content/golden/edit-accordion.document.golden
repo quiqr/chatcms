@@ -1,0 +1,9 @@
+---
+title: About
+blocks:
+  - heading: Changed
+    text: Baked daily.
+  - heading: Second
+---
+
+The body.

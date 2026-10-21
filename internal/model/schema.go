@@ -79,13 +79,20 @@ type Field struct {
 	Theme                string         `json:"theme,omitempty"`
 	Default              any            `json:"default,omitempty"`
 	Hidden               bool           `json:"hidden,omitempty"`
-	GroupData            bool           `json:"groupdata,omitempty"`
+	GroupData            *bool          `json:"groupdata,omitempty"`
 	ArrayTitle           bool           `json:"arrayTitle,omitempty"`
 	AutoSave             bool           `json:"autoSave,omitempty"`
 	FieldPromptTemplates []string       `json:"field_prompt_templates,omitempty"`
 	Fields               []Field        `json:"fields,omitempty"`
 	Config               FieldConfig    `json:"config,omitempty"`
 	Extra                map[string]any `json:"extra,omitempty"`
+}
+
+// GroupsData reports whether a grouping field nests its children under its
+// own key. The model leaves the key out far more often than it sets it, and
+// absent means nesting, so the answer is not the same as the raw value.
+func (f Field) GroupsData() bool {
+	return f.GroupData == nil || *f.GroupData
 }
 
 // Single returns the single with this key.

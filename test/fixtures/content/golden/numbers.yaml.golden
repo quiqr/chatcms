@@ -1,0 +1,5 @@
+int: 3
+negative: -2
+float: 1.5
+big: 10000000
+zero: 0

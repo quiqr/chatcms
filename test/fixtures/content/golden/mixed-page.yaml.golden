@@ -1,0 +1,13 @@
+title: Korenaar Bakery
+date: 2024-03-01T10:00:00.000Z
+draft: false
+weight: 3
+tags:
+  - bakery
+  - sourdough
+seo:
+  description: Fresh bread every morning
+  noindex: false
+blocks:
+  - heading: Our bread
+    text: Baked daily.

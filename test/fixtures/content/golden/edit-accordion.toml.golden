@@ -1,0 +1,8 @@
+title = "About"
+
+[[blocks]]
+heading = "Changed"
+text = "Baked daily."
+
+[[blocks]]
+heading = "Second"

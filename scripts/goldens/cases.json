@@ -1,0 +1,1232 @@
+[
+  {
+    "name": "scalar-plain",
+    "value": {
+      "note": "About us"
+    }
+  },
+  {
+    "name": "scalar-numberish",
+    "value": {
+      "note": "123"
+    }
+  },
+  {
+    "name": "scalar-floatish",
+    "value": {
+      "note": "1.5"
+    }
+  },
+  {
+    "name": "scalar-negnumberish",
+    "value": {
+      "note": "-7"
+    }
+  },
+  {
+    "name": "scalar-boolish-yes",
+    "value": {
+      "note": "yes"
+    }
+  },
+  {
+    "name": "scalar-boolish-no",
+    "value": {
+      "note": "no"
+    }
+  },
+  {
+    "name": "scalar-boolish-true",
+    "value": {
+      "note": "true"
+    }
+  },
+  {
+    "name": "scalar-boolish-false",
+    "value": {
+      "note": "false"
+    }
+  },
+  {
+    "name": "scalar-boolish-on",
+    "value": {
+      "note": "on"
+    }
+  },
+  {
+    "name": "scalar-boolish-off",
+    "value": {
+      "note": "off"
+    }
+  },
+  {
+    "name": "scalar-nullish-null",
+    "value": {
+      "note": "null"
+    }
+  },
+  {
+    "name": "scalar-nullish-tilde",
+    "value": {
+      "note": "~"
+    }
+  },
+  {
+    "name": "scalar-nullish-Null",
+    "value": {
+      "note": "Null"
+    }
+  },
+  {
+    "name": "scalar-apostrophe",
+    "value": {
+      "note": "it's fine"
+    }
+  },
+  {
+    "name": "scalar-double-quote",
+    "value": {
+      "note": "she said \"hello\""
+    }
+  },
+  {
+    "name": "scalar-colon-space",
+    "value": {
+      "note": "has: a colon"
+    }
+  },
+  {
+    "name": "scalar-colon-nospace",
+    "value": {
+      "note": "ratio:3"
+    }
+  },
+  {
+    "name": "scalar-hash-leading",
+    "value": {
+      "note": "#hashtag"
+    }
+  },
+  {
+    "name": "scalar-hash-inner",
+    "value": {
+      "note": "a # b"
+    }
+  },
+  {
+    "name": "scalar-dash-leading",
+    "value": {
+      "note": "-leading dash"
+    }
+  },
+  {
+    "name": "scalar-dash-inner",
+    "value": {
+      "note": "a - b"
+    }
+  },
+  {
+    "name": "scalar-star-leading",
+    "value": {
+      "note": "*star"
+    }
+  },
+  {
+    "name": "scalar-amp-leading",
+    "value": {
+      "note": "&anchor"
+    }
+  },
+  {
+    "name": "scalar-bang-leading",
+    "value": {
+      "note": "!bang"
+    }
+  },
+  {
+    "name": "scalar-pipe-leading",
+    "value": {
+      "note": "|pipe"
+    }
+  },
+  {
+    "name": "scalar-gt-leading",
+    "value": {
+      "note": ">gt"
+    }
+  },
+  {
+    "name": "scalar-brace-leading",
+    "value": {
+      "note": "{brace"
+    }
+  },
+  {
+    "name": "scalar-bracket-leading",
+    "value": {
+      "note": "[bracket"
+    }
+  },
+  {
+    "name": "scalar-percent-leading",
+    "value": {
+      "note": "%percent"
+    }
+  },
+  {
+    "name": "scalar-at-leading",
+    "value": {
+      "note": "@at"
+    }
+  },
+  {
+    "name": "scalar-backtick-leading",
+    "value": {
+      "note": "`tick"
+    }
+  },
+  {
+    "name": "scalar-question-leading",
+    "value": {
+      "note": "? question"
+    }
+  },
+  {
+    "name": "scalar-comma",
+    "value": {
+      "note": "a, b"
+    }
+  },
+  {
+    "name": "scalar-trailing-space",
+    "value": {
+      "note": "trailing "
+    }
+  },
+  {
+    "name": "scalar-leading-space",
+    "value": {
+      "note": " leading"
+    }
+  },
+  {
+    "name": "scalar-empty",
+    "value": {
+      "note": ""
+    }
+  },
+  {
+    "name": "scalar-space-only",
+    "value": {
+      "note": " "
+    }
+  },
+  {
+    "name": "scalar-unicode",
+    "value": {
+      "note": "ruimte voor groen"
+    }
+  },
+  {
+    "name": "scalar-accented",
+    "value": {
+      "note": "café au lait"
+    }
+  },
+  {
+    "name": "scalar-emoji",
+    "value": {
+      "note": "bread 🥖"
+    }
+  },
+  {
+    "name": "scalar-tab-inner",
+    "value": {
+      "note": "a\tb"
+    }
+  },
+  {
+    "name": "scalar-slash",
+    "value": {
+      "note": "content/pages/about.md"
+    }
+  },
+  {
+    "name": "scalar-date-like",
+    "value": {
+      "note": "2024-03-01"
+    }
+  },
+  {
+    "name": "scalar-time-like",
+    "value": {
+      "note": "10:00:00"
+    }
+  },
+  {
+    "name": "scalar-version-like",
+    "value": {
+      "note": "0.110.0"
+    }
+  },
+  {
+    "name": "scalar-sexagesimal",
+    "value": {
+      "note": "1:30"
+    }
+  },
+  {
+    "name": "scalar-underscore-number",
+    "value": {
+      "note": "1_000"
+    }
+  },
+  {
+    "name": "scalar-hex-like",
+    "value": {
+      "note": "0x1f"
+    }
+  },
+  {
+    "name": "scalar-inf",
+    "value": {
+      "note": ".inf"
+    }
+  },
+  {
+    "name": "scalar-nan",
+    "value": {
+      "note": ".nan"
+    }
+  },
+  {
+    "name": "scalar-dot",
+    "value": {
+      "note": "."
+    }
+  },
+  {
+    "name": "scalar-dotdot",
+    "value": {
+      "note": ".."
+    }
+  },
+  {
+    "name": "scalar-triple-dash",
+    "value": {
+      "note": "---"
+    }
+  },
+  {
+    "name": "scalar-long-word",
+    "value": {
+      "note": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "name": "fold-d0-l69",
+    "value": {
+      "val": "word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l71",
+    "value": {
+      "val": "word word word word word word word word word word word word word word w"
+    }
+  },
+  {
+    "name": "fold-d0-l72",
+    "value": {
+      "val": "word word word word word word word word word word word word word word wo"
+    }
+  },
+  {
+    "name": "fold-d0-l73",
+    "value": {
+      "val": "word word word word word word word word word word word word word word wor"
+    }
+  },
+  {
+    "name": "fold-d0-l74",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l74",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l76",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word w"
+    }
+  },
+  {
+    "name": "fold-d0-l77",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word wo"
+    }
+  },
+  {
+    "name": "fold-d0-l78",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word wor"
+    }
+  },
+  {
+    "name": "fold-d0-l79",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l79",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l81",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word w"
+    }
+  },
+  {
+    "name": "fold-d0-l82",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word wo"
+    }
+  },
+  {
+    "name": "fold-d0-l83",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word wor"
+    }
+  },
+  {
+    "name": "fold-d0-l84",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d0-l84",
+    "value": {
+      "val": "word word word word word word word word word word word word word word word word word"
+    }
+  },
+  {
+    "name": "fold-d1-l69",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l71",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word w"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l72",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word wo"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l73",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word wor"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l74",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l74",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l76",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word w"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l77",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word wo"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l78",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word wor"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l79",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l79",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l81",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word w"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l82",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word wo"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l83",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word wor"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l84",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d1-l84",
+    "value": {
+      "k0": {
+        "val": "word word word word word word word word word word word word word word word word word"
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l69",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l71",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word w"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l72",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word wo"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l73",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word wor"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l74",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l74",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l76",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word w"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l77",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word wo"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l78",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word wor"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l79",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l79",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l81",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word w"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l82",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word wo"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l83",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word wor"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l84",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d2-l84",
+    "value": {
+      "k1": {
+        "k0": {
+          "val": "word word word word word word word word word word word word word word word word word"
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l69",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l71",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word w"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l72",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word wo"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l73",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word wor"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l74",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l74",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l76",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word w"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l77",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word wo"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l78",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word wor"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l79",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l79",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l81",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word w"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l82",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word wo"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l83",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word wor"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l84",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "fold-d3-l84",
+    "value": {
+      "k2": {
+        "k1": {
+          "k0": {
+            "val": "word word word word word word word word word word word word word word word word word"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "multiline-trailing",
+    "value": {
+      "body": "first line\nsecond line\n"
+    }
+  },
+  {
+    "name": "multiline-no-trailing",
+    "value": {
+      "body": "first line\nsecond line"
+    }
+  },
+  {
+    "name": "multiline-blank-inside",
+    "value": {
+      "body": "first\n\nthird\n"
+    }
+  },
+  {
+    "name": "multiline-two-trailing",
+    "value": {
+      "body": "first\nsecond\n\n"
+    }
+  },
+  {
+    "name": "multiline-indented",
+    "value": {
+      "body": "first\n  indented\n"
+    }
+  },
+  {
+    "name": "list-of-scalars",
+    "value": {
+      "tags": [
+        "news",
+        "events"
+      ]
+    }
+  },
+  {
+    "name": "list-empty",
+    "value": {
+      "tags": []
+    }
+  },
+  {
+    "name": "list-of-objects",
+    "value": {
+      "people": [
+        {
+          "name": "Joris",
+          "role": "editor"
+        },
+        {
+          "name": "Marieke"
+        }
+      ]
+    }
+  },
+  {
+    "name": "list-of-lists",
+    "value": {
+      "grid": [
+        [
+          "a",
+          "b"
+        ],
+        [
+          "c"
+        ]
+      ]
+    }
+  },
+  {
+    "name": "list-mixed",
+    "value": {
+      "things": [
+        "text",
+        3,
+        true,
+        null
+      ]
+    }
+  },
+  {
+    "name": "object-nested",
+    "value": {
+      "seo": {
+        "description": "A page",
+        "noindex": false
+      }
+    }
+  },
+  {
+    "name": "object-empty",
+    "value": {
+      "seo": {}
+    }
+  },
+  {
+    "name": "object-deep",
+    "value": {
+      "a": {
+        "b": {
+          "c": {
+            "d": "deep"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "list-nested-in-object",
+    "value": {
+      "seo": {
+        "keywords": [
+          "a",
+          "b"
+        ]
+      }
+    }
+  },
+  {
+    "name": "object-in-list-in-object",
+    "value": {
+      "seo": {
+        "items": [
+          {
+            "k": "v"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "name": "numbers",
+    "value": {
+      "int": 3,
+      "negative": -2,
+      "float": 1.5,
+      "big": 10000000,
+      "zero": 0
+    }
+  },
+  {
+    "name": "float-whole",
+    "value": {
+      "ratio": 2.0
+    }
+  },
+  {
+    "name": "float-small",
+    "value": {
+      "ratio": 0.001
+    }
+  },
+  {
+    "name": "booleans",
+    "value": {
+      "draft": false,
+      "featured": true
+    }
+  },
+  {
+    "name": "null-value",
+    "value": {
+      "note": null
+    }
+  },
+  {
+    "name": "date",
+    "value": {
+      "date": "@@DATE@@2024-03-01T10:00:00Z"
+    }
+  },
+  {
+    "name": "key-ordering",
+    "value": {
+      "zebra": 1,
+      "apple": 2,
+      "mango": 3
+    }
+  },
+  {
+    "name": "key-needs-quoting",
+    "value": {
+      "a key": 1,
+      "yes": 2,
+      "123": 3
+    }
+  },
+  {
+    "name": "mixed-page",
+    "value": {
+      "title": "Korenaar Bakery",
+      "date": "@@DATE@@2024-03-01T10:00:00Z",
+      "draft": false,
+      "weight": 3,
+      "tags": [
+        "bakery",
+        "sourdough"
+      ],
+      "seo": {
+        "description": "Fresh bread every morning",
+        "noindex": false
+      },
+      "blocks": [
+        {
+          "heading": "Our bread",
+          "text": "Baked daily."
+        }
+      ]
+    }
+  },
+  {
+    "name": "edit-string",
+    "value": {
+      "title": "Our story",
+      "weight": 3
+    }
+  },
+  {
+    "name": "edit-markdown",
+    "value": {
+      "title": "About",
+      "weight": 3
+    }
+  },
+  {
+    "name": "edit-number",
+    "value": {
+      "title": "About",
+      "weight": 7
+    }
+  },
+  {
+    "name": "edit-boolean",
+    "value": {
+      "title": "About",
+      "draft": true
+    }
+  },
+  {
+    "name": "edit-date",
+    "value": {
+      "title": "About",
+      "date": "@@DATE@@2025-01-15T09:30:00Z"
+    }
+  },
+  {
+    "name": "edit-select",
+    "value": {
+      "title": "About",
+      "layout": "wide"
+    }
+  },
+  {
+    "name": "edit-leaf-array",
+    "value": {
+      "title": "About",
+      "tags": [
+        "news",
+        "events",
+        "bakery"
+      ]
+    }
+  },
+  {
+    "name": "edit-section",
+    "value": {
+      "title": "About",
+      "seo": {
+        "description": "A new description",
+        "noindex": false
+      }
+    }
+  },
+  {
+    "name": "edit-pull",
+    "value": {
+      "title": "About",
+      "metadata": {
+        "author": "Marieke"
+      }
+    }
+  },
+  {
+    "name": "edit-accordion",
+    "value": {
+      "title": "About",
+      "blocks": [
+        {
+          "heading": "Changed",
+          "text": "Baked daily."
+        },
+        {
+          "heading": "Second"
+        }
+      ]
+    }
+  },
+  {
+    "name": "edit-cleared",
+    "value": {
+      "title": "About",
+      "summary": null
+    }
+  },
+  {
+    "name": "edit-added",
+    "value": {
+      "title": "About",
+      "summary": "A short summary",
+      "weight": 3
+    }
+  },
+  {
+    "name": "edit-long-text",
+    "value": {
+      "title": "About",
+      "summary": "This is a fairly long summary that will certainly exceed the default line width that js-yaml uses when it dumps a document."
+    }
+  },
+  {
+    "name": "edit-multiline",
+    "value": {
+      "title": "About",
+      "intro": "first line\nsecond line\n"
+    }
+  }
+]

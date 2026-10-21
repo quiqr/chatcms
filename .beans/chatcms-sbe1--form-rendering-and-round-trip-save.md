@@ -1,11 +1,11 @@
 ---
 # chatcms-sbe1
 title: Form rendering and round-trip save
-status: todo
+status: in-progress
 type: epic
 priority: critical
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:31Z
+updated_at: 2026-10-21T20:37:36Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-vho6

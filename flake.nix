@@ -30,6 +30,7 @@
           ./db
           ./internal
           ./test/fixtures
+          ./scripts/goldens
         ];
       };
 

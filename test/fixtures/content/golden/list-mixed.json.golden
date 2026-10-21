@@ -1,0 +1,8 @@
+{
+  "things": [
+    "text",
+    3,
+    true,
+    null
+  ]
+}
