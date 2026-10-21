@@ -1,0 +1,143 @@
+ssgType: hugo
+ssgVersion: 0.110.0
+
+singles:
+  - key: kitchen-sink
+    title: Every field type
+    file: content/_index.md
+    dataformat: yaml
+    fields:
+      - key: title
+        type: string
+        title: Title
+        tip: The name of this page
+      - key: summary
+        type: string
+        title: Summary
+        multiLine: true
+        txtInsertButtons: ["&nbsp;"]
+      - key: body
+        type: markdown
+        title: Body
+      - key: notes
+        type: easymde
+        multiLine: true
+      - key: slug
+        type: readonly
+      - key: id
+        type: uniq
+      - key: weight
+        type: number
+        min: 0
+        max: 100
+        step: 5
+      - key: prominence
+        type: slider
+        min: 0
+        max: 10
+        step: 1
+      - key: published
+        type: boolean
+        default: false
+      - key: date
+        type: date
+        dateFormat: YYYY-MM-DD
+        time: true
+      - key: layout
+        type: select
+        options:
+          - plain
+          - value: wide
+            text: Wide
+        option_image_path: static/layouts
+        option_image_width: 120
+        option_image_extension: png
+      - key: related
+        type: select-from-query
+        query_glob: content/posts/**/*.md
+        query_string: .title
+        multiple: true
+      - key: tags
+        type: chips
+        options:
+          - news
+          - events
+      - key: accent
+        type: color
+      - key: heading_font
+        type: font-picker
+        limit: 20
+        categories: ["sans-serif"]
+      - key: icon
+        type: fonticon-picker
+      - key: hero
+        type: image-select
+        path: static/images
+        buttonTitle: Choose an image
+        extensions: ["jpg", "png"]
+      - key: priorities
+        type: eisenhouwer
+        dataSetsPath: data.sets
+        dataSetsDataPointsPath: points
+        dataSetsDataPointPosXPath: x
+        dataSetsDataPointPosYPath: y
+        xScaleTitle: Urgency
+        yScaleTitle: Importance
+      - key: seo
+        type: section
+        title: Search engines and sharing
+        fields:
+          - key: description
+            type: string
+          - key: noindex
+            type: boolean
+      - key: tree
+        type: nest
+        max_depth: 3
+        fields:
+          - key: label
+            type: string
+      - key: blocks
+        type: accordion
+        disableSort: true
+        fields:
+          - key: heading
+            type: string
+            arrayTitle: true
+          - key: text
+            type: markdown
+      - key: meta
+        type: pull
+        group: metadata
+        fields:
+          - key: author
+            type: string
+      - key: keywords
+        type: leaf-array
+        field:
+          key: keyword
+          type: string
+      - key: gallery
+        type: bundle-manager
+        path: gallery
+        maxItems: 12
+        fields:
+          - key: caption
+            type: string
+          - key: thumb
+            type: bundle-image-thumbnail
+            src: thumb.png
+      - key: internal_id
+        type: hidden
+        default: generated
+      - key: spacer
+        type: empty-line
+        amount: 2
+      - key: guidance
+        type: info
+        content: Fill in the title first.
+        size: small
+        theme: warn
+      - key: rating
+        type: star-rating
+        maximum: 5

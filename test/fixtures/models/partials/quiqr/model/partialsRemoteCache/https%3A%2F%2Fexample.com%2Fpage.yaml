@@ -1,0 +1,5 @@
+title: About
+file: content/about.md
+fields:
+  - key: title
+    type: string

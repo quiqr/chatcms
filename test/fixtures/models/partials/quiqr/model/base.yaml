@@ -1,0 +1,18 @@
+ssgVersion: 0.110.0
+collections:
+  - key: posts
+    folder: content/posts/
+    _mergePartial: article
+    fields:
+      - key: title
+        type: string
+        title: Own title
+      - key: extra
+        type: string
+singles:
+  - key: about
+    _mergePartial: https://example.com/page.yaml
+  - key: dashboard
+    _mergePartial: dogfood_site://cmsDashboardMd
+  - key: missing
+    _mergePartial: not-there

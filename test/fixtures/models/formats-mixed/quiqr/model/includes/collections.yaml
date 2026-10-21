@@ -1,0 +1,9 @@
+- key: pages
+  title: Pages
+  folder: content/pages/
+  extension: md
+  dataformat: yaml
+  itemtitle: page
+  fields:
+    - key: title
+      type: string

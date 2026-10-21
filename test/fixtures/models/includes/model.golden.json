@@ -1,0 +1,110 @@
+{
+  "model": {
+    "ssgType": "hugo",
+    "ssgVersion": "0.110.0",
+    "singles": [
+      {
+        "key": "about",
+        "title": "About us",
+        "file": "content/about.md",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      }
+    ],
+    "collections": [
+      {
+        "key": "posts",
+        "title": "Posts",
+        "folder": "content/posts/",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      },
+      {
+        "key": "pages",
+        "title": "Pages",
+        "folder": "content/pages/",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      },
+      {
+        "key": "team",
+        "title": "Team",
+        "folder": "content/team/",
+        "fields": [
+          {
+            "key": "name",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      }
+    ],
+    "menu": [
+      {
+        "title": "Site",
+        "menuItems": [
+          {
+            "key": "about"
+          },
+          {
+            "key": "posts"
+          },
+          {
+            "key": "ghost"
+          }
+        ]
+      }
+    ],
+    "extra": {
+      "settings": {
+        "only": "from-include",
+        "shared": "from-base",
+        "theme": "from-base"
+      }
+    },
+    "baseFile": "quiqr/model/base.yaml"
+  },
+  "navigation": {
+    "sections": [
+      {
+        "title": "Site",
+        "entries": [
+          {
+            "key": "about",
+            "title": "About us",
+            "kind": "page"
+          },
+          {
+            "key": "posts",
+            "title": "Posts",
+            "kind": "collection",
+            "itemName": "item",
+            "count": 0
+          }
+        ]
+      }
+    ],
+    "warnings": [
+      {
+        "file": "quiqr/model/base.yaml",
+        "path": "menu.Site",
+        "message": "the menu names \"ghost\", which this model does not declare"
+      }
+    ]
+  }
+}

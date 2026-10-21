@@ -1,0 +1,42 @@
+{
+  "model": {
+    "ssgType": "hugo",
+    "ssgVersion": "0.101.0",
+    "singles": [
+      {
+        "key": "home",
+        "title": "Homepage",
+        "file": "content/_index.md",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          },
+          {
+            "key": "mainContent",
+            "type": "markdown"
+          }
+        ]
+      }
+    ],
+    "extra": {
+      "hugover": "0.101.0"
+    },
+    "baseFile": "sukoh.yaml"
+  },
+  "navigation": {
+    "sections": [
+      {
+        "title": "Pages",
+        "entries": [
+          {
+            "key": "home",
+            "title": "Homepage",
+            "kind": "page"
+          }
+        ]
+      }
+    ]
+  }
+}

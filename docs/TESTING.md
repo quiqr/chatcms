@@ -114,6 +114,25 @@ A check that cannot run in the Nix sandbox, because it needs a browser or a
 network, runs in a NixOS VM test instead. Nothing is excused from the gate for
 being awkward.
 
+## Golden files
+
+Two kinds of golden file exist, and they are regenerated the same way.
+
+| Golden                           | Pins                                             |
+| -------------------------------- | ------------------------------------------------ |
+| `test/fixtures/models/*/model.golden.json` | The JSON shape of a parsed Quiqr model and its navigation |
+| `test/fixtures/sites/*/`                   | The bytes the old Quiqr writes for a content file |
+
+Regenerate with:
+
+```bash
+CHATCMS_UPDATE_GOLDEN=1 go test ./...
+```
+
+That variable is never set during a normal run, so a changed golden always
+fails the gate first. Read the diff before committing it: a golden that changes
+without a reason in the commit message is a behaviour change nobody noticed.
+
 ## Conventions
 
 - Table-driven tests, with the case name as the map key.

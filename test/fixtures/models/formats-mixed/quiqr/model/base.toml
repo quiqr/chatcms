@@ -1,0 +1,14 @@
+ssgType = "hugo"
+ssgVersion = "0.120.0"
+
+[[collections]]
+key = "posts"
+title = "Posts"
+folder = "content/posts/"
+extension = "md"
+dataformat = "yaml"
+itemtitle = "article"
+
+  [[collections.fields]]
+  key = "title"
+  type = "string"

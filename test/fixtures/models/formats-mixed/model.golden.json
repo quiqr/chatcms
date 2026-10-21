@@ -1,0 +1,71 @@
+{
+  "model": {
+    "ssgType": "hugo",
+    "ssgVersion": "0.120.0",
+    "singles": [
+      {
+        "key": "home",
+        "title": "Homepage",
+        "file": "content/_index.md",
+        "fields": [
+          {
+            "key": "headline",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      }
+    ],
+    "collections": [
+      {
+        "key": "pages",
+        "title": "Pages",
+        "folder": "content/pages/",
+        "extension": "md",
+        "dataformat": "yaml",
+        "itemtitle": "page",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      }
+    ],
+    "baseFile": "quiqr/model/base.toml",
+    "warnings": [
+      {
+        "file": "quiqr/model/base.toml",
+        "path": "collections",
+        "message": "this should be a list; what is there was ignored"
+      }
+    ]
+  },
+  "navigation": {
+    "sections": [
+      {
+        "title": "Pages",
+        "entries": [
+          {
+            "key": "home",
+            "title": "Homepage",
+            "kind": "page"
+          }
+        ]
+      },
+      {
+        "title": "Collections",
+        "entries": [
+          {
+            "key": "pages",
+            "title": "Pages",
+            "kind": "collection",
+            "itemName": "page",
+            "count": 0
+          }
+        ]
+      }
+    ]
+  }
+}

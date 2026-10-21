@@ -19,3 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   there is no separate directory of assets to copy or keep in step.
 - Configuration values can be supplied from files rather than environment
   variables, so passwords and keys stay out of the Nix store.
+- Quiqr models are read the way the desktop app reads them: a base file in
+  YAML, TOML or JSON, plus includes, per-item include folders and partials,
+  assembled in the same order and with the same precedence.
+- All twenty-seven field types of the desktop app are understood, and a field
+  type this version does not know is kept as a placeholder rather than dropped,
+  so a model written for a newer Quiqr still opens.
+- An unusable model says which file and which part of it is wrong.
+- The pages and collections a content creator browses, with item counts and
+  the model's own labels, are derived from the model itself.

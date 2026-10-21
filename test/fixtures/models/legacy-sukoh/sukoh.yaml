@@ -1,0 +1,10 @@
+hugover: 0.101.0
+singles:
+  - key: home
+    title: Homepage
+    file: content/_index.md
+    fields:
+      - key: title
+        type: string
+      - key: mainContent
+        type: markdown

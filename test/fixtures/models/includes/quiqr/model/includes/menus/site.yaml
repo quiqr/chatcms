@@ -1,0 +1,5 @@
+title: Site
+menuItems:
+  - key: about
+  - key: posts
+  - key: ghost

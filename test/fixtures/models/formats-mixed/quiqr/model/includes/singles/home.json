@@ -1,0 +1,6 @@
+{
+  "key": "home",
+  "title": "Homepage",
+  "file": "content/_index.md",
+  "fields": [{ "key": "headline", "type": "string" }]
+}

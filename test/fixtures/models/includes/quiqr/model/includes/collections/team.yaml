@@ -1,0 +1,6 @@
+key: team
+title: Team
+folder: content/team/
+fields:
+  - key: name
+    type: string

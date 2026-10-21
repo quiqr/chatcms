@@ -1,0 +1,108 @@
+{
+  "model": {
+    "ssgType": "hugo",
+    "ssgVersion": "0.110.0",
+    "singles": [
+      {
+        "key": "about",
+        "title": "About",
+        "file": "content/about.md",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      },
+      {
+        "key": "dashboard",
+        "extra": {
+          "_mergePartial": "dogfood_site://cmsDashboardMd"
+        }
+      },
+      {
+        "key": "missing",
+        "extra": {
+          "_mergePartial": "not-there"
+        }
+      }
+    ],
+    "collections": [
+      {
+        "key": "posts",
+        "title": "Article",
+        "folder": "content/posts/",
+        "extension": "md",
+        "dataformat": "yaml",
+        "itemtitle": "article",
+        "fields": [
+          {
+            "key": "body",
+            "type": "markdown"
+          },
+          {
+            "key": "title",
+            "type": "string",
+            "title": "Own title",
+            "config": {}
+          },
+          {
+            "key": "extra",
+            "type": "string",
+            "config": {}
+          }
+        ]
+      }
+    ],
+    "baseFile": "quiqr/model/base.yaml",
+    "warnings": [
+      {
+        "file": "quiqr/model/base.yaml",
+        "path": "singles[1]",
+        "message": "this site uses dogfood_site://cmsDashboardMd, which only the Quiqr desktop app provides"
+      },
+      {
+        "file": "quiqr/model/base.yaml",
+        "path": "singles[2]",
+        "message": "the partial \"not-there\" is not in quiqr/model/partials"
+      }
+    ]
+  },
+  "navigation": {
+    "sections": [
+      {
+        "title": "Pages",
+        "entries": [
+          {
+            "key": "about",
+            "title": "About",
+            "kind": "page"
+          },
+          {
+            "key": "dashboard",
+            "title": "dashboard",
+            "kind": "page"
+          },
+          {
+            "key": "missing",
+            "title": "missing",
+            "kind": "page"
+          }
+        ]
+      },
+      {
+        "title": "Collections",
+        "entries": [
+          {
+            "key": "posts",
+            "title": "Article",
+            "kind": "collection",
+            "itemName": "article",
+            "count": 0
+          }
+        ]
+      }
+    ]
+  }
+}

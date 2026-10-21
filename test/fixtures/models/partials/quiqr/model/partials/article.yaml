@@ -1,0 +1,10 @@
+title: Article
+itemtitle: article
+extension: md
+dataformat: yaml
+fields:
+  - key: title
+    type: string
+    title: Partial title
+  - key: body
+    type: markdown

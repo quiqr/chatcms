@@ -20,7 +20,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/auth`        | Email and password login, password hashing, session issue and revoke          |
 | `internal/policy`      | The single `Can(actor, action, resource)` function. Core package.             |
 | `internal/tenancy`     | Organisations, projects, memberships, invitations                             |
-| `internal/model`       | Parsing the Quiqr model YAML into a typed form schema. Core package.          |
+| `internal/model`       | Reading a site's Quiqr model into a typed schema, and the navigation it implies. Core package. |
 | `internal/forms`       | Rendering values into a form and writing them back to front matter plus body. Core package. |
 | `internal/content`     | Collections and singles: list, create, rename, delete                         |
 | `internal/media`       | Upload, listing, thumbnails, alt text, usage lookup                           |

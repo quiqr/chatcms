@@ -1,0 +1,59 @@
+{
+  "model": {
+    "ssgType": "hugo",
+    "collections": [
+      {
+        "key": "pages",
+        "title": "Pages",
+        "folder": "content/pages/",
+        "extension": "md",
+        "dataformat": "yaml",
+        "itemtitle": "Page",
+        "fields": [
+          {
+            "key": "title",
+            "type": "string",
+            "config": {}
+          },
+          {
+            "key": "mainContent",
+            "type": "markdown"
+          }
+        ]
+      }
+    ],
+    "menu": [
+      {
+        "title": "Content",
+        "menuItems": [
+          {
+            "key": "pages"
+          }
+        ]
+      }
+    ],
+    "extra": {
+      "include": [
+        "includes/collections.yaml",
+        "includes/menu.yml"
+      ]
+    },
+    "baseFile": "quiqr/model/base.yaml"
+  },
+  "navigation": {
+    "sections": [
+      {
+        "title": "Content",
+        "entries": [
+          {
+            "key": "pages",
+            "title": "Pages",
+            "kind": "collection",
+            "itemName": "Page",
+            "count": 2
+          }
+        ]
+      }
+    ]
+  }
+}

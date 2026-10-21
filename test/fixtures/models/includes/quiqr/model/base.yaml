@@ -1,0 +1,11 @@
+ssgVersion: 0.110.0
+settings:
+  theme: from-base
+  shared: from-base
+collections:
+  - key: posts
+    title: Posts
+    folder: content/posts/
+    fields:
+      - key: title
+        type: string
