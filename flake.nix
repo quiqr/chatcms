@@ -108,9 +108,12 @@
         preBuild = "";
         doCheck = true;
         env = old.env // { CGO_ENABLED = 1; };
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.git pkgs.openssh ];
         buildPhase = "runHook preBuild; runHook postBuild";
         checkPhase = ''
           runHook preCheck
+          export HOME=$TMPDIR
+          export CHATCMS_GIT_BIN=${pkgs.lib.getExe pkgs.git}
           go vet ./...
           go test -race -covermode=atomic -coverprofile=coverage.out ./...
           runHook postCheck
@@ -129,6 +132,7 @@
         checkPhase = ''
           runHook preCheck
           export HOME=$TMPDIR
+          export CHATCMS_GIT_BIN=${pkgs.lib.getExe pkgs.git}
           go vet -tags=integration ./...
           go test -tags=integration -covermode=atomic -coverprofile=coverage.out ./...
           ${pkgs.bash}/bin/bash ${./scripts/coverage-gate.sh} coverage.out

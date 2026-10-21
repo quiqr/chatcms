@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -16,6 +17,13 @@ type Config struct {
 	LogFormat       string
 	GitBin          string
 	HugoBin         string
+	SSHKeyPath      string
+	SyncInterval    time.Duration
+}
+
+// SitesDir is where every site's working copy lives.
+func (c Config) SitesDir() string {
+	return filepath.Join(c.StateDir, "sites")
 }
 
 type Lookup func(string) (string, bool)
@@ -52,6 +60,7 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_LOG_FORMAT", &cfg.LogFormat, "auto", false},
 		{"CHATCMS_GIT_BIN", &cfg.GitBin, "git", false},
 		{"CHATCMS_HUGO_BIN", &cfg.HugoBin, "hugo", false},
+		{"CHATCMS_SSH_KEY_PATH", &cfg.SSHKeyPath, "", false},
 	}
 
 	for _, field := range fields {
@@ -68,19 +77,28 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		*field.target = value
 	}
 
-	timeout, err := resolve(lookup, "CHATCMS_SHUTDOWN_TIMEOUT")
-	if err != nil {
-		return Config{}, err
+	durations := []struct {
+		name     string
+		target   *time.Duration
+		fallback string
+	}{
+		{"CHATCMS_SHUTDOWN_TIMEOUT", &cfg.ShutdownTimeout, "20s"},
+		{"CHATCMS_SYNC_INTERVAL", &cfg.SyncInterval, "2m"},
 	}
-	if timeout == "" {
-		timeout = "20s"
-	}
-	cfg.ShutdownTimeout, err = time.ParseDuration(timeout)
-	if err != nil {
-		return Config{}, &ConfigError{Variable: "CHATCMS_SHUTDOWN_TIMEOUT", Reason: reasonInvalid}
-	}
-	if cfg.ShutdownTimeout <= 0 {
-		return Config{}, &ConfigError{Variable: "CHATCMS_SHUTDOWN_TIMEOUT", Reason: reasonInvalid}
+
+	for _, field := range durations {
+		raw, err := resolve(lookup, field.name)
+		if err != nil {
+			return Config{}, err
+		}
+		if raw == "" {
+			raw = field.fallback
+		}
+		value, err := time.ParseDuration(raw)
+		if err != nil || value <= 0 {
+			return Config{}, &ConfigError{Variable: field.name, Reason: reasonInvalid}
+		}
+		*field.target = value
 	}
 
 	switch cfg.LogFormat {

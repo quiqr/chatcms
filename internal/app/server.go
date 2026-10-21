@@ -7,9 +7,14 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
+	"strings"
+	"sync"
 	"time"
 
+	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
+	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/version"
 	"github.com/quiqr/chatcms/internal/webui"
@@ -24,6 +29,10 @@ type Server struct {
 	listener net.Listener
 	http     *http.Server
 	known    int64
+
+	queue  *jobs.Queue
+	worker *jobs.Worker
+	sites  *gitsync.Sites
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -49,6 +58,16 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	}
 
 	server := &Server{cfg: cfg, logger: logger, db: db, known: known}
+
+	server.sites = gitsync.NewSites(gitsync.Config{
+		GitBin:     cfg.GitBin,
+		SSHKeyPath: cfg.SSHKeyPath,
+		System:     gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)},
+	}, cfg.SitesDir())
+
+	server.queue = jobs.NewQueue(db)
+	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
+	registerSyncJob(server.worker, server.sites, logger)
 
 	handler := httpapi.New(httpapi.Options{
 		Logger: logger,
@@ -102,6 +121,20 @@ func (s *Server) health(ctx context.Context) httpapi.Health {
 }
 
 func (s *Server) Serve(ctx context.Context) error {
+	background, stopBackground := context.WithCancel(context.Background())
+	defer stopBackground()
+
+	var workers sync.WaitGroup
+	workers.Add(2)
+	go func() {
+		defer workers.Done()
+		s.worker.Run(background)
+	}()
+	go func() {
+		defer workers.Done()
+		scheduleSyncs(background, s.queue, s.sites, s.cfg.SyncInterval, s.logger)
+	}()
+
 	errs := make(chan error, 1)
 	go func() {
 		err := s.http.Serve(s.listener)
@@ -115,6 +148,8 @@ func (s *Server) Serve(ctx context.Context) error {
 
 	select {
 	case err := <-errs:
+		stopBackground()
+		workers.Wait()
 		s.db.Close()
 		return err
 	case <-ctx.Done():
@@ -124,6 +159,13 @@ func (s *Server) Serve(ctx context.Context) error {
 
 	shutdownErr := gracefulShutdown(s.http, s.cfg.ShutdownTimeout)
 	<-errs
+
+	stopBackground()
+	if err := s.worker.Drain(context.Background(), s.cfg.ShutdownTimeout); err != nil {
+		s.logger.Error("returning unfinished work to the queue failed", "error", err)
+	}
+	workers.Wait()
+
 	s.db.Close()
 
 	if errors.Is(shutdownErr, ErrShutdownForced) {
@@ -145,4 +187,14 @@ func Serve(ctx context.Context, cfg Config, logger *slog.Logger) error {
 		return err
 	}
 	return server.Serve(ctx)
+}
+
+// hostOf is used for the address versions are written by, so history shows
+// where an edit came from rather than a placeholder domain.
+func hostOf(baseURL string) string {
+	parsed, err := url.Parse(baseURL)
+	if err != nil || parsed.Hostname() == "" {
+		return "chatcms.local"
+	}
+	return strings.ToLower(parsed.Hostname())
 }

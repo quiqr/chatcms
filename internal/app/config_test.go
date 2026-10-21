@@ -184,3 +184,68 @@ func TestLoadConfigRejectsInvalidShutdownTimeout(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadConfigReadsSyncSettings(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":  "postgres:///chatcms",
+		"CHATCMS_SYNC_INTERVAL": "45s",
+		"CHATCMS_SSH_KEY_PATH":  "/run/secrets/site-key",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+	if cfg.SyncInterval != 45*time.Second {
+		t.Errorf("SyncInterval = %v, want 45s", cfg.SyncInterval)
+	}
+	if cfg.SSHKeyPath != "/run/secrets/site-key" {
+		t.Errorf("SSHKeyPath = %q", cfg.SSHKeyPath)
+	}
+}
+
+func TestSyncIntervalHasADefault(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL": "postgres:///chatcms",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+	if cfg.SyncInterval <= 0 {
+		t.Errorf("SyncInterval = %v, want a usable default", cfg.SyncInterval)
+	}
+}
+
+func TestLoadConfigRejectsAnInvalidSyncInterval(t *testing.T) {
+	for _, value := range []string{"never", "0s", "-1m"} {
+		_, err := LoadConfig(lookupFrom(map[string]string{
+			"CHATCMS_DATABASE_URL":  "postgres:///chatcms",
+			"CHATCMS_SYNC_INTERVAL": value,
+		}))
+		if err == nil {
+			t.Errorf("LoadConfig() with %q error = nil, want a rejection", value)
+		}
+	}
+}
+
+func TestSitesDirIsUnderTheStateDirectory(t *testing.T) {
+	cfg := Config{StateDir: "/var/lib/chatcms"}
+
+	if got := cfg.SitesDir(); got != "/var/lib/chatcms/sites" {
+		t.Errorf("SitesDir() = %q, want it under the state directory", got)
+	}
+}
+
+func TestHostOf(t *testing.T) {
+	cases := map[string]string{
+		"https://chatcms.eu":      "chatcms.eu",
+		"http://localhost:8080":   "localhost",
+		"https://CHATCMS.EU/path": "chatcms.eu",
+		"not a url":               "chatcms.local",
+		"":                        "chatcms.local",
+	}
+
+	for in, want := range cases {
+		if got := hostOf(in); got != want {
+			t.Errorf("hostOf(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

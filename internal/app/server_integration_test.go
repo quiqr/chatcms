@@ -6,9 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -17,7 +21,10 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/quiqr/chatcms/internal/app"
+	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
+	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/testsupport"
 )
 
@@ -30,6 +37,7 @@ func testConfig(t *testing.T) app.Config {
 		StateDir:        t.TempDir(),
 		DatabaseURL:     testsupport.Postgres(t),
 		ShutdownTimeout: 5 * time.Second,
+		SyncInterval:    time.Hour,
 		LogFormat:       "json",
 		GitBin:          "git",
 		HugoBin:         "hugo",
@@ -221,4 +229,151 @@ func freeAddress(t *testing.T) string {
 	address := listener.Addr().String()
 	listener.Close()
 	return address
+}
+
+func TestSyncJobRunsASync(t *testing.T) {
+	cfg := testConfig(t)
+	logger := quietLogger()
+
+	gitCfg := gitsync.Config{
+		GitBin: gitBinary(t),
+		System: gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@example.org"},
+	}
+	sites := gitsync.NewSites(gitCfg, cfg.SitesDir())
+
+	remote := bareRemoteWithAPage(t, gitCfg)
+	repository, err := sites.Clone(t.Context(), "korenaar", remote)
+	if err != nil {
+		t.Fatalf("Clone() error = %v, want nil", err)
+	}
+	repository.Close()
+
+	pushAnotherPage(t, gitCfg, remote)
+
+	db, err := store.Open(t.Context(), cfg.DatabaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.Migrate(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+
+	queue := jobs.NewQueue(db)
+	worker := jobs.NewWorker(queue, jobs.WorkerOptions{Logger: logger})
+	app.RegisterSyncJobForTest(worker, sites, logger)
+
+	if _, err := queue.Enqueue(t.Context(), gitsync.SyncJobKind, "korenaar", nil); err != nil {
+		t.Fatal(err)
+	}
+	if did, err := worker.RunOnce(t.Context()); err != nil || !did {
+		t.Fatalf("RunOnce() = %v, %v, want the sync to have run", did, err)
+	}
+
+	done, _ := queue.CountByState(t.Context(), "done")
+	if done != 1 {
+		failed, _ := queue.CountByState(t.Context(), "queued")
+		t.Fatalf("done = %d, queued = %d, want the sync to have succeeded", done, failed)
+	}
+
+	reopened, err := sites.Open(t.Context(), "korenaar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+
+	if _, err := fs.ReadFile(reopened.FS(), "content/news.md"); err != nil {
+		t.Errorf("the page pushed elsewhere did not arrive: %v", err)
+	}
+}
+
+func TestShutdownDrainsTheWorkerToo(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.SyncInterval = 50 * time.Millisecond
+
+	server, stop := startServer(t, cfg)
+
+	db, err := store.Open(t.Context(), cfg.DatabaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	queue := jobs.NewQueue(db)
+	if _, err := queue.Enqueue(t.Context(), "a-kind-with-no-handler", "korenaar", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	// The job has no handler, so the worker keeps it rather than losing it.
+	// What matters here is that shutting the server down does not strand it.
+	stop()
+
+	queued, err := queue.CountByState(context.Background(), "queued")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if queued != 1 {
+		t.Errorf("queued = %d after shutdown, want the job still there", queued)
+	}
+
+	_ = server
+}
+
+func gitBinary(t *testing.T) string {
+	t.Helper()
+
+	if bin := os.Getenv("CHATCMS_GIT_BIN"); bin != "" {
+		return bin
+	}
+	found, err := exec.LookPath("git")
+	if err != nil {
+		t.Skipf("git is not available: %v", err)
+	}
+	return found
+}
+
+func bareRemoteWithAPage(t *testing.T, cfg gitsync.Config) string {
+	t.Helper()
+
+	remote := filepath.Join(t.TempDir(), "remote.git")
+	gitRun(t, cfg, "", "init", "--bare", "--initial-branch=main", remote)
+
+	seed := filepath.Join(t.TempDir(), "seed")
+	gitRun(t, cfg, "", "clone", "--", remote, seed)
+	writeSeedFile(t, filepath.Join(seed, "content", "_index.md"), "---\ntitle: Home\n---\n")
+	gitRun(t, cfg, seed, "add", "--all")
+	gitRun(t, cfg, seed, "commit", "--message=First version")
+	gitRun(t, cfg, seed, "push", "origin", "HEAD:refs/heads/main")
+
+	return remote
+}
+
+func pushAnotherPage(t *testing.T, cfg gitsync.Config, remote string) {
+	t.Helper()
+
+	dir := filepath.Join(t.TempDir(), "elsewhere")
+	gitRun(t, cfg, "", "clone", "--", remote, dir)
+	writeSeedFile(t, filepath.Join(dir, "content", "news.md"), "---\ntitle: News\n---\n")
+	gitRun(t, cfg, dir, "add", "--all")
+	gitRun(t, cfg, dir, "commit", "--message=Add news")
+	gitRun(t, cfg, dir, "push", "origin", "HEAD:refs/heads/main")
+}
+
+func gitRun(t *testing.T, cfg gitsync.Config, dir string, args ...string) {
+	t.Helper()
+
+	if err := gitsync.RunForTest(t.Context(), cfg, dir, t.TempDir(), args...); err != nil {
+		t.Fatalf("git %v failed: %v", args, err)
+	}
+}
+
+func writeSeedFile(t *testing.T, path, contents string) {
+	t.Helper()
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatal(err)
+	}
 }

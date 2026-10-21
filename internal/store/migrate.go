@@ -55,9 +55,19 @@ func (d *DB) Migrate(ctx context.Context) error {
 	})
 }
 
+// MigrateDown rolls back the most recently applied migration.
 func (d *DB) MigrateDown(ctx context.Context) error {
 	return d.withProvider(func(provider *goose.Provider) error {
 		_, err := provider.Down(ctx)
+		return err
+	})
+}
+
+// MigrateDownTo rolls back to a version, with zero meaning an empty schema.
+// It exists for tests that prove a migration is reversible.
+func (d *DB) MigrateDownTo(ctx context.Context, version int64) error {
+	return d.withProvider(func(provider *goose.Provider) error {
+		_, err := provider.DownTo(ctx, version)
 		return err
 	})
 }

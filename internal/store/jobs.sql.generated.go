@@ -7,6 +7,8 @@ package store
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const claimNextJob = `-- name: ClaimNextJob :one
@@ -17,11 +19,11 @@ SET state = 'running',
 WHERE id = (
     SELECT id FROM jobs
     WHERE state = 'queued' AND run_at <= now()
-    ORDER BY run_at
+    ORDER BY run_at, id
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at
+RETURNING id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at, subject
 `
 
 func (q *Queries) ClaimNextJob(ctx context.Context) (Job, error) {
@@ -37,8 +39,22 @@ func (q *Queries) ClaimNextJob(ctx context.Context) (Job, error) {
 		&i.RunAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Subject,
 	)
 	return i, err
+}
+
+const completeJob = `-- name: CompleteJob :exec
+UPDATE jobs
+SET state = 'done',
+    last_error = NULL,
+    updated_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) CompleteJob(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, completeJob, id)
+	return err
 }
 
 const countJobsByState = `-- name: CountJobsByState :one
@@ -52,20 +68,44 @@ func (q *Queries) CountJobsByState(ctx context.Context, state string) (int64, er
 	return count, err
 }
 
+const countJobsForSubject = `-- name: CountJobsForSubject :one
+SELECT count(*) FROM jobs WHERE kind = $1 AND subject = $2 AND state = $3
+`
+
+type CountJobsForSubjectParams struct {
+	Kind    string `json:"kind"`
+	Subject string `json:"subject"`
+	State   string `json:"state"`
+}
+
+func (q *Queries) CountJobsForSubject(ctx context.Context, arg CountJobsForSubjectParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countJobsForSubject, arg.Kind, arg.Subject, arg.State)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const enqueueJob = `-- name: EnqueueJob :one
-INSERT INTO jobs (kind, payload, run_at)
-VALUES ($1, $2, COALESCE($3, now()))
-RETURNING id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at
+INSERT INTO jobs (kind, subject, payload, run_at)
+VALUES ($1, $2, $3, COALESCE($4::timestamptz, now()))
+ON CONFLICT (kind, subject) WHERE state = 'queued' DO NOTHING
+RETURNING id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at, subject
 `
 
 type EnqueueJobParams struct {
-	Kind    string      `json:"kind"`
-	Payload []byte      `json:"payload"`
-	Column3 interface{} `json:"column_3"`
+	Kind    string             `json:"kind"`
+	Subject string             `json:"subject"`
+	Payload []byte             `json:"payload"`
+	RunAt   pgtype.Timestamptz `json:"run_at"`
 }
 
 func (q *Queries) EnqueueJob(ctx context.Context, arg EnqueueJobParams) (Job, error) {
-	row := q.db.QueryRow(ctx, enqueueJob, arg.Kind, arg.Payload, arg.Column3)
+	row := q.db.QueryRow(ctx, enqueueJob,
+		arg.Kind,
+		arg.Subject,
+		arg.Payload,
+		arg.RunAt,
+	)
 	var i Job
 	err := row.Scan(
 		&i.ID,
@@ -77,31 +117,31 @@ func (q *Queries) EnqueueJob(ctx context.Context, arg EnqueueJobParams) (Job, er
 		&i.RunAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Subject,
 	)
 	return i, err
 }
 
-const finishJob = `-- name: FinishJob :exec
+const failJob = `-- name: FailJob :exec
 UPDATE jobs
-SET state = $2,
-    last_error = $3,
+SET state = 'failed',
+    last_error = $2,
     updated_at = now()
 WHERE id = $1
 `
 
-type FinishJobParams struct {
+type FailJobParams struct {
 	ID        int64   `json:"id"`
-	State     string  `json:"state"`
 	LastError *string `json:"last_error"`
 }
 
-func (q *Queries) FinishJob(ctx context.Context, arg FinishJobParams) error {
-	_, err := q.db.Exec(ctx, finishJob, arg.ID, arg.State, arg.LastError)
+func (q *Queries) FailJob(ctx context.Context, arg FailJobParams) error {
+	_, err := q.db.Exec(ctx, failJob, arg.ID, arg.LastError)
 	return err
 }
 
 const getJob = `-- name: GetJob :one
-SELECT id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at FROM jobs WHERE id = $1
+SELECT id, kind, payload, state, attempts, last_error, run_at, created_at, updated_at, subject FROM jobs WHERE id = $1
 `
 
 func (q *Queries) GetJob(ctx context.Context, id int64) (Job, error) {
@@ -117,6 +157,40 @@ func (q *Queries) GetJob(ctx context.Context, id int64) (Job, error) {
 		&i.RunAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Subject,
 	)
 	return i, err
+}
+
+const releaseJob = `-- name: ReleaseJob :exec
+UPDATE jobs
+SET state = 'queued',
+    run_at = now(),
+    updated_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) ReleaseJob(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, releaseJob, id)
+	return err
+}
+
+const retryJob = `-- name: RetryJob :exec
+UPDATE jobs
+SET state = 'queued',
+    run_at = $2,
+    last_error = $3,
+    updated_at = now()
+WHERE id = $1
+`
+
+type RetryJobParams struct {
+	ID        int64              `json:"id"`
+	RunAt     pgtype.Timestamptz `json:"run_at"`
+	LastError *string            `json:"last_error"`
+}
+
+func (q *Queries) RetryJob(ctx context.Context, arg RetryJobParams) error {
+	_, err := q.db.Exec(ctx, retryJob, arg.ID, arg.RunAt, arg.LastError)
+	return err
 }

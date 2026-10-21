@@ -18,4 +18,5 @@ type Job struct {
 	RunAt     pgtype.Timestamptz `json:"run_at"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	Subject   string             `json:"subject"`
 }

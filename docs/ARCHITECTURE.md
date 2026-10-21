@@ -26,12 +26,13 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/media`       | Upload, listing, thumbnails, alt text, usage lookup                           |
 | `internal/gitsync`     | The repository engine: clone, commit, fetch, push, conflict detection. Core package. |
 | `internal/secrets`     | Encryption at rest for per-project SSH deploy keys                            |
+| `internal/redact`      | Removing credential-shaped text before it is logged, stored or shown          |
 | `internal/preview`     | Per-session Hugo preview servers, including idle shutdown                     |
 | `internal/runner`      | Sandboxed build execution behind an interface                                 |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | The change summary, the publish pipeline, the publish record                  |
 | `internal/history`     | Version listing in plain language, and rollback                               |
-| `internal/jobs`        | Background job queue and worker, backed by Postgres                           |
+| `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
 | `internal/version`     | The version string stamped by the build                                       |
 
@@ -42,9 +43,23 @@ must leave the door open. Each is an interface with exactly one implementation
 today. Nothing outside the package may depend on the concrete type.
 
 **`internal/gitsync.Repo`** wraps the git CLI. Every repository operation goes
-through this interface so Jujutsu can replace git later. No `exec.Command("git"
-...)` anywhere else in the tree. The git binary comes from
-`CHATCMS_GIT_BIN`, never from `PATH`.
+through this interface so Jujutsu can replace git later. Nothing else in the
+tree runs git, which a test over the sources enforces rather than leaving to
+review. The git binary comes from `CHATCMS_GIT_BIN`, never from `PATH`.
+
+Git runs with hooks disabled, no credential helper, no terminal prompt and no
+system or user configuration. A customer's repository may contain a hook, and
+a hook is code; running it on the server because a repository was imported is
+not a thing this product does. A site that needs a step to run at a particular
+moment declares it in `quiqr/workflows/`, which is the supported way and the
+one that runs in the sandbox.
+
+The interface speaks in sites and versions. No method takes a commit id, a
+branch name or a refspec, so a caller can show history and roll back without
+knowing what the identifier is. The cost is that a git-specific capability
+that does not fit cannot be reached from outside; when one is genuinely
+needed, it is added as a method in this vocabulary rather than by handing out
+the repository path.
 
 **`internal/runner.Runner`** executes a build in isolation. Milestone 1 ships a
 Nix sandbox implementation. Firecracker micro VMs replace it later, so the

@@ -94,8 +94,8 @@ func TestMigrateUpDown(t *testing.T) {
 		t.Fatalf("the jobs table is not usable after migrating: %v", err)
 	}
 
-	if err := db.MigrateDown(ctx); err != nil {
-		t.Fatalf("MigrateDown() error = %v, want nil", err)
+	if err := db.MigrateDownTo(ctx, 0); err != nil {
+		t.Fatalf("MigrateDownTo() error = %v, want nil", err)
 	}
 	if _, err := db.Queries.CountJobsByState(ctx, "queued"); err == nil {
 		t.Error("the jobs table still exists after rolling the migration back")
@@ -181,6 +181,7 @@ func TestJobsRoundTrip(t *testing.T) {
 
 	queued, err := db.Queries.EnqueueJob(ctx, store.EnqueueJobParams{
 		Kind:    "sync",
+		Subject: "korenaar",
 		Payload: []byte(`{"project":"korenaar"}`),
 	})
 	if err != nil {
@@ -205,8 +206,8 @@ func TestJobsRoundTrip(t *testing.T) {
 		t.Error("a second claim returned a job, want none left to claim")
 	}
 
-	if err := db.Queries.FinishJob(ctx, store.FinishJobParams{ID: claimed.ID, State: "done"}); err != nil {
-		t.Fatalf("FinishJob() error = %v, want nil", err)
+	if err := db.Queries.CompleteJob(ctx, claimed.ID); err != nil {
+		t.Fatalf("CompleteJob() error = %v, want nil", err)
 	}
 
 	done, err := db.Queries.CountJobsByState(ctx, "done")

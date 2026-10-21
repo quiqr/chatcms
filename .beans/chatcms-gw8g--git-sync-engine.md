@@ -1,11 +1,11 @@
 ---
 # chatcms-gw8g
 title: Git sync engine
-status: todo
+status: in-progress
 type: epic
 priority: critical
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:31Z
+updated_at: 2026-10-21T19:02:56Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-io95

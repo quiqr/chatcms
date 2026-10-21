@@ -28,3 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An unusable model says which file and which part of it is wrong.
 - The pages and collections a content creator browses, with item counts and
   the model's own labels, are derived from the model itself.
+- Editing a site makes a version of it, attributed to the person who made the
+  edit, so history reads as a list of who changed what.
+- Changes made to a site outside ChatCMS arrive on their own, without anyone
+  asking for them, and are woven in underneath the work in progress.
+- When two people change the same page, the site says so and offers both
+  versions to choose between. Neither version is lost, and nobody ever opens a
+  page full of machine-written markers.
+- Publishing, syncing and anything else that has to talk to the outside world
+  happens in the background, so a slow or unreachable host never stops someone
+  editing. Work that fails is tried again, and work that never finished is
+  picked up after a restart rather than lost.
+- Nothing the system records about a failure carries a password or a key.
