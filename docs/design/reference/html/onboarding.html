@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiqr ChatCMS — New project</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F7F7F5}
+a{color:#0B6BAA}a:hover{color:#08578C}
+</style>
+
+<style>
+html,body{background:#F7F7F5}
+*{-webkit-tap-highlight-color:transparent}
+.qp-screens{position:fixed;right:calc(12px + env(safe-area-inset-right, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:50;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:#18181B;color:#FAFAFA;font:500 13px Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.qp-screens:hover{color:#FFFFFF;background:#27272A}
+.qp-screens:focus-visible{outline:2px solid #37B6FF;outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div style="min-height: 100vh; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; background: #F7F7F5">
+  <header style="background: #FFFFFF; border-bottom: 1px solid #E5E5E2">
+    <div style="max-width: 1040px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 14px">
+      <a href="projects.html" aria-label="Back to projects" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E5E5E2; display: flex; align-items: center; justify-content: center; color: #3F3F46">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </a>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-size: 12px; color: #6B6B73">Studio Noord</span>
+        <span style="font-size: 15px; font-weight: 600">New project</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+    <nav aria-label="Setup steps" style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #3F3F46">
+        <span style="width: 24px; height: 24px; border-radius: 50%; background: #0B6BAA; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        Repository
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #3F3F46">
+        <span style="width: 24px; height: 24px; border-radius: 50%; background: #0B6BAA; display: flex; align-items: center; justify-content: center; flex: none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        Deploy key
+      </div>
+      <div aria-current="step" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; background: #FFFFFF; border: 1px solid #E5E5E2">
+        <span style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0B6BAA; color: #0B6BAA; font-size: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: none">3</span>
+        Publishing
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #6B6B73">
+        <span style="width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #D4D4D0; font-size: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: none">4</span>
+        Invite people
+      </div>
+    </nav>
+
+    <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+      <section style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">1 · Repository</h2>
+          <button type="button" style="height: 32px; padding: 0 10px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #0B6BAA; cursor: pointer">Change</button>
+        </div>
+        <div role="tablist" aria-label="Source" style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #F1F1EE; border-radius: 10px; align-self: flex-start">
+          <button type="button" role="tab" aria-selected="true" style="height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,.08); font: inherit; font-size: 13px; font-weight: 500; color: #18181B">Import Git repository</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font: inherit; font-size: 13px; color: #52525B">From Quiqr Desktop</button>
+          <button type="button" role="tab" aria-selected="false" style="height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font: inherit; font-size: 13px; color: #52525B">Start from a template</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; background: #F7F7F5; border-radius: 10px">
+            <span style="font-size: 12px; color: #6B6B73">Repository</span>
+            <span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; overflow-wrap: anywhere">git@github.com:studionoord/korenaar.git</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; background: #F7F7F5; border-radius: 10px">
+            <span style="font-size: 12px; color: #6B6B73">Detected</span>
+            <span style="font-size: 13px; display: flex; align-items: center; gap: 6px">Hugo site · Quiqr model found <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          </div>
+        </div>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">2 · Deploy key</h2>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: #166534; background: #EAF6EE; border-radius: 999px; padding: 4px 10px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #16A34A"></span>Connected · read &amp; write</span>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #52525B">Add this key to the repository’s deploy keys and allow write access. Quiqr uses it to fetch content and to publish.</p>
+        <div style="display: flex; align-items: stretch; border: 1px solid #E5E5E2; border-radius: 10px; overflow: hidden">
+          <code style="flex: 1; min-width: 0; padding: 12px 14px; background: #FAFAF8; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; line-height: 1.5; color: #27272A; overflow-wrap: anywhere">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7v2Lx9Qm4pWq8eTn3sYfRb0cJhD1uGz5aV quiqr-korenaar</code>
+          <button type="button" style="flex: none; display: flex; align-items: center; gap: 6px; padding: 0 14px; border: 0; border-left: 1px solid #E5E5E2; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; color: #18181B; cursor: pointer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>
+            Copy
+          </button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px">
+          <a href="#" style="text-decoration: none; font-weight: 500">How to add a deploy key on GitHub, GitLab or Forgejo</a>
+          <button type="button" style="border: 0; background: transparent; padding: 0; font: inherit; font-size: 13px; font-weight: 500; color: #3F3F46; cursor: pointer">Test connection again</button>
+        </div>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1.5px solid #0B6BAA; border-radius: 14px; padding: 20px 24px; display: flex; flex-direction: column; gap: 22px; box-shadow: 0 0 0 4px #E6F2FB">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">3 · Publishing</h2>
+          <p style="margin: 0; font-size: 14px; color: #52525B">What happens when someone presses Publish.</p>
+        </div>
+
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+          <legend style="font-size: 14px; font-weight: 500; padding: 0; margin-bottom: 10px">Push to</legend>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 10px">
+            <label style="display: flex; gap: 12px; padding: 14px; border: 1px solid #E5E5E2; border-radius: 10px; cursor: pointer">
+              <input type="radio" name="branch" style="margin: 2px 0 0; width: 16px; height: 16px; accent-color: #0B6BAA">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 14px; font-weight: 500">Main branch</span>
+                <span style="font-size: 13px; line-height: 1.45; color: #52525B">Changes go straight to <code style="font-family: 'Geist Mono', monospace; font-size: 12px">main</code>.</span>
+              </span>
+            </label>
+            <label style="display: flex; gap: 12px; padding: 14px; border: 1.5px solid #0B6BAA; border-radius: 10px; background: #F2F8FD; cursor: pointer">
+              <input type="radio" name="branch" checked style="margin: 2px 0 0; width: 16px; height: 16px; accent-color: #0B6BAA">
+              <span style="display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0">
+                <span style="font-size: 14px; font-weight: 500">A separate branch</span>
+                <span style="font-size: 13px; line-height: 1.45; color: #52525B">Keeps editing work apart from your own commits.</span>
+                <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Branch name</span>
+                <input type="text" value="quiqr/publish" style="height: 36px; padding: 0 10px; border: 1px solid #D9D9D5; border-radius: 7px; font-family: 'Geist Mono', monospace; font-size: 13px; background: #FFFFFF">
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+          <legend style="font-size: 14px; font-weight: 500; padding: 0; margin-bottom: 10px">What to push</legend>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 10px">
+            <label style="display: flex; gap: 12px; padding: 14px; border: 1.5px solid #0B6BAA; border-radius: 10px; background: #F2F8FD; cursor: pointer">
+              <input type="radio" name="what" checked style="margin: 2px 0 0; width: 16px; height: 16px; accent-color: #0B6BAA">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 14px; font-weight: 500">Source files</span>
+                <span style="font-size: 13px; line-height: 1.45; color: #52525B">Your own pipeline builds the site, e.g. Cloudflare Pages or AWS Amplify. Quiqr checks the build first.</span>
+              </span>
+            </label>
+            <label style="display: flex; gap: 12px; padding: 14px; border: 1px solid #E5E5E2; border-radius: 10px; cursor: pointer">
+              <input type="radio" name="what" style="margin: 2px 0 0; width: 16px; height: 16px; accent-color: #0B6BAA">
+              <span style="display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 14px; font-weight: 500">Built HTML</span>
+                <span style="font-size: 13px; line-height: 1.45; color: #52525B">Quiqr builds the site with Hugo and pushes plain HTML, ready to serve.</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div style="display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: #F7F7F5; font-size: 13px; line-height: 1.5; color: #3F3F46">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M6 9v3a3 3 0 0 0 3 3h6"/></svg>
+          <span>Custom build steps will live in <code style="font-family: 'Geist Mono', monospace; font-size: 12px">quiqr/workflows/</code> in the repository. The workflow editor arrives in a later release.</span>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; border-top: 1px solid #EDEDEA; padding-top: 18px">
+          <button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #E5E5E2; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; color: #18181B; cursor: pointer">Back</button>
+          <a href="people.html" style="height: 40px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none">Continue to invite people</a>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<a class="qp-screens" href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All screens</a>
+</body>
+</html>

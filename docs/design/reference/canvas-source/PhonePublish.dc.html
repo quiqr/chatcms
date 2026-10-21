@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quiqr ChatCMS — Publish on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6BAA}a:hover{color:#08578C}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F7F7F5; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 52px 12px 10px; background: #FFFFFF; border-bottom: 1px solid #E5E5E2; display: flex; align-items: center; gap: 6px">
+    <a href="PhoneEditor.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #18181B"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <span style="font-size: 16px; font-weight: 600">Publish</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -0.02em">4 changes ready</h1>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #52525B">Last published Tuesday by Joris Bakker.</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px">
+      <li style="display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid #F1F1EE">
+        <span style="font-size: 12px; font-weight: 500; color: #92400E; background: #FEF3E2; border-radius: 6px; padding: 3px 7px; flex: none">Changed</span>
+        <span style="flex: 1; min-width: 0; font-size: 15px">Our spring bread is back</span>
+      </li>
+      <li style="display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid #F1F1EE">
+        <span style="font-size: 12px; font-weight: 500; color: #1E40AF; background: #EAF0FD; border-radius: 6px; padding: 3px 7px; flex: none">New</span>
+        <span style="flex: 1; min-width: 0; font-size: 15px">Closed on King’s Day</span>
+      </li>
+      <li style="display: flex; align-items: center; gap: 12px; padding: 14px; border-bottom: 1px solid #F1F1EE">
+        <span style="font-size: 12px; font-weight: 500; color: #92400E; background: #FEF3E2; border-radius: 6px; padding: 3px 7px; flex: none">Changed</span>
+        <span style="flex: 1; min-width: 0; font-size: 15px">About us</span>
+      </li>
+      <li style="display: flex; align-items: center; gap: 12px; padding: 14px">
+        <span style="font-size: 12px; font-weight: 500; color: #1E40AF; background: #EAF0FD; border-radius: 6px; padding: 3px 7px; flex: none">New</span>
+        <span style="flex: 1; min-width: 0; font-size: 15px">spring-spelt.jpg</span>
+      </li>
+    </ul>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="pn" style="font-size: 14px; font-weight: 500">What’s in this update? <span style="font-weight: 400; color: #6B6B73">Optional</span></label>
+      <input id="pn" type="text" placeholder="e.g. Spring bread" style="height: 46px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 16px">
+    </div>
+  </main>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 30px; background: #FFFFFF; border-top: 1px solid #E5E5E2">
+    <button type="button" style="height: 50px; border: 0; border-radius: 10px; background: #0B6BAA; color: #FFFFFF; font: inherit; font-size: 16px; font-weight: 600">Publish 4 changes</button>
+    <span style="text-align: center; font-size: 13px; color: #6B6B73">Your site updates in a minute or two.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

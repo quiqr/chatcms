@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiqr ChatCMS — Edit page</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F7F7F5}
+a{color:#0B6BAA}a:hover{color:#08578C}
+</style>
+
+<style>
+html,body{background:#F7F7F5}
+*{-webkit-tap-highlight-color:transparent}
+.qp-screens{position:fixed;right:calc(12px + env(safe-area-inset-right, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:50;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:#18181B;color:#FAFAFA;font:500 13px Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.qp-screens:hover{color:#FFFFFF;background:#27272A}
+.qp-screens:focus-visible{outline:2px solid #37B6FF;outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div style="min-height: 100vh; display: flex; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; background: #F7F7F5">
+  <nav aria-label="Project" style="flex: none; width: 64px; background: #FFFFFF; border-right: 1px solid #E5E5E2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 0">
+    <img src="logo.svg" alt="Quiqr" style="height: 20px; width: auto; display: block; margin-bottom: 12px;">
+    <a href="content.html" aria-label="Content" aria-current="page" style="width: 44px; height: 44px; border-radius: 10px; background: #F1F1EE; color: #18181B; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></a>
+    <a href="media.html" aria-label="Media" style="width: 44px; height: 44px; border-radius: 10px; color: #52525B; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></a>
+    <a href="publish.html" aria-label="Publish" style="width: 44px; height: 44px; border-radius: 10px; color: #52525B; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg></a>
+    <a href="history.html" aria-label="History" style="width: 44px; height: 44px; border-radius: 10px; color: #52525B; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg></a>
+    <div style="flex: 1"></div>
+    <span style="width: 34px; height: 34px; border-radius: 50%; background: #F3E3D3; color: #9A3412; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">EV</span>
+  </nav>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 24px; border-bottom: 1px solid #E5E5E2; background: #FFFFFF">
+      <a href="content.html" aria-label="Back to News" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E5E5E2; display: flex; align-items: center; justify-content: center; color: #3F3F46"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+      <div style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column">
+        <span style="font-size: 12px; color: #6B6B73">News</span>
+        <h1 style="margin: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Our spring bread is back</h1>
+      </div>
+      <span role="status" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #52525B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z"/><path d="M9.5 13l2 2 3.5-3.5"/></svg>Saved</span>
+      <div role="group" aria-label="Layout" style="display: flex; gap: 2px; padding: 3px; background: #F1F1EE; border-radius: 9px">
+        <button type="button" aria-pressed="false" style="height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; color: #52525B; cursor: pointer">Form</button>
+        <button type="button" aria-pressed="true" style="height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(16,24,40,.08); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Side by side</button>
+        <button type="button" aria-pressed="false" style="height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; color: #52525B; cursor: pointer">Preview</button>
+      </div>
+      <a href="editor.html" style="color: #18181B; height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid #E5E5E2; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; color: #18181B; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Assistant</a>
+      <a href="publish.html" style="height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; font-size: 14px; font-weight: 600; text-decoration: none">Publish<span style="font-size: 12px; background: rgba(255,255,255,.2); border-radius: 999px; padding: 1px 7px">4</span></a>
+    </header>
+
+    <div style="flex: 1; display: flex; flex-wrap: wrap; align-items: stretch">
+      <main style="flex: 1 1 460px; min-width: 0; padding: 28px clamp(16px, 3vw, 40px) 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; max-width: 760px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="f-title" style="font-size: 14px; font-weight: 500">Title</label>
+          <input id="f-title" type="text" value="Our spring bread is back" style="height: 44px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px">
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="f-date" style="font-size: 14px; font-weight: 500">Date</label>
+            <input id="f-date" type="text" value="14 March 2027" style="height: 44px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="f-author" style="font-size: 14px; font-weight: 500">Author</label>
+            <select id="f-author" style="height: 44px; padding: 0 10px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px"><option>Eva de Vries</option><option>Joris Bakker</option></select>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 14px; font-weight: 500">Cover image</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; padding: 10px; border: 1px solid #E5E5E2; border-radius: 10px; background: #FFFFFF">
+            <span role="img" aria-label="Cover image: spelt loaves on a wooden board" style="width: 112px; height: 76px; border-radius: 7px; background: #D8E6D2; flex: none"></span>
+            <div style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 3px">
+              <span style="font-size: 14px; font-weight: 500">spring-spelt.jpg</span>
+              <span style="font-size: 13px; color: #6B6B73">1600 × 1067 · 240 KB</span>
+            </div>
+            <div style="display: flex; gap: 8px">
+              <a href="media.html" style="height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid #E5E5E2; border-radius: 8px; font-size: 13px; font-weight: 500; color: #18181B; text-decoration: none">Replace</a>
+              <button type="button" style="height: 36px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #52525B; cursor: pointer">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+            <label for="f-sum" style="font-size: 14px; font-weight: 500">Summary</label>
+            <span style="font-size: 12px; color: #6B6B73">Shown on the news overview · 96 / 160</span>
+          </div>
+          <textarea id="f-sum" rows="2" style="padding: 10px 12px; border: 1.5px solid #0B6BAA; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px; line-height: 1.5; resize: vertical; box-shadow: 0 0 0 3px #E6F2FB">From this week our spelt and honey loaf is back on the shelves, baked fresh every morning.</textarea>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 14px; font-weight: 500">Body</span>
+          <div style="border: 1px solid #D9D9D5; border-radius: 10px; background: #FFFFFF; overflow: hidden">
+            <div role="toolbar" aria-label="Formatting" style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px; border-bottom: 1px solid #EDEDEA; background: #FAFAF8">
+              <button type="button" aria-label="Heading" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 13px; font-weight: 600; color: #3F3F46; cursor: pointer">H</button>
+              <button type="button" aria-label="Bold" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 14px; font-weight: 700; color: #3F3F46; cursor: pointer">B</button>
+              <button type="button" aria-label="Italic" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 14px; font-style: italic; color: #3F3F46; cursor: pointer">I</button>
+              <button type="button" aria-label="Link" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; color: #3F3F46; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+              <button type="button" aria-label="Bulleted list" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; color: #3F3F46; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button>
+              <button type="button" aria-label="Insert image" style="width: 34px; height: 34px; border: 0; border-radius: 6px; background: transparent; color: #3F3F46; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg></button>
+              <div style="flex: 1"></div>
+              <button type="button" aria-pressed="false" style="height: 30px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 6px; background: #FFFFFF; font-family: 'Geist Mono', monospace; font-size: 12px; color: #52525B; cursor: pointer">Markdown</button>
+            </div>
+            <div style="padding: 16px 18px; font-size: 15px; line-height: 1.65; color: #27272A; display: flex; flex-direction: column; gap: 12px; min-height: 180px">
+              <p style="margin: 0">After a long winter, the <strong>spelt and honey loaf</strong> is back. We bake it with flour from the Lindewaard mill and a spoonful of local honey.</p>
+              <p style="margin: 0; font-size: 17px; font-weight: 600">When can you get it?</p>
+              <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px">
+                <li>Tuesday to Saturday, from 7:00</li>
+                <li>Pre-order for Sunday via the <a href="#">order page</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <fieldset style="min-width: 0; border: 1px solid #E5E5E2; border-radius: 10px; background: #FFFFFF; margin: 0; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+          <legend style="font-size: 14px; font-weight: 500; padding: 0 6px">Ingredients <span style="font-weight: 400; color: #6B6B73">· 3 items</span></legend>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span aria-hidden="true" style="color: #A1A1AA; font-size: 16px; line-height: 1; letter-spacing: -2px">⋮⋮</span>
+            <label for="i1" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ingredient 1</label>
+            <input id="i1" type="text" value="Spelt flour" style="flex: 1; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; font: inherit; font-size: 14px">
+            <button type="button" aria-label="Remove Spelt flour" style="width: 36px; height: 36px; border: 0; border-radius: 7px; background: transparent; color: #6B6B73; cursor: pointer; font-size: 18px">×</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span aria-hidden="true" style="color: #A1A1AA; font-size: 16px; line-height: 1; letter-spacing: -2px">⋮⋮</span>
+            <label for="i2" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ingredient 2</label>
+            <input id="i2" type="text" value="Local honey" style="flex: 1; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; font: inherit; font-size: 14px">
+            <button type="button" aria-label="Remove Local honey" style="width: 36px; height: 36px; border: 0; border-radius: 7px; background: transparent; color: #6B6B73; cursor: pointer; font-size: 18px">×</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span aria-hidden="true" style="color: #A1A1AA; font-size: 16px; line-height: 1; letter-spacing: -2px">⋮⋮</span>
+            <label for="i3" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ingredient 3</label>
+            <input id="i3" type="text" value="Sea salt" style="flex: 1; min-width: 0; height: 40px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; font: inherit; font-size: 14px">
+            <button type="button" aria-label="Remove Sea salt" style="width: 36px; height: 36px; border: 0; border-radius: 7px; background: transparent; color: #6B6B73; cursor: pointer; font-size: 18px">×</button>
+          </div>
+          <button type="button" style="align-self: flex-start; height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 0; border-radius: 7px; background: #F1F1EE; font: inherit; font-size: 13px; font-weight: 500; color: #18181B; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add ingredient</button>
+        </fieldset>
+
+        <button type="button" aria-expanded="false" style="display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 16px; border: 1px solid #E5E5E2; border-radius: 10px; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; color: #18181B; cursor: pointer">
+          <span>Search engines &amp; sharing <span style="font-weight: 400; color: #6B6B73">· optional</span></span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </main>
+
+      
+        <section aria-label="Live preview" style="flex: 1 1 460px; min-width: 0; background: #EFEFEC; border-left: 1px solid #E5E5E2; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="flex: 1; min-width: 0; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; background: #FFFFFF; font-size: 13px; color: #52525B; overflow: hidden; white-space: nowrap">
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #0B6BAA; flex: none"></span>Preview · korenaar.nl/news/spring-bread
+            </span>
+            <div role="group" aria-label="Device" style="display: flex; gap: 2px; padding: 3px; background: #E2E2DE; border-radius: 8px">
+              <button type="button" aria-label="Desktop" aria-pressed="true" style="width: 32px; height: 28px; border: 0; border-radius: 5px; background: #FFFFFF; color: #18181B; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
+              <button type="button" aria-label="Phone" aria-pressed="false" style="width: 32px; height: 28px; border: 0; border-radius: 5px; background: transparent; color: #52525B; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg></button>
+            </div>
+          </div>
+          <div style="flex: 1; background: #FFFDF8; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 12px 32px rgba(16,24,40,.08); overflow: hidden; display: flex; flex-direction: column">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid #EFE8DA; font-size: 13px; color: #6B5B45">
+              <span style="font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; color: #3B2A17">Korenaar</span>
+              <span style="display: flex; gap: 16px"><span>Breads</span><span>News</span><span>Visit</span></span>
+            </div>
+            <div style="padding: 28px; display: flex; flex-direction: column; gap: 14px">
+              <span style="font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #8A6D47">News · 14 March 2027</span>
+              <span style="font-family: Fraunces, Georgia, serif; font-size: 34px; line-height: 1.1; font-weight: 600; color: #2B1D0E">Our spring bread is back</span>
+              <span style="font-size: 16px; line-height: 1.55; color: #4B3B28; outline: 2px dashed #0B6BAA; outline-offset: 6px; border-radius: 2px">From this week our spelt and honey loaf is back on the shelves, baked fresh every morning.</span>
+              <span role="img" aria-label="Cover image" style="height: 180px; border-radius: 10px; background: #D8E6D2; margin-top: 6px"></span>
+              <span style="font-size: 15px; line-height: 1.65; color: #4B3B28">After a long winter, the <strong>spelt and honey loaf</strong> is back. We bake it with flour from the Lindewaard mill and a spoonful of local honey.</span>
+              <span style="font-family: Fraunces, Georgia, serif; font-size: 20px; font-weight: 600; color: #2B1D0E">When can you get it?</span>
+              <span style="font-size: 15px; line-height: 1.65; color: #4B3B28">• Tuesday to Saturday, from 7:00<br>• Pre-order for Sunday via the order page</span>
+            </div>
+          </div>
+        </section>
+      
+
+      
+        <aside aria-label="Assistant" style="flex: 0 1 340px; min-width: 280px; background: #FFFFFF; border-left: 1px solid #E5E5E2; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid #EDEDEA">
+            <span style="font-size: 15px; font-weight: 600; flex: 1">Assistant</span>
+            <span style="font-size: 11px; font-weight: 500; color: #52525B; border: 1px solid #E5E5E2; border-radius: 999px; padding: 2px 8px">Coming later</span>
+          </div>
+          <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+            <div style="align-self: flex-end; max-width: 85%; background: #F1F1EE; border-radius: 12px 12px 4px 12px; padding: 10px 12px; font-size: 14px; line-height: 1.5">Mention that the loaf is baked fresh every morning, in the summary.</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5">
+              <span>Done. I updated one field:</span>
+              <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #E5E5E2; border-radius: 10px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6BAA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                <span style="flex: 1">Summary</span>
+                <button type="button" style="height: 30px; padding: 0 8px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #0B6BAA; cursor: pointer">Show</button>
+                <button type="button" style="height: 30px; padding: 0 8px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #52525B; cursor: pointer">Undo</button>
+              </div>
+            </div>
+          </div>
+          <form style="padding: 12px; border-top: 1px solid #EDEDEA; display: flex; gap: 8px">
+            <label for="chat" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask the assistant</label>
+            <input id="chat" type="text" placeholder="Ask to change something…" style="flex: 1; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 14px">
+            <button type="submit" aria-label="Send" style="width: 42px; height: 42px; border: 0; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </form>
+        </aside>
+      
+    </div>
+  </div>
+</div>
+
+<a class="qp-screens" href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All screens</a>
+</body>
+</html>

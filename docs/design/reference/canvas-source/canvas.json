@@ -1,0 +1,30 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-21T12:58:00Z"},
+  "title": "Quiqr ChatCMS — Milestone 1",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 900, "title": "1 · Login", "expand": "fill"},
+    "Projects.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 960, "title": "2 · Organisation & projects", "expand": "fill"},
+    "Onboarding.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1100, "title": "3 · Project onboarding (implementer)", "expand": "fill"},
+    "Users.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 960, "title": "4 · Users & roles", "expand": "fill"},
+    "Content.dc.html": {"x": 0, "y": 1480, "w": 1440, "h": 1000, "title": "5 · Content browser", "expand": "fill"},
+    "Editor.dc.html": {"x": 1520, "y": 1480, "w": 1440, "h": 1100, "title": "6 · Form editor + live preview", "expand": "fill"},
+    "Media.dc.html": {"x": 3040, "y": 1480, "w": 1440, "h": 1000, "title": "7 · Media library", "expand": "fill"},
+    "Publish.dc.html": {"x": 0, "y": 2960, "w": 1440, "h": 1000, "title": "8 · Publish", "expand": "fill"},
+    "History.dc.html": {"x": 1520, "y": 2960, "w": 1440, "h": 1000, "title": "9 · History & rollback", "expand": "fill"},
+    "Sync.dc.html": {"x": 3040, "y": 2960, "w": 1440, "h": 760, "title": "10 · Sync status states"},
+    "PhoneContent.dc.html": {"x": 0, "y": 4340, "w": 390, "h": 844, "title": "Phone · Content"},
+    "PhoneEditor.dc.html": {"x": 470, "y": 4340, "w": 390, "h": 844, "title": "Phone · Edit page"},
+    "PhonePublish.dc.html": {"x": 940, "y": 4340, "w": 390, "h": 844, "title": "Phone · Publish"}
+  },
+  "order": ["Main.dc.html", "Projects.dc.html", "Onboarding.dc.html", "Users.dc.html", "Content.dc.html", "Editor.dc.html", "Media.dc.html", "Publish.dc.html", "History.dc.html", "Sync.dc.html", "PhoneContent.dc.html", "PhoneEditor.dc.html", "PhonePublish.dc.html"],
+  "notes": {
+    "row1": {"x": 0, "y": -300, "text": "Access & setup", "kind": "title1", "maxW": 6000},
+    "row2": {"x": 0, "y": 1180, "text": "Editing content", "kind": "title1", "maxW": 4480},
+    "row3": {"x": 0, "y": 2660, "text": "Publishing & history", "kind": "title1", "maxW": 4480},
+    "row4": {"x": 0, "y": 4040, "text": "On a phone", "kind": "title1", "maxW": 1330}
+  },
+  "designSystems": []
+}

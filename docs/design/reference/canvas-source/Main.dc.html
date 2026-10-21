@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quiqr ChatCMS — Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F7F7F5}
+a{color:#0B6BAA}a:hover{color:#08578C}
+input:focus{outline:2px solid #0B6BAA;outline-offset:1px}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; background: #F7F7F5">
+  <main style="flex: 1 1 480px; display: flex; flex-direction: column; justify-content: space-between; padding: 40px clamp(20px, 6vw, 96px); box-sizing: border-box; gap: 48px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <img src="/_blob/9afe28dac053a7d49cbb6ba0e9cce833" alt="Quiqr" style="height: 28px; width: auto; display: block;">
+      <div style="font-size: 18px; letter-spacing: -0.01em"><span style="font-weight: 400; color: #52525B">ChatCMS</span></div>
+    </div>
+
+    <form style="width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h1 style="margin: 0; font-size: 32px; line-height: 1.15; font-weight: 650; letter-spacing: -0.025em">Sign in</h1>
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #52525B">Edit and publish your website. No technical knowledge needed.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="email" style="font-size: 14px; font-weight: 500">Email</label>
+          <input id="email" type="email" value="eva@korenaar.nl" style="height: 44px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px; color: #18181B">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline">
+            <label for="pw" style="font-size: 14px; font-weight: 500">Password</label>
+            <a href="#" style="font-size: 13px; text-decoration: none; font-weight: 500">Forgot password?</a>
+          </div>
+          <input id="pw" type="password" value="••••••••••" style="height: 44px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 15px; color: #18181B">
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #3F3F46; min-height: 28px">
+          <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #0B6BAA; margin: 0">
+          Keep me signed in on this device
+        </label>
+      </div>
+      <button type="submit" style="height: 44px; border: 0; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer">Sign in</button>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #6B6B73">Got an invitation email? Use the link in it to set your password first.</p>
+    </form>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #6B6B73">
+      <span>chatcms.eu</span>
+      <a href="#" style="color: #6B6B73; text-decoration: none">Privacy</a>
+      <a href="#" style="color: #6B6B73; text-decoration: none">Help</a>
+    </div>
+  </main>
+
+  <aside aria-label="Product preview" style="flex: 1 1 520px; box-sizing: border-box; padding: 24px; display: flex">
+    <div style="flex: 1; border-radius: 20px; background: #E6F2FB; display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: clamp(28px, 5vw, 72px); box-sizing: border-box; min-height: 420px">
+      <p style="margin: 0; max-width: 460px; font-size: 30px; line-height: 1.2; font-weight: 600; letter-spacing: -0.025em; color: #0A3D63; text-wrap: balance">Fill in a form, or just ask. Your site updates as you go.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; max-width: 620px">
+        <div style="background: #FFFFFF; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06)">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; font-weight: 500; color: #52525B">Page title</span>
+            <span style="height: 34px; border: 1px solid #D9D9D5; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 14px">Our spring bread</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; font-weight: 500; color: #52525B">Opening hours</span>
+            <span style="height: 34px; border: 1px solid #D9D9D5; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 14px">Tue–Sat · 7:00–17:00</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 10px; border-radius: 8px; background: #F4F4F1; font-size: 13px; color: #3F3F46">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B6BAA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+            “Add that we’re closed on King’s Day”
+          </div>
+        </div>
+        <div style="background: #FFFFFF; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px rgba(16,24,40,.06)">
+          <div style="height: 28px; background: #F4F4F1; display: flex; align-items: center; gap: 5px; padding: 0 10px">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #D4D4D0"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #D4D4D0"></span><span style="width: 7px; height: 7px; border-radius: 50%; background: #D4D4D0"></span>
+          </div>
+          <div style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+            <div style="height: 84px; border-radius: 8px; background: #D8E6D2"></div>
+            <div style="font-size: 16px; font-weight: 650; letter-spacing: -0.01em">Our spring bread</div>
+            <div style="height: 8px; width: 90%; border-radius: 4px; background: #ECECE8"></div>
+            <div style="height: 8px; width: 70%; border-radius: 4px; background: #ECECE8"></div>
+            <div style="display: inline-flex; align-self: flex-start; gap: 6px; align-items: center; font-size: 12px; color: #0A5A8F; background: #E6F2FB; border-radius: 999px; padding: 4px 10px; margin-top: 4px">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: #0B6BAA"></span>Live preview
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

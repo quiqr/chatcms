@@ -1,0 +1,50 @@
+schema: spec-driven
+
+context: |
+  Quiqr ChatCMS (chatcms.eu): a hosted, multi-tenant, Nix-powered headless CMS
+  for Markdown static sites, Hugo first. Editing forms are generated from the
+  declarative Quiqr model (YAML). Content lives in git; git is hidden from
+  content creators.
+
+  Audiences: implementers (set up repositories, publishing, people) and content
+  creators (edit through forms, preview, publish).
+
+  Locked stack: Go backend; React + TypeScript + Vite + Tailwind v4 +
+  shadcn/ui frontend, responsive down to 390 px; PostgreSQL with sqlc for
+  queries and goose for migrations, embedded and run on start-up; the git CLI
+  called from Go, never go-git; Nix flake plus NixOS module for packaging;
+  jj for version control.
+
+  Backwards compatibility is a hard requirement: existing Quiqr models must be
+  read unchanged, and saving through a form must produce the same front matter
+  and Markdown as the old Quiqr desktop app at ../quiqr-desktop. Golden tests
+  prove it.
+
+  Read AGENTS.md, docs/ARCHITECTURE.md, docs/TESTING.md and
+  docs/design/DESIGN.md before proposing. Epics live in .beans; every proposal
+  links back to its bean.
+
+rules:
+  proposal:
+    - Link the originating bean id in the proposal.
+    - State which acceptance test from docs/BRIEFING-M01.md the change serves.
+    - Record assumptions explicitly instead of asking a blocking question.
+    - Name the seam the change touches when it touches gitsync, runner, policy
+      or auth, and say what stays behind the interface.
+  tasks:
+    - Every task that adds behaviour names the test that proves it.
+    - Include a task for adding the change's check to flake.nix when it
+      produces a new buildable or runnable artifact.
+    - Include a task for updating CHANGELOG.md under [Unreleased].
+
+operations:
+  apply:
+    guidance:
+      - Keep nix flake check green at every commit.
+      - Editor-facing UI strings must avoid the banned git words listed in
+        docs/design/DESIGN.md section 7.
+  archive:
+    guidance:
+      - Ship through scripts/ship-change.sh so the gate runs before archiving.
+      - Add the openspec-link to the bean frontmatter and close the bean with a
+        Summary of Changes section.

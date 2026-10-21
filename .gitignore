@@ -1,0 +1,13 @@
+result
+result-*
+.direnv/
+dist/
+node_modules/
+coverage.out
+coverage.html
+/chatcmsd
+/tmp/
+.env
+.env.local
+playwright-report/
+test-results/
