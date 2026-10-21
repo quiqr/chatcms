@@ -3,8 +3,14 @@
 #
 # The gate /mip:ship enforces: >=70% statement coverage overall and >=80% on
 # every core package. Core packages are the ones whose breakage is silent and
-# expensive: the Quiqr model, the form round-trip, the policy function and the
-# git sync engine.
+# expensive: the Quiqr model, the form round-trip, the policy function, the git
+# sync engine and the HTTP layer every handler runs through.
+#
+# Two things are excluded. Generated files, because they are not written by
+# hand and covering them measures the generator rather than this project; the
+# exclusion is by filename pattern, not by package, so hand-written code living
+# beside generated code is still measured. And test-support packages, because
+# they exist only to run the tests that do the measuring.
 set -euo pipefail
 
 PROFILE="${1:?usage: coverage-gate.sh <coverage.out>}"
@@ -16,7 +22,11 @@ CORE_PACKAGES=(
   "github.com/quiqr/chatcms/internal/forms"
   "github.com/quiqr/chatcms/internal/policy"
   "github.com/quiqr/chatcms/internal/gitsync"
+  "github.com/quiqr/chatcms/internal/httpapi"
 )
+
+GENERATED_PATTERN='[.]generated[.]go$'
+EXCLUDED_PACKAGES='/internal/testsupport$'
 
 if [[ ! -s "$PROFILE" ]]; then
   echo "coverage-gate: $PROFILE is missing or empty" >&2
@@ -24,14 +34,16 @@ if [[ ! -s "$PROFILE" ]]; then
 fi
 
 report() {
-  awk '
+  awk -v generated="$GENERATED_PATTERN" -v excluded="$EXCLUDED_PACKAGES" '
     /^mode:/ { next }
     {
       split($1, a, ":")
       file = a[1]
+      if (file ~ generated) next
       n = split(file, p, "/")
       dir = p[1]
       for (i = 2; i < n; i++) dir = dir "/" p[i]
+      if (dir ~ excluded) next
       stmts[dir] += $2
       total += $2
       if ($3 + 0 > 0) { covered[dir] += $2; totalcovered += $2 }

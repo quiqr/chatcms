@@ -1,49 +1,18 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/quiqr/chatcms/internal/version"
 )
-
-type Config struct {
-	Listen      string
-	BaseURL     string
-	StateDir    string
-	DatabaseURL string
-	GitBin      string
-	HugoBin     string
-}
-
-var ErrMissingDatabaseURL = errors.New("CHATCMS_DATABASE_URL is not set")
-
-func LoadConfig(lookup func(string) string) (Config, error) {
-	cfg := Config{
-		Listen:      withDefault(lookup("CHATCMS_LISTEN"), "127.0.0.1:8080"),
-		BaseURL:     withDefault(lookup("CHATCMS_BASE_URL"), "http://localhost:8080"),
-		StateDir:    withDefault(lookup("CHATCMS_STATE_DIR"), "./.chatcms-state"),
-		DatabaseURL: lookup("CHATCMS_DATABASE_URL"),
-		GitBin:      withDefault(lookup("CHATCMS_GIT_BIN"), "git"),
-		HugoBin:     withDefault(lookup("CHATCMS_HUGO_BIN"), "hugo"),
-	}
-
-	if cfg.DatabaseURL == "" {
-		return cfg, ErrMissingDatabaseURL
-	}
-
-	return cfg, nil
-}
-
-func withDefault(value, fallback string) string {
-	if value == "" {
-		return fallback
-	}
-	return value
-}
 
 func Run(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("chatcmsd", flag.ContinueOnError)
@@ -59,14 +28,46 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return 0
 	}
 
-	cfg, err := LoadConfig(os.Getenv)
+	cfg, err := LoadConfig(EnvLookup())
 	if err != nil {
 		fmt.Fprintf(stderr, "chatcmsd: %v\n", err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "%s\nlisten=%s base-url=%s state-dir=%s\n",
-		version.String(), cfg.Listen, cfg.BaseURL, cfg.StateDir)
-	fmt.Fprintln(stderr, "chatcmsd: no HTTP server yet; see openspec/changes for the active work")
+	logger := NewLogger(stderr, cfg.LogFormat, IsTerminal(stderr))
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := Serve(ctx, cfg, logger); err != nil {
+		if errors.Is(err, ErrShutdownForced) {
+			logger.Error("shutdown was forced", "error", err)
+			return 1
+		}
+		logger.Error("the server stopped", "error", err)
+		return 1
+	}
 	return 0
+}
+
+func NewLogger(w io.Writer, format string, terminal bool) *slog.Logger {
+	opts := &slog.HandlerOptions{Level: slog.LevelInfo}
+
+	useText := format == "text" || (format == "auto" && terminal)
+	if useText {
+		return slog.New(slog.NewTextHandler(w, opts))
+	}
+	return slog.New(slog.NewJSONHandler(w, opts))
+}
+
+func IsTerminal(w io.Writer) bool {
+	file, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeCharDevice != 0
 }

@@ -18,30 +18,83 @@
         nixpkgs.lib.genAttrs systems (system: f {
           inherit system;
           pkgs = nixpkgs.legacyPackages.${system};
+          lib = nixpkgs.lib;
         });
 
       goSource = nixpkgs.lib.fileset.toSource {
         root = ./.;
         fileset = nixpkgs.lib.fileset.unions [
           ./go.mod
+          ./go.sum
           ./cmd
+          ./db
           ./internal
         ];
       };
 
-      mkServer = { pkgs, ... }: pkgs.buildGoModule {
-        pname = "chatcmsd";
+      webSource = nixpkgs.lib.fileset.toSource {
+        root = ./web;
+        fileset = nixpkgs.lib.fileset.unions [
+          ./web/package.json
+          ./web/package-lock.json
+          ./web/tsconfig.json
+          ./web/vite.config.ts
+          ./web/vitest.setup.ts
+          ./web/index.html
+          ./web/src
+          ./web/public
+        ];
+      };
+
+      vendorHash = "sha256-FdppPs2flv66rTasoRyKIJASBH1BjCWU8cSWjP4l6nw=";
+
+      mkWeb = { pkgs, ... }: pkgs.buildNpmPackage {
+        pname = "chatcms-web";
         inherit version;
+        src = webSource;
+        npmDepsHash = "sha256-FQsbsYTdcxp2nAKEwU0u+UVVPEakhli2lkqio0cPEg4=";
+
+        nativeBuildInputs = [ pkgs.nodejs_22 ];
+
+        env.ESBUILD_BINARY_PATH = pkgs.lib.getExe pkgs.esbuild;
+        env.ROLLUP_SKIP_NODEJS_NATIVE = "1";
+
+        doCheck = true;
+        checkPhase = ''
+          runHook preCheck
+          npm run typecheck
+          npm run test
+          runHook postCheck
+        '';
+
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out
+          cp -r dist/* $out/
+          runHook postInstall
+        '';
+
+        meta.description = "Quiqr ChatCMS browser application";
+      };
+
+      mkServer = { pkgs, ... }@args: pkgs.buildGoModule {
+        pname = "chatcmsd";
+        inherit version vendorHash;
         src = goSource;
-        vendorHash = null;
         subPackages = [ "cmd/chatcmsd" ];
         doCheck = false;
         env.CGO_ENABLED = 0;
+
+        preBuild = ''
+          cp -r ${mkWeb args}/. internal/webui/dist/
+        '';
+
         ldflags = [
           "-s"
           "-w"
           "-X=github.com/quiqr/chatcms/internal/version.Version=${version}"
         ];
+
         meta = {
           description = "Quiqr ChatCMS server";
           mainProgram = "chatcmsd";
@@ -51,6 +104,7 @@
       mkGoTests = { pkgs, ... }@args: (mkServer args).overrideAttrs (old: {
         pname = "chatcmsd-tests";
         subPackages = null;
+        preBuild = "";
         doCheck = true;
         env = old.env // { CGO_ENABLED = 1; };
         buildPhase = "runHook preBuild; runHook postBuild";
@@ -58,7 +112,6 @@
           runHook preCheck
           go vet ./...
           go test -race -covermode=atomic -coverprofile=coverage.out ./...
-          ${pkgs.bash}/bin/bash ${./scripts/coverage-gate.sh} coverage.out
           runHook postCheck
         '';
         installPhase = ''
@@ -68,6 +121,37 @@
           runHook postInstall
         '';
       });
+
+      mkIntegrationTests = { pkgs, ... }@args: (mkGoTests args).overrideAttrs (old: {
+        pname = "chatcmsd-integration-tests";
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.postgresql_16 ];
+        checkPhase = ''
+          runHook preCheck
+          export HOME=$TMPDIR
+          go vet -tags=integration ./...
+          go test -tags=integration -covermode=atomic -coverprofile=coverage.out ./...
+          ${pkgs.bash}/bin/bash ${./scripts/coverage-gate.sh} coverage.out
+          runHook postCheck
+        '';
+      });
+
+      mkSqlcCheck = { pkgs, ... }: pkgs.runCommand "chatcms-sqlc-diff"
+        {
+          nativeBuildInputs = [ pkgs.sqlc ];
+          src = nixpkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = nixpkgs.lib.fileset.unions [
+              ./sqlc.yaml
+              ./db
+              ./internal/store
+            ];
+          };
+        } ''
+        cp -r $src/. .
+        chmod -R u+w .
+        sqlc diff
+        touch $out
+      '';
 
       mkDevShell = { pkgs, system, ... }: pkgs.mkShell {
         name = "chatcms";
@@ -93,6 +177,7 @@
           openssh
 
           playwright-driver.browsers
+          prefetch-npm-deps
           jq
           yq-go
         ];
@@ -113,6 +198,7 @@
     {
       packages = forAllSystems (args: rec {
         chatcmsd = mkServer args;
+        web = mkWeb args;
         default = chatcmsd;
       });
 
@@ -123,6 +209,9 @@
       checks = forAllSystems (args: {
         go-build = mkServer args;
         go-test = mkGoTests args;
+        integration = mkIntegrationTests args;
+        frontend = mkWeb args;
+        sqlc = mkSqlcCheck args;
       });
 
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);

@@ -1,7 +1,10 @@
 result
 result-*
 .direnv/
-dist/
+/.pgdata/
+/web/dist/
+internal/webui/dist/*
+!internal/webui/dist/.gitkeep
 node_modules/
 coverage.out
 coverage.html

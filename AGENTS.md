@@ -41,7 +41,7 @@ credentials and job state. Content stays in git.
 | ------------------- | ---------------------------------------------------------- |
 | `cmd/chatcmsd/`     | The server entry point, nothing but a call into `internal/app` |
 | `internal/`         | All Go code; see `docs/ARCHITECTURE.md` for the packages   |
-| `web/`              | The React frontend (added by the foundation epic)          |
+| `web/`              | The React frontend, built by Nix and embedded in the binary |
 | `db/migrations/`    | goose migrations, embedded into the binary                 |
 | `db/queries/`       | sqlc query files                                           |
 | `nix/`              | The NixOS module and other Nix glue                        |
@@ -56,19 +56,41 @@ credentials and job state. Content stays in git.
 ## Commands
 
 ```bash
-nix develop                      # dev shell with Go, Node, Postgres, sqlc, goose, Hugo
-nix flake check                  # the gate: build, vet, tests, coverage
-nix build .#chatcmsd             # build the server
-go test ./...                    # fast test loop
-bash scripts/dev-db.sh up        # local Postgres in ./.pgdata, prints the URL
-bash scripts/dev-db.sh reset     # throw the database away and start over
-sqlc generate                    # regenerate query code after editing db/queries
+nix develop                        # dev shell with Go, Node, Postgres, sqlc, goose, Hugo
+nix flake check                    # the gate: build, vet, tests, coverage, frontend, sqlc
+nix build .#chatcmsd               # build the server with the frontend embedded
+nix build .#web                    # build the frontend on its own
+
+go test ./...                      # fast unit loop, no database needed
+go test -tags=integration ./...    # adds the tests that need PostgreSQL
+bash scripts/dev-db.sh up          # local Postgres in ./.pgdata, prints the URL
+bash scripts/dev-db.sh reset       # throw the database away and start over
+
+sqlc generate                      # regenerate query code after editing db/queries
+sqlc diff                          # what the gate checks: is the generated code stale
 goose -dir db/migrations postgres "$CHATCMS_DATABASE_URL" up
+
+cd web && npm run dev              # frontend dev server, proxies /api to the Go server
+cd web && npm run typecheck        # what the frontend check runs
+cd web && npm run test             # Vitest
+
 bash scripts/ship-change.sh <change> "<commit subject>"
-beans list --ready             # the next epic that is not blocked
-beans roadmap                  # milestones and epics as Markdown
-openspec list                  # active change proposals
+beans list --ready                 # the next epic that is not blocked
+beans roadmap                      # milestones and epics as Markdown
+openspec list                      # active change proposals
 ```
+
+After changing `web/package.json`, the pinned `npmDepsHash` in `flake.nix` is
+stale and the build fails. Regenerate it with:
+
+```bash
+nix develop --command prefetch-npm-deps web/package-lock.json
+```
+
+The server embeds `internal/webui/dist`, which holds only a placeholder in a
+checkout. `nix build .#chatcmsd` fills it from the frontend build; a plain
+`go build` leaves it empty and the server then serves a short notice saying the
+frontend was not built.
 
 UI work follows `docs/design/DESIGN.md`; reference screens are in
 `docs/design/reference/`.
@@ -91,16 +113,26 @@ Log assumptions in the OpenSpec proposal instead of asking.
 
 ### The gate
 
-`nix flake check` must stay green. It runs `go vet`, the full test suite with
-the race detector, and `scripts/coverage-gate.sh`, which requires at least 70%
-statement coverage overall and at least 80% on each core package:
-`internal/model`, `internal/forms`, `internal/policy` and `internal/gitsync`.
-A core package that does not exist yet is reported and skipped, so the gate
-tightens as those packages appear. Never bypass the gate; fix the code.
+`nix flake check` must stay green. It runs these checks:
+
+| Check         | What it runs                                                     |
+| ------------- | ---------------------------------------------------------------- |
+| `go-build`    | The server package, frontend included                             |
+| `go-test`     | `go vet` and the unit tests with the race detector                |
+| `integration` | The same plus the integration-tagged tests against a real PostgreSQL, then the coverage gate |
+| `frontend`    | The frontend type check, Vitest and the production build          |
+| `sqlc`        | `sqlc diff`, so committed generated code cannot drift from its SQL |
+
+`scripts/coverage-gate.sh` requires at least 70% statement coverage overall and
+at least 80% on each core package: `internal/model`, `internal/forms`,
+`internal/policy`, `internal/gitsync` and `internal/httpapi`. Generated files
+and test-support packages are excluded. A core package that does not exist yet
+is reported and skipped, so the gate tightens as those packages appear. Never
+bypass the gate; fix the code.
 
 Each epic that adds a buildable artifact must also add its check to
-`flake.nix`, so the frontend build, the e2e suite and the migration test all
-end up behind the same single command.
+`flake.nix`, so the e2e suite and the NixOS module test end up behind the same
+single command.
 
 ### Version control
 

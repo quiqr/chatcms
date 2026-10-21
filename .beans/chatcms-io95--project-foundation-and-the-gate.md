@@ -1,11 +1,11 @@
 ---
 # chatcms-io95
 title: Project foundation and the gate
-status: todo
+status: in-progress
 type: epic
 priority: critical
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:21Z
+updated_at: 2026-10-21T16:27:29Z
 parent: chatcms-8vem
 ---
 
