@@ -1,11 +1,12 @@
 ---
 # chatcms-gw8g
 title: Git sync engine
-status: in-progress
+status: completed
 type: epic
 priority: critical
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T19:02:56Z
+openspec-link: openspec/changes/archive/2026-10-21-add-git-sync-engine
+updated_at: 2026-10-21T19:27:08Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-io95
@@ -48,3 +49,21 @@ replace git later.
 
 - `docs/BRIEFING-M01.md` section 4.7.
 - `docs/ARCHITECTURE.md`, the seams section.
+
+## Summary of Changes
+
+Shipped as OpenSpec change `add-git-sync-engine`, archived at `openspec/changes/archive/2026-10-21-add-git-sync-engine`.
+
+Three capabilities specified and built: `sync/repository`, `sync/remote-exchange` and `platform/background-jobs`.
+
+`internal/gitsync` wraps the git CLI behind an interface that speaks in sites and versions, never in commits, branches or refspecs, so Jujutsu could replace it. `TestOnlyGitsyncRunsGit` walks the sources and fails when any other package starts a process and mentions git, so the rule is enforced rather than written down. Git runs with hooks disabled, no credential helper, no prompt and no system or user configuration, because a customer repository's hook is code we will not run on the server.
+
+Conflicts never reach a content file as markers: the engine reads all three versions out of the index, writes valid content back to disk, and hands the three versions to the caller in memory. The content filesystem refuses a conflicted path rather than serving a version as if it were the truth. An answer given for a page stands for the rest of that exchange, so a replay of several local versions asks once rather than three times; the design records why keying on content was built and then removed.
+
+`internal/jobs` is a Postgres-backed queue with exclusive claiming via FOR UPDATE SKIP LOCKED, exponential backoff, an attempt limit, and deduplication enforced by a unique index over queued rows rather than a read-then-write. Shutdown drains the job in flight and returns an overrunning one to the queue. `internal/redact` strips credential-shaped text from anything stored, logged or shown.
+
+Acceptance test 6 is proven at the engine level: a version pushed straight to the remote arrives through the scheduled sync job without anyone asking.
+
+Coverage: `internal/gitsync` 84.2%, `internal/jobs` 80.4%, overall 86.8%. The gate now runs against the pinned git binary and a real bare repository on disk; no test uses a git mock.
+
+Three things deferred with reasons in the proposal: no project table yet, so a site is an id and a directory and status is computed from git rather than projected into Postgres; no credentials yet, so a key path is accepted but never read; and conflict resolution is file-level, which the form epic turns into the per-field question the design asks for.
