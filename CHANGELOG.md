@@ -50,3 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A page whose front matter is TOML or JSON can be read but not saved, and
   says so. The desktop app writes TOML in a layout it cannot read back, so
   matching it would produce files nothing can open.
+- The interface has its own look: the Quiqr colours and typefaces, the buttons,
+  badges and menus the designs call for, and the frames they sit in. Phones get
+  their own frame with a bottom tab bar rather than a squeezed desktop.
+- The typefaces are served by ChatCMS itself, so no reader's browser is asked
+  to contact anyone else.
+- What an editor can read is checked by the build: a version control word in a
+  screen a content creator sees fails it, as does a colour written outside the
+  palette or a control too small to tap.

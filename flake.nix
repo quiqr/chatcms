@@ -45,6 +45,7 @@
           ./web/index.html
           ./web/src
           ./web/public
+          ./web/scripts
         ];
       };
 
@@ -54,7 +55,7 @@
         pname = "chatcms-web";
         inherit version;
         src = webSource;
-        npmDepsHash = "sha256-FQsbsYTdcxp2nAKEwU0u+UVVPEakhli2lkqio0cPEg4=";
+        npmDepsHash = "sha256-NmOT+1OfEUw4Oj72bI5iSXSQAnjD9p37pvE3efDEmH0=";
 
         nativeBuildInputs = [ pkgs.nodejs_22 ];
 
@@ -65,6 +66,7 @@
         checkPhase = ''
           runHook preCheck
           npm run typecheck
+          npm run check:interface
           npm run test
           runHook postCheck
         '';

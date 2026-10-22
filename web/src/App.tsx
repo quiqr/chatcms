@@ -1,49 +1,36 @@
-import { useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router";
 
-import { fetchHealth, type Health } from "./api";
-
-type State =
-  | { kind: "loading" }
-  | { kind: "ready"; health: Health }
-  | { kind: "failed"; message: string };
+import { TooltipProvider } from "./components/ui/tooltip";
+import { Toaster } from "./components/ui/toast";
+import { EditorPage } from "./routes/EditorPage";
+import { NotFound } from "./routes/NotFound";
+import { OrganisationPage } from "./routes/OrganisationPage";
+import { ProjectPage } from "./routes/ProjectPage";
+import { SignInPage } from "./routes/SignInPage";
 
 export function App() {
-  const [state, setState] = useState<State>({ kind: "loading" });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    fetchHealth()
-      .then((health) => {
-        if (!cancelled) setState({ kind: "ready", health });
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        const message =
-          error instanceof Error ? error.message : "The server could not be reached.";
-        setState({ kind: "failed", message });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-4 p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Quiqr ChatCMS</h1>
-      {state.kind === "loading" && <p>Checking the server...</p>}
-      {state.kind === "failed" && <p role="alert">{state.message}</p>}
-      {state.kind === "ready" && (
-        <dl className="grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-neutral-500">Server</dt>
-          <dd>{state.health.serverVersion}</dd>
-          <dt className="text-neutral-500">Schema</dt>
-          <dd>{state.health.schemaVersion}</dd>
-          <dt className="text-neutral-500">Database</dt>
-          <dd>{state.health.database}</dd>
-        </dl>
-      )}
-    </main>
+    <TooltipProvider delayDuration={200}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/projects" replace />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/projects" element={<OrganisationPage title="Projects" />} />
+        <Route path="/help" element={<OrganisationPage title="Help" />} />
+
+        <Route path="/p/:project/setup" element={<ProjectPage title="Set up a project" />} />
+        <Route path="/p/:project/people" element={<ProjectPage title="People & roles" />} />
+        <Route path="/p/:project/settings" element={<ProjectPage title="Project settings" />} />
+        <Route path="/p/:project/workflows" element={<ProjectPage title="Workflows" />} />
+        <Route path="/p/:project/content" element={<ProjectPage title="Content" />} />
+        <Route path="/p/:project/content/:page" element={<EditorPage />} />
+        <Route path="/p/:project/media" element={<ProjectPage title="Media" />} />
+        <Route path="/p/:project/publish" element={<ProjectPage title="Publish" />} />
+        <Route path="/p/:project/history" element={<ProjectPage title="History" />} />
+        <Route path="/p/:project/sync" element={<ProjectPage title="Sync status" />} />
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </TooltipProvider>
   );
 }

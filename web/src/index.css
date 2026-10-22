@@ -1,1 +1,140 @@
 @import "tailwindcss";
+
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-sans/700.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+
+/* The tokens below are the design hand-off in docs/design/tokens/tokens.css,
+   taken as they are. The font import that file opens with is deliberately not
+   here: the typefaces are installed as packages and served by this
+   application, so no reader's browser contacts a third party and the build
+   needs no network. See openspec/specs/interface/design-system. */
+
+/* Quiqr ChatCMS design tokens — shadcn/ui variable names, Tailwind v4.
+   Light theme only for milestone 1. Values come straight from the designs. */
+
+
+:root {
+  /* Surfaces & text */
+  --background: #F7F7F5;          /* app canvas */
+  --foreground: #18181B;          /* primary text */
+  --card: #FFFFFF;                /* cards, sidebar, top bars, inputs */
+  --card-foreground: #18181B;
+  --popover: #FFFFFF;
+  --popover-foreground: #18181B;
+  --muted: #F1F1EE;               /* segmented controls, chips, active nav item */
+  --muted-foreground: #52525B;    /* secondary text */
+  --subtle-foreground: #6B6B73;   /* captions, meta (passes 4.5:1 on white) */
+  --border: #E5E5E2;              /* card & divider borders */
+  --border-subtle: #EDEDEA;       /* rows inside cards */
+  --input: #D9D9D5;               /* input borders */
+
+  /* Brand accent: deep Quiqr blue (logo blue #37B6FF darkened for contrast) */
+  --primary: #0B6BAA;             /* primary buttons, links, focus, selection */
+  --primary-hover: #08578C;
+  --primary-foreground: #FFFFFF;
+  --primary-soft: #E6F2FB;        /* focus halo, selected tiles, login panel */
+  --primary-soft-foreground: #0A5A8F;
+  --primary-tint: #F2F8FD;        /* selected radio cards / list items */
+  --ring: #0B6BAA;
+
+  /* Secondary "ink" button (New article, Upload, Open the page) */
+  --secondary: #18181B;
+  --secondary-foreground: #FFFFFF;
+
+  /* Status — always as soft background + dark text, plus a dot where useful */
+  --success: #16A34A;  --success-soft: #EAF6EE;  --success-foreground: #166534;
+  --warning: #D97706;  --warning-soft: #FEF3E2;  --warning-foreground: #92400E;   /* "Changed", unpublished */
+  --info: #2563EB;     --info-soft: #EAF0FD;     --info-foreground: #1E40AF;      /* "New", publishing */
+  --destructive: #B91C1C; --destructive-soft: #FDECEC; --destructive-foreground: #991B1B;
+
+  /* Quiqr logo palette — for the logo and decorative use only, never for text on white */
+  --quiqr-coral: #FF5758;
+  --quiqr-orange: #FFBE58;
+  --quiqr-yellow: #FFDE59;
+  --quiqr-green: #7ED758;
+  --quiqr-blue: #37B6FF;
+  --quiqr-lilac: #9D98F1;
+
+  --radius: 8px;                  /* buttons, inputs; cards use 14px, dialogs 16px, pills 999px */
+  --font-sans: "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-primary-tint: var(--primary-tint);
+  --color-ring: var(--ring);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-quiqr-coral: var(--quiqr-coral);
+  --color-quiqr-orange: var(--quiqr-orange);
+  --color-quiqr-yellow: var(--quiqr-yellow);
+  --color-quiqr-green: var(--quiqr-green);
+  --color-quiqr-blue: var(--quiqr-blue);
+  --color-quiqr-lilac: var(--quiqr-lilac);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pb-safe-2 {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}

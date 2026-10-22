@@ -1,11 +1,11 @@
 ---
 # chatcms-fdo0
 title: 'Design foundation: tokens, components, shells'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:31Z
+updated_at: 2026-10-22T12:47:10Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-io95
