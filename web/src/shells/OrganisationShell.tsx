@@ -7,11 +7,17 @@ import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../comp
 
 export type OrganisationShellProps = {
   organisation: { name: string };
-  viewer: { name: string };
+  organisations?: { slug: string; name: string }[];
+  viewer?: { name: string };
   children: ReactNode;
 };
 
-export function OrganisationShell({ organisation, viewer, children }: OrganisationShellProps) {
+export function OrganisationShell({
+  organisation,
+  organisations = [],
+  viewer,
+  children,
+}: OrganisationShellProps) {
   return (
     <div data-testid="organisation-shell" className="min-h-dvh">
       <header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-3">
@@ -25,7 +31,11 @@ export function OrganisationShell({ organisation, viewer, children }: Organisati
             <ChevronDown aria-hidden="true" className="size-4" />
           </MenuTrigger>
           <MenuContent>
-            <MenuItem>{organisation.name}</MenuItem>
+            {organisations.length === 0 ? (
+              <MenuItem>{organisation.name}</MenuItem>
+            ) : (
+              organisations.map((one) => <MenuItem key={one.slug}>{one.name}</MenuItem>)
+            )}
             <MenuSeparator />
             <MenuItem>New organisation</MenuItem>
           </MenuContent>
@@ -36,7 +46,7 @@ export function OrganisationShell({ organisation, viewer, children }: Organisati
         <NavLink to="/help" className="flex h-11 items-center px-3 text-sm text-muted-foreground">
           Help
         </NavLink>
-        <Avatar name={viewer.name} />
+        {viewer && <Avatar name={viewer.name} />}
       </header>
 
       <main className="mx-auto w-full max-w-[1200px] p-6">{children}</main>

@@ -9,6 +9,7 @@ import { OrganisationShell } from "../OrganisationShell";
 import { PhoneShell } from "../PhoneShell";
 import { ProjectShell } from "../ProjectShell";
 import { canSeeSetup, canSeeTechnicalDetail } from "../roles";
+import { phoneWidth, useIsPhone } from "../useIsPhone";
 
 const project = demoProjects[0]!;
 
@@ -184,5 +185,56 @@ describe("roles", () => {
       expect(canSeeSetup(role)).toBe(allowed);
       expect(canSeeTechnicalDetail(role)).toBe(allowed);
     }
+  });
+});
+
+describe("useIsPhone", () => {
+  it("reads the same width the stylesheet uses", () => {
+    expect(phoneWidth).toBe(640);
+  });
+
+  it("says no when the window is wide", () => {
+    const { result } = renderHook(() => useIsPhone());
+    expect(result).toBe(false);
+  });
+
+  it("says yes when the window is narrow", () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: true,
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList) as typeof window.matchMedia;
+
+    const { result } = renderHook(() => useIsPhone());
+    expect(result).toBe(true);
+
+    window.matchMedia = original;
+  });
+});
+
+function renderHook<T>(use: () => T): { result: T } {
+  const box = { result: undefined as unknown as T };
+
+  function Probe() {
+    box.result = use();
+    return null;
+  }
+
+  render(<Probe />);
+  return box;
+}
+
+describe("the phone frame and sideways scrolling", () => {
+  it("clips sideways rather than letting the page move", () => {
+    at("/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
+
+    const shell = screen.getByTestId("phone-shell");
+    expect(shell.className).toContain("overflow-x-clip");
+
+    const main = shell.querySelector("main")!;
+    expect(main.className).toContain("overflow-x-clip");
   });
 });

@@ -68,9 +68,20 @@ interface speaks in terms of inputs, a command and collected outputs, never in
 terms of local paths that only make sense in-process.
 
 **`internal/policy.Can`** is the only authorisation decision point in the
-codebase. Handlers ask it; they never compare roles themselves. Per-document
-permissions are out of scope for milestone 1, so `Can` takes a resource
-argument it mostly ignores today. Keep the argument.
+codebase. Handlers ask it; they never compare roles themselves, which a test
+over the sources enforces by failing when any other package carries a role as
+a value. The packages allowed to carry one are listed in that test, so adding
+an exception is visible in a diff.
+
+`Can` is pure: no database, no context, no error. The caller loads the
+memberships; this package decides. That is what makes the whole role table
+testable with the answers written out rather than worked out, which is how the
+table from `docs/design/DESIGN.md` section 6 is checked.
+
+Per-document permissions are out of scope for milestone 1, so `Can` takes a
+resource argument it mostly ignores today. Keep the argument. Owning an
+organisation carries the owner role on every project in it, so a project
+cannot end up with nobody who can administer it.
 
 **`internal/auth`** issues sessions. OIDC is out of scope, so the identity
 source is an interface with one implementation: `Identity.Authenticate` takes

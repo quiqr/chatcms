@@ -4,14 +4,22 @@ import { cn } from "../../lib/cn";
 
 export function TableWrapper({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("w-full overflow-x-auto", className)} {...props}>
+    // Positioned so that an absolutely positioned descendant, such as a
+    // screen-reader-only label, is contained by the box that scrolls rather
+    // than escaping it and widening the page.
+    <div className={cn("relative w-full min-w-0 max-w-full overflow-x-auto", className)} {...props}>
       {children}
     </div>
   );
 }
 
 export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
-  return <table className={cn("w-full border-collapse text-left text-sm", className)} {...props} />;
+  return (
+    <table
+      className={cn("w-max min-w-full border-collapse text-left text-sm", className)}
+      {...props}
+    />
+  );
 }
 
 export function TableHeaderCell({ className, ...props }: HTMLAttributes<HTMLTableCellElement>) {

@@ -71,3 +71,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Until there is a way to send email, an invitation or reset link is written to
   the server log for an implementer to pass on by hand, and is never returned
   to the browser.
+- There are organisations with projects inside them, and four roles: owner,
+  implementer, editor and viewer, with exactly the powers the design gives
+  each.
+- An owner invites someone by email address and role. Someone new gets an
+  account and a link that sets their first password; someone already known
+  simply gains the role.
+- A viewer can read and cannot change anything, and this holds whether the
+  button is on the screen or not.
+- What someone may not do is left out of the interface rather than shown greyed
+  out, because the server tells each person what they may do.
+- A project belonging to an organisation you are not in looks exactly like a
+  project that does not exist, so the addresses of other customers' sites
+  cannot be discovered by guessing.
+- The project list and the people and roles screen are built and read real
+  data.

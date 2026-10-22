@@ -31,6 +31,21 @@ type Job struct {
 	Subject   string             `json:"subject"`
 }
 
+type Organisation struct {
+	ID        pgtype.UUID        `json:"id"`
+	Slug      string             `json:"slug"`
+	Name      string             `json:"name"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type OrganisationMember struct {
+	OrganisationID pgtype.UUID        `json:"organisation_id"`
+	PersonID       pgtype.UUID        `json:"person_id"`
+	Role           string             `json:"role"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
 type Person struct {
 	ID           pgtype.UUID        `json:"id"`
 	Email        string             `json:"email"`
@@ -39,6 +54,23 @@ type Person struct {
 	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Project struct {
+	ID             pgtype.UUID        `json:"id"`
+	OrganisationID pgtype.UUID        `json:"organisation_id"`
+	Slug           string             `json:"slug"`
+	Name           string             `json:"name"`
+	Domain         string             `json:"domain"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ProjectMember struct {
+	ProjectID pgtype.UUID        `json:"project_id"`
+	PersonID  pgtype.UUID        `json:"person_id"`
+	Role      string             `json:"role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Session struct {

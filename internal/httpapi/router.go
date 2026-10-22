@@ -32,6 +32,8 @@ type Options struct {
 	// Secure says the site is served over a secure connection, which decides
 	// whether cookies are marked as requiring one.
 	Secure bool
+	// Tenancy serves organisations, projects and the people on them.
+	Tenancy TenancyService
 }
 
 func New(opts Options) http.Handler {
@@ -60,6 +62,34 @@ func New(opts Options) http.Handler {
 
 		mux.Handle("POST /api/set-password", setPasswordHandler(opts.Auth))
 		mux.HandleFunc("/api/set-password", MethodNotAllowed)
+	}
+
+	if opts.Tenancy != nil {
+		mux.Handle("GET /api/organisations", RequireActor(listOrganisationsHandler(opts.Tenancy)))
+		mux.Handle("POST /api/organisations", RequireActor(createOrganisationHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations", MethodNotAllowed)
+
+		mux.Handle("GET /api/organisations/{organisation}/projects",
+			RequireActor(listProjectsHandler(opts.Tenancy)))
+		mux.Handle("POST /api/organisations/{organisation}/projects",
+			RequireActor(createProjectHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations/{organisation}/projects", MethodNotAllowed)
+
+		mux.Handle("GET /api/organisations/{organisation}/projects/{project}",
+			RequireActor(getProjectHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}", MethodNotAllowed)
+
+		mux.Handle("GET /api/organisations/{organisation}/projects/{project}/people",
+			RequireActor(listPeopleHandler(opts.Tenancy)))
+		mux.Handle("POST /api/organisations/{organisation}/projects/{project}/people",
+			RequireActor(invitePersonHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people", MethodNotAllowed)
+
+		mux.Handle("PUT /api/organisations/{organisation}/projects/{project}/people/{person}",
+			RequireActor(changeRoleHandler(opts.Tenancy)))
+		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}/people/{person}",
+			RequireActor(removePersonHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people/{person}", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

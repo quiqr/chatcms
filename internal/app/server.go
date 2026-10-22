@@ -17,6 +17,7 @@ import (
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/store"
+	"github.com/quiqr/chatcms/internal/tenancy"
 	"github.com/quiqr/chatcms/internal/version"
 	"github.com/quiqr/chatcms/internal/webui"
 )
@@ -31,10 +32,11 @@ type Server struct {
 	http     *http.Server
 	known    int64
 
-	queue  *jobs.Queue
-	worker *jobs.Worker
-	sites  *gitsync.Sites
-	auth   *auth.Service
+	queue   *jobs.Queue
+	worker  *jobs.Worker
+	sites   *gitsync.Sites
+	auth    *auth.Service
+	tenancy *tenancy.Service
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -68,17 +70,19 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	}, cfg.SitesDir())
 
 	server.auth = auth.NewService(db, logger, cfg.BaseURL)
+	server.tenancy = tenancy.NewService(tenancy.NewStore(db), server.auth)
 
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
 
 	handler := httpapi.New(httpapi.Options{
-		Logger: logger,
-		Health: server.health,
-		Assets: webui.Handler(),
-		Auth:   server.auth,
-		Secure: strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
+		Logger:  logger,
+		Health:  server.health,
+		Assets:  webui.Handler(),
+		Auth:    server.auth,
+		Tenancy: server.tenancy,
+		Secure:  strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
 	listener, err := net.Listen("tcp", cfg.Listen)
@@ -198,6 +202,10 @@ func Serve(ctx context.Context, cfg Config, logger *slog.Logger) error {
 // Auth exposes the identity service, which the integration tests use to
 // create a person without an endpoint for it.
 func (s *Server) Auth() *auth.Service { return s.auth }
+
+// Tenancy exposes the organisations and projects, which the integration
+// tests use to set a scene without an endpoint for every step.
+func (s *Server) Tenancy() *tenancy.Service { return s.tenancy }
 
 // hostOf is used for the address versions are written by, so history shows
 // where an edit came from rather than a placeholder domain.

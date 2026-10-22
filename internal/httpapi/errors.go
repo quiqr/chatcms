@@ -25,6 +25,7 @@ const (
 	CodeUnauthorized     = "unauthorized"
 	CodeForbidden        = "forbidden"
 	CodeTooManyAttempts  = "too_many_attempts"
+	CodeRefused          = "refused"
 )
 
 func WriteJSON(w http.ResponseWriter, status int, body any) {

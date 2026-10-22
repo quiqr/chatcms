@@ -6,16 +6,20 @@ import { demoProjects, demoViewer } from "../demo/content";
 import { EditorShell, type EditorLayout } from "../shells/EditorShell";
 import { PhoneShell } from "../shells/PhoneShell";
 import { AssistantSlot } from "../shells/ProjectShell";
+import { useIsPhone } from "../shells/useIsPhone";
 import { Placeholder } from "./Placeholder";
 
 export function EditorPage() {
   const { project: slug } = useParams();
-  const project = demoProjects.find((candidate) => candidate.slug === slug) ?? demoProjects[0]!;
+  const project =
+    demoProjects.find((candidate) => candidate.slug === slug) ??
+    demoProjects[0]!;
   const [layout, setLayout] = useState<EditorLayout>("split");
+  const onAPhone = useIsPhone();
 
-  return (
-    <>
-      <div className="hidden sm:block">
+  if (!onAPhone) {
+    return (
+      <div>
         <EditorShell
           project={project}
           breadcrumb="News / About us"
@@ -25,21 +29,23 @@ export function EditorPage() {
           preview={<Placeholder screen="Preview" />}
         />
       </div>
+    );
+  }
 
-      <PhoneShell
-        project={project}
-        viewer={demoViewer}
-        bottomBar={
-          <>
-            <AssistantSlot />
-            <Button className="flex-1" count={project.unpublished}>
-              Publish
-            </Button>
-          </>
-        }
-      >
-        <Placeholder screen="Page fields" />
-      </PhoneShell>
-    </>
+  return (
+    <PhoneShell
+      project={project}
+      viewer={demoViewer}
+      bottomBar={
+        <>
+          <AssistantSlot />
+          <Button className="flex-1" count={project.unpublished}>
+            Publish
+          </Button>
+        </>
+      }
+    >
+      <Placeholder screen="Page fields" />
+    </PhoneShell>
   );
 }

@@ -1,10 +1,23 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../../App";
 import { PLACEHOLDER, demoProjects } from "../../demo/content";
 import { pathFor, screens } from "../screens";
+
+beforeEach(() => {
+  // Screens that read from the server get an empty answer, so these tests are
+  // about addresses rather than about what any screen shows.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ organisations: [], projects: [], people: [] }) }),
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 function at(path: string) {
   return render(
@@ -39,16 +52,19 @@ describe("routes", () => {
     expect(screen.getByRole("link", { name: "Go to your projects" })).toBeInTheDocument();
   });
 
-  it("sends the bare address to the projects", () => {
+  it("sends the bare address to the projects", async () => {
     at("/");
-    expect(screen.getByRole("button", { name: /TechNative/ })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Projects" })).toBeInTheDocument();
   });
 
-  it("renders both frames so the stylesheet can choose", () => {
+  it("renders one frame rather than both, so a screen loads once", () => {
     at("/p/korenaar/content");
 
+    // The test environment reports a wide window, so the project frame is the
+    // one chosen. Which frame is chosen for which width is the shells' own
+    // test; what matters here is that only one is mounted.
     expect(screen.getByTestId("project-shell")).toBeInTheDocument();
-    expect(screen.getByTestId("phone-shell")).toBeInTheDocument();
+    expect(screen.queryByTestId("phone-shell")).toBeNull();
   });
 });
 

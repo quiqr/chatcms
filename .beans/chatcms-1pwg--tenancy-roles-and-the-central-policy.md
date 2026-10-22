@@ -1,11 +1,11 @@
 ---
 # chatcms-1pwg
 title: Tenancy, roles and the central policy
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:31Z
+updated_at: 2026-10-22T16:04:49Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-zijg

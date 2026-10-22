@@ -25,7 +25,10 @@ export function PhoneShell({
   const tabs = siteNavigation(project.slug);
 
   return (
-    <div data-testid="phone-shell" className="flex min-h-dvh flex-col sm:hidden">
+    <div
+      data-testid="phone-shell"
+      className="flex min-h-dvh flex-col overflow-x-clip sm:hidden"
+    >
       <header className="flex items-center gap-2 border-b border-border bg-card px-4 py-3">
         <Tile name={project.name} />
         <span className="flex min-w-0 flex-1 flex-col">
@@ -41,7 +44,7 @@ export function PhoneShell({
         </div>
       )}
 
-      <main className="min-w-0 flex-1 p-4 pb-28">{children}</main>
+      <main className="min-w-0 flex-1 overflow-x-clip p-4 pb-28">{children}</main>
 
       {bottomBar ? (
         <div

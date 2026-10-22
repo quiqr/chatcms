@@ -28,6 +28,14 @@ export async function post<T>(path: string, body?: unknown): Promise<T> {
   return send<T>("POST", path, body);
 }
 
+export async function put<T>(path: string, body?: unknown): Promise<T> {
+  return send<T>("PUT", path, body);
+}
+
+export async function remove<T>(path: string): Promise<T> {
+  return send<T>("DELETE", path);
+}
+
 async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
 

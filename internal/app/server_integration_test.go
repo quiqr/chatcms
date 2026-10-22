@@ -28,6 +28,7 @@ import (
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/policy"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/testsupport"
 )
@@ -730,5 +731,222 @@ func TestSetPasswordRefusesAnUnusableLink(t *testing.T) {
 	}
 	if !strings.Contains(strings.ToLower(string(payload)), "new one") {
 		t.Errorf("the message does not say what to do next: %s", payload)
+	}
+}
+
+// TestAcceptanceCreateOrganisationAndInviteAnEditor is acceptance test 1 from
+// docs/BRIEFING-M01.md section 6, proven end to end through the API: an
+// organisation is created, a project is made in it, a customer is invited as
+// an editor, and they sign in with the link they were given.
+func TestAcceptanceCreateOrganisationAndInviteAnEditor(t *testing.T) {
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	const adminAddress = "admin@technative.example"
+	const adminPassword = "a long enough passphrase"
+
+	if _, err := server.Auth().People().Create(t.Context(), adminAddress, "The Admin", adminPassword); err != nil {
+		t.Fatal(err)
+	}
+
+	admin := newClient(t, server.Addr())
+	admin.warmUp()
+
+	signedIn := admin.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": adminAddress, "password": adminPassword}, true)
+	signedIn.Body.Close()
+	if signedIn.StatusCode != http.StatusOK {
+		t.Fatalf("the admin could not sign in: %d", signedIn.StatusCode)
+	}
+
+	created := admin.do(http.MethodPost, "/api/organisations",
+		map[string]any{"slug": "technative", "name": "TechNative"}, true)
+	created.Body.Close()
+	if created.StatusCode != http.StatusCreated {
+		t.Fatalf("creating the organisation = %d, want 201", created.StatusCode)
+	}
+
+	project := admin.do(http.MethodPost, "/api/organisations/technative/projects",
+		map[string]any{"slug": "korenaar", "name": "Korenaar Bakery", "domain": "korenaar.example"}, true)
+	project.Body.Close()
+	if project.StatusCode != http.StatusCreated {
+		t.Fatalf("creating the project = %d, want 201", project.StatusCode)
+	}
+
+	invited := admin.do(http.MethodPost, "/api/organisations/technative/projects/korenaar/people",
+		map[string]any{"email": "customer@korenaar.example", "role": "editor"}, true)
+	payload, _ := io.ReadAll(invited.Body)
+	invited.Body.Close()
+	if invited.StatusCode != http.StatusCreated {
+		t.Fatalf("inviting the customer = %d, want 201: %s", invited.StatusCode, payload)
+	}
+
+	var member struct {
+		Role          string `json:"role"`
+		StillToAccept bool   `json:"stillToAccept"`
+	}
+	if err := json.Unmarshal(payload, &member); err != nil {
+		t.Fatal(err)
+	}
+	if member.Role != "editor" || !member.StillToAccept {
+		t.Fatalf("member = %+v, want an editor who has still to accept", member)
+	}
+
+	// The customer sets a password through the link they were issued, and
+	// signs in with it.
+	person, err := server.Auth().People().ByEmail(t.Context(), "customer@korenaar.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, _, err := server.Auth().Credentials().Issue(t.Context(), auth.KindInvitation, person.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	customer := newClient(t, server.Addr())
+	customer.warmUp()
+
+	set := customer.do(http.MethodPost, "/api/set-password",
+		map[string]any{"token": token, "password": "the customer's own passphrase"}, true)
+	set.Body.Close()
+	if set.StatusCode != http.StatusOK {
+		t.Fatalf("setting the password = %d, want 200", set.StatusCode)
+	}
+
+	in := customer.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "customer@korenaar.example", "password": "the customer's own passphrase"}, true)
+	in.Body.Close()
+	if in.StatusCode != http.StatusOK {
+		t.Fatalf("the customer could not sign in: %d", in.StatusCode)
+	}
+
+	// They can see the project, and are told they may edit but not administer.
+	view := customer.do(http.MethodGet, "/api/organisations/technative/projects/korenaar", nil, false)
+	viewPayload, _ := io.ReadAll(view.Body)
+	view.Body.Close()
+	if view.StatusCode != http.StatusOK {
+		t.Fatalf("the customer cannot see the project: %d", view.StatusCode)
+	}
+
+	var projectView struct {
+		YourRole string   `json:"yourRole"`
+		YouMay   []string `json:"youMay"`
+	}
+	if err := json.Unmarshal(viewPayload, &projectView); err != nil {
+		t.Fatal(err)
+	}
+	if projectView.YourRole != "editor" {
+		t.Errorf("yourRole = %q, want editor", projectView.YourRole)
+	}
+
+	may := map[string]bool{}
+	for _, action := range projectView.YouMay {
+		may[action] = true
+	}
+	if !may["edit-content"] || !may["publish"] {
+		t.Errorf("the customer may %v, want editing and publishing", projectView.YouMay)
+	}
+	if may["manage-people"] || may["see-technical-detail"] {
+		t.Errorf("the customer may %v, which includes things an editor may not do", projectView.YouMay)
+	}
+}
+
+func TestAViewerCannotChangeAnything(t *testing.T) {
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	owner, err := server.Auth().People().Create(t.Context(), "owner@example.org", "Owner", "a long enough passphrase")
+	if err != nil {
+		t.Fatal(err)
+	}
+	viewer, err := server.Auth().People().Create(t.Context(), "viewer@example.org", "Viewer", "a long enough passphrase")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tenancyStore := server.Tenancy().Store()
+	organisation, err := tenancyStore.CreateOrganisation(t.Context(), "technative", "TechNative", owner.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := tenancyStore.CreateProject(t.Context(), organisation.ID, "korenaar", "Korenaar", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tenancyStore.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleOwner); err != nil {
+		t.Fatal(err)
+	}
+	if err := tenancyStore.SetProjectRole(t.Context(), project.ID, viewer.ID, policy.RoleViewer); err != nil {
+		t.Fatal(err)
+	}
+
+	caller := newClient(t, server.Addr())
+	caller.warmUp()
+	in := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "viewer@example.org", "password": "a long enough passphrase"}, true)
+	in.Body.Close()
+
+	// Everything a viewer might try to change, called directly rather than
+	// hidden behind an interface.
+	attempts := []struct {
+		method string
+		path   string
+		body   any
+	}{
+		{http.MethodPost, "/api/organisations/technative/projects", map[string]any{"slug": "new", "name": "New"}},
+		{http.MethodPost, "/api/organisations/technative/projects/korenaar/people",
+			map[string]any{"email": "someone@example.org", "role": "editor"}},
+		{http.MethodPut, "/api/organisations/technative/projects/korenaar/people/" + owner.ID.String(),
+			map[string]any{"role": "viewer"}},
+		{http.MethodDelete, "/api/organisations/technative/projects/korenaar/people/" + owner.ID.String(), nil},
+	}
+
+	for _, attempt := range attempts {
+		response := caller.do(attempt.method, attempt.path, attempt.body, true)
+		payload, _ := io.ReadAll(response.Body)
+		response.Body.Close()
+
+		if response.StatusCode != http.StatusForbidden {
+			t.Errorf("%s %s = %d, want 403: %s", attempt.method, attempt.path, response.StatusCode, payload)
+		}
+	}
+
+	// Nothing changed.
+	members, err := tenancyStore.Members(t.Context(), project.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(members) != 2 {
+		t.Errorf("the project has %d people, want the two it started with", len(members))
+	}
+
+	projects, err := tenancyStore.ProjectsIn(t.Context(), organisation.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(projects) != 1 {
+		t.Errorf("the organisation has %d projects, want the one it started with", len(projects))
+	}
+
+	// Reading still works.
+	read := caller.do(http.MethodGet, "/api/organisations/technative/projects/korenaar", nil, false)
+	read.Body.Close()
+	if read.StatusCode != http.StatusOK {
+		t.Errorf("a viewer reading the project = %d, want 200", read.StatusCode)
+	}
+}
+
+func TestNobodyGetsUnauthorizedRatherThanForbidden(t *testing.T) {
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	caller := newClient(t, server.Addr())
+	caller.warmUp()
+
+	response := caller.do(http.MethodGet, "/api/organisations", nil, false)
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401 for a request from nobody", response.StatusCode)
 	}
 }
