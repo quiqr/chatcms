@@ -57,7 +57,7 @@ func (q *Queries) CreateOrganisation(ctx context.Context, arg CreateOrganisation
 }
 
 const createProject = `-- name: CreateProject :one
-INSERT INTO projects (organisation_id, slug, name, domain) VALUES ($1, $2, $3, $4) RETURNING id, organisation_id, slug, name, domain, created_at, updated_at
+INSERT INTO projects (organisation_id, slug, name, domain) VALUES ($1, $2, $3, $4) RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form
 `
 
 type CreateProjectParams struct {
@@ -83,6 +83,14 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 		&i.Domain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Remote,
+		&i.SourceKind,
+		&i.SourceAddress,
+		&i.DeployPublicKey,
+		&i.DeployPrivateKey,
+		&i.PublishTo,
+		&i.PublishBranch,
+		&i.PublishForm,
 	)
 	return i, err
 }
@@ -122,7 +130,7 @@ func (q *Queries) GetOrganisationBySlug(ctx context.Context, slug string) (Organ
 }
 
 const getProject = `-- name: GetProject :one
-SELECT id, organisation_id, slug, name, domain, created_at, updated_at FROM projects WHERE id = $1
+SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form FROM projects WHERE id = $1
 `
 
 func (q *Queries) GetProject(ctx context.Context, id pgtype.UUID) (Project, error) {
@@ -136,12 +144,20 @@ func (q *Queries) GetProject(ctx context.Context, id pgtype.UUID) (Project, erro
 		&i.Domain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Remote,
+		&i.SourceKind,
+		&i.SourceAddress,
+		&i.DeployPublicKey,
+		&i.DeployPrivateKey,
+		&i.PublishTo,
+		&i.PublishBranch,
+		&i.PublishForm,
 	)
 	return i, err
 }
 
 const getProjectBySlug = `-- name: GetProjectBySlug :one
-SELECT projects.id, projects.organisation_id, projects.slug, projects.name, projects.domain, projects.created_at, projects.updated_at FROM projects
+SELECT projects.id, projects.organisation_id, projects.slug, projects.name, projects.domain, projects.created_at, projects.updated_at, projects.remote, projects.source_kind, projects.source_address, projects.deploy_public_key, projects.deploy_private_key, projects.publish_to, projects.publish_branch, projects.publish_form FROM projects
 JOIN organisations ON organisations.id = projects.organisation_id
 WHERE organisations.slug = $1 AND projects.slug = $2
 `
@@ -162,6 +178,14 @@ func (q *Queries) GetProjectBySlug(ctx context.Context, arg GetProjectBySlugPara
 		&i.Domain,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Remote,
+		&i.SourceKind,
+		&i.SourceAddress,
+		&i.DeployPublicKey,
+		&i.DeployPrivateKey,
+		&i.PublishTo,
+		&i.PublishBranch,
+		&i.PublishForm,
 	)
 	return i, err
 }
@@ -312,7 +336,7 @@ func (q *Queries) ListProjectMembershipsForPerson(ctx context.Context, personID 
 }
 
 const listProjectsInOrganisation = `-- name: ListProjectsInOrganisation :many
-SELECT id, organisation_id, slug, name, domain, created_at, updated_at FROM projects WHERE organisation_id = $1 ORDER BY name
+SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form FROM projects WHERE organisation_id = $1 ORDER BY name
 `
 
 func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID pgtype.UUID) ([]Project, error) {
@@ -332,6 +356,14 @@ func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID
 			&i.Domain,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Remote,
+			&i.SourceKind,
+			&i.SourceAddress,
+			&i.DeployPublicKey,
+			&i.DeployPrivateKey,
+			&i.PublishTo,
+			&i.PublishBranch,
+			&i.PublishForm,
 		); err != nil {
 			return nil, err
 		}
@@ -388,6 +420,25 @@ func (q *Queries) SetOrganisationMember(ctx context.Context, arg SetOrganisation
 	return err
 }
 
+const setProjectDeployKey = `-- name: SetProjectDeployKey :exec
+UPDATE projects
+SET deploy_public_key = $2,
+    deploy_private_key = $3,
+    updated_at = now()
+WHERE id = $1
+`
+
+type SetProjectDeployKeyParams struct {
+	ID               pgtype.UUID `json:"id"`
+	DeployPublicKey  string      `json:"deploy_public_key"`
+	DeployPrivateKey []byte      `json:"deploy_private_key"`
+}
+
+func (q *Queries) SetProjectDeployKey(ctx context.Context, arg SetProjectDeployKeyParams) error {
+	_, err := q.db.Exec(ctx, setProjectDeployKey, arg.ID, arg.DeployPublicKey, arg.DeployPrivateKey)
+	return err
+}
+
 const setProjectMember = `-- name: SetProjectMember :exec
 INSERT INTO project_members (project_id, person_id, role)
 VALUES ($1, $2, $3)
@@ -402,5 +453,57 @@ type SetProjectMemberParams struct {
 
 func (q *Queries) SetProjectMember(ctx context.Context, arg SetProjectMemberParams) error {
 	_, err := q.db.Exec(ctx, setProjectMember, arg.ProjectID, arg.PersonID, arg.Role)
+	return err
+}
+
+const setProjectPublishing = `-- name: SetProjectPublishing :exec
+UPDATE projects
+SET publish_to = $2,
+    publish_branch = $3,
+    publish_form = $4,
+    updated_at = now()
+WHERE id = $1
+`
+
+type SetProjectPublishingParams struct {
+	ID            pgtype.UUID `json:"id"`
+	PublishTo     string      `json:"publish_to"`
+	PublishBranch string      `json:"publish_branch"`
+	PublishForm   string      `json:"publish_form"`
+}
+
+func (q *Queries) SetProjectPublishing(ctx context.Context, arg SetProjectPublishingParams) error {
+	_, err := q.db.Exec(ctx, setProjectPublishing,
+		arg.ID,
+		arg.PublishTo,
+		arg.PublishBranch,
+		arg.PublishForm,
+	)
+	return err
+}
+
+const setProjectSource = `-- name: SetProjectSource :exec
+UPDATE projects
+SET remote = $2,
+    source_kind = $3,
+    source_address = $4,
+    updated_at = now()
+WHERE id = $1
+`
+
+type SetProjectSourceParams struct {
+	ID            pgtype.UUID `json:"id"`
+	Remote        string      `json:"remote"`
+	SourceKind    string      `json:"source_kind"`
+	SourceAddress string      `json:"source_address"`
+}
+
+func (q *Queries) SetProjectSource(ctx context.Context, arg SetProjectSourceParams) error {
+	_, err := q.db.Exec(ctx, setProjectSource,
+		arg.ID,
+		arg.Remote,
+		arg.SourceKind,
+		arg.SourceAddress,
+	)
 	return err
 }

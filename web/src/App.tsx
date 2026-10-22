@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/toast";
 import { EditorPage } from "./routes/EditorPage";
 import { NotFound } from "./routes/NotFound";
 import { OrganisationPage } from "./routes/OrganisationPage";
+import { OnboardingPage } from "./routes/OnboardingPage";
 import { PeoplePage } from "./routes/PeoplePage";
 import { ProjectPage } from "./routes/ProjectPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
@@ -20,7 +21,15 @@ export function App() {
         <Route path="/o/:organisation/projects" element={<ProjectsPage />} />
         <Route path="/help" element={<OrganisationPage title="Help" />} />
 
-        <Route path="/p/:project/setup" element={<ProjectPage title="Set up a project" />} />
+        <Route
+          path="/p/:project/setup"
+          element={
+            <ProjectPage
+              title="Set up a project"
+              body={<OnboardingPage organisation="technative" />}
+            />
+          }
+        />
         <Route
           path="/p/:project/people"
           element={<ProjectPage title="People & roles" body={<PeoplePage organisation="technative" />} />}

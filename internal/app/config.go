@@ -18,6 +18,7 @@ type Config struct {
 	GitBin          string
 	HugoBin         string
 	SSHKeyPath      string
+	SecretKeyFile   string
 	SyncInterval    time.Duration
 }
 
@@ -61,6 +62,7 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_GIT_BIN", &cfg.GitBin, "git", false},
 		{"CHATCMS_HUGO_BIN", &cfg.HugoBin, "hugo", false},
 		{"CHATCMS_SSH_KEY_PATH", &cfg.SSHKeyPath, "", false},
+		{"CHATCMS_SECRET_KEY_FILE", &cfg.SecretKeyFile, "", true},
 	}
 
 	for _, field := range fields {

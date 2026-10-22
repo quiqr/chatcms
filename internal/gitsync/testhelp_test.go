@@ -129,3 +129,13 @@ func save(t *testing.T, repository Repo, who, message string, writes map[string]
 	}
 	return version
 }
+
+// emptyBareRemote is a remote with nothing in it, which is what a site
+// created from an export is pushed to.
+func emptyBareRemote(t *testing.T, cfg Config) string {
+	t.Helper()
+
+	remote := filepath.Join(t.TempDir(), "empty-remote.git")
+	run(t, cfg, "", "init", "--bare", "--initial-branch=main", remote)
+	return remote
+}

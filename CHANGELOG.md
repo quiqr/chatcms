@@ -86,3 +86,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cannot be discovered by guessing.
 - The project list and the people and roles screen are built and read real
   data.
+- A customer's existing site can be brought in: from where it already lives in
+  git, from a folder exported by the Quiqr desktop app, or from a template.
+- Each project gets a key of its own for reaching where its site lives. The
+  half you paste into your git host is shown with what to do with it; the other
+  half is encrypted before it is stored and is never shown, returned or logged.
+- After bringing a site in, ChatCMS says what it found: whether it is a Hugo
+  site and whether it has a Quiqr model. A site without a model is not broken,
+  it just needs one, and the message says where to put it.
+- The connection can be tested at any time, and the answer says what to do
+  next rather than what went wrong.
+- Where and in what form a site is published is recorded per project: to its
+  main line or to one of its own, and either the site's files for your own
+  pipeline to build or the result of ChatCMS building it.

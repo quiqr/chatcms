@@ -73,3 +73,26 @@ LEFT JOIN project_members
       AND project_members.person_id = $1
 WHERE organisation_members.person_id IS NOT NULL OR project_members.person_id IS NOT NULL
 ORDER BY organisations.name;
+
+-- name: SetProjectDeployKey :exec
+UPDATE projects
+SET deploy_public_key = $2,
+    deploy_private_key = $3,
+    updated_at = now()
+WHERE id = $1;
+
+-- name: SetProjectSource :exec
+UPDATE projects
+SET remote = $2,
+    source_kind = $3,
+    source_address = $4,
+    updated_at = now()
+WHERE id = $1;
+
+-- name: SetProjectPublishing :exec
+UPDATE projects
+SET publish_to = $2,
+    publish_branch = $3,
+    publish_form = $4,
+    updated_at = now()
+WHERE id = $1;

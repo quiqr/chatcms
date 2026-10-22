@@ -57,13 +57,21 @@ type Person struct {
 }
 
 type Project struct {
-	ID             pgtype.UUID        `json:"id"`
-	OrganisationID pgtype.UUID        `json:"organisation_id"`
-	Slug           string             `json:"slug"`
-	Name           string             `json:"name"`
-	Domain         string             `json:"domain"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID               pgtype.UUID        `json:"id"`
+	OrganisationID   pgtype.UUID        `json:"organisation_id"`
+	Slug             string             `json:"slug"`
+	Name             string             `json:"name"`
+	Domain           string             `json:"domain"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	Remote           string             `json:"remote"`
+	SourceKind       string             `json:"source_kind"`
+	SourceAddress    string             `json:"source_address"`
+	DeployPublicKey  string             `json:"deploy_public_key"`
+	DeployPrivateKey []byte             `json:"deploy_private_key"`
+	PublishTo        string             `json:"publish_to"`
+	PublishBranch    string             `json:"publish_branch"`
+	PublishForm      string             `json:"publish_form"`
 }
 
 type ProjectMember struct {

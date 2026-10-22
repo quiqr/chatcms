@@ -18,7 +18,8 @@ func lookupFrom(pairs map[string]string) Lookup {
 
 func TestLoadConfigAppliesDefaults(t *testing.T) {
 	cfg, err := LoadConfig(lookupFrom(map[string]string{
-		"CHATCMS_DATABASE_URL": "postgres:///chatcms",
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig() error = %v, want nil", err)
@@ -54,6 +55,7 @@ func TestLoadConfigAppliesDefaults(t *testing.T) {
 func TestLoadConfigPrefersEnvironment(t *testing.T) {
 	cfg, err := LoadConfig(lookupFrom(map[string]string{
 		"CHATCMS_DATABASE_URL":     "postgres:///other",
+		"CHATCMS_SECRET_KEY_FILE":  "/run/secrets/master-key",
 		"CHATCMS_LISTEN":           "0.0.0.0:9000",
 		"CHATCMS_BASE_URL":         "https://chatcms.eu",
 		"CHATCMS_STATE_DIR":        "/var/lib/chatcms",
@@ -101,6 +103,7 @@ func TestLoadConfigErrorNamesVariableNotValue(t *testing.T) {
 
 	_, err := LoadConfig(lookupFrom(map[string]string{
 		"CHATCMS_DATABASE_URL_FILE": path,
+		"CHATCMS_SECRET_KEY_FILE":   "/run/secrets/master-key",
 		"CHATCMS_LOG_FORMAT":        "yelling",
 	}))
 	if err == nil {
@@ -123,6 +126,7 @@ func TestLoadConfigReadsSecretFromFile(t *testing.T) {
 
 	cfg, err := LoadConfig(lookupFrom(map[string]string{
 		"CHATCMS_DATABASE_URL_FILE": path,
+		"CHATCMS_SECRET_KEY_FILE":   "/run/secrets/master-key",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig() error = %v, want nil", err)
@@ -142,6 +146,7 @@ func TestLoadConfigRejectsBothValueAndFile(t *testing.T) {
 	_, err := LoadConfig(lookupFrom(map[string]string{
 		"CHATCMS_DATABASE_URL":      "postgres:///direct",
 		"CHATCMS_DATABASE_URL_FILE": path,
+		"CHATCMS_SECRET_KEY_FILE":   "/run/secrets/master-key",
 	}))
 
 	var configErr *ConfigError
@@ -176,6 +181,7 @@ func TestLoadConfigRejectsInvalidShutdownTimeout(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := LoadConfig(lookupFrom(map[string]string{
 				"CHATCMS_DATABASE_URL":     "postgres:///chatcms",
+				"CHATCMS_SECRET_KEY_FILE":  "/run/secrets/master-key",
 				"CHATCMS_SHUTDOWN_TIMEOUT": value,
 			}))
 			if err == nil {
@@ -187,9 +193,10 @@ func TestLoadConfigRejectsInvalidShutdownTimeout(t *testing.T) {
 
 func TestLoadConfigReadsSyncSettings(t *testing.T) {
 	cfg, err := LoadConfig(lookupFrom(map[string]string{
-		"CHATCMS_DATABASE_URL":  "postgres:///chatcms",
-		"CHATCMS_SYNC_INTERVAL": "45s",
-		"CHATCMS_SSH_KEY_PATH":  "/run/secrets/site-key",
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+		"CHATCMS_SYNC_INTERVAL":   "45s",
+		"CHATCMS_SSH_KEY_PATH":    "/run/secrets/site-key",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig() error = %v, want nil", err)
@@ -204,7 +211,8 @@ func TestLoadConfigReadsSyncSettings(t *testing.T) {
 
 func TestSyncIntervalHasADefault(t *testing.T) {
 	cfg, err := LoadConfig(lookupFrom(map[string]string{
-		"CHATCMS_DATABASE_URL": "postgres:///chatcms",
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
 	}))
 	if err != nil {
 		t.Fatalf("LoadConfig() error = %v, want nil", err)
@@ -217,8 +225,9 @@ func TestSyncIntervalHasADefault(t *testing.T) {
 func TestLoadConfigRejectsAnInvalidSyncInterval(t *testing.T) {
 	for _, value := range []string{"never", "0s", "-1m"} {
 		_, err := LoadConfig(lookupFrom(map[string]string{
-			"CHATCMS_DATABASE_URL":  "postgres:///chatcms",
-			"CHATCMS_SYNC_INTERVAL": value,
+			"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+			"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+			"CHATCMS_SYNC_INTERVAL":   value,
 		}))
 		if err == nil {
 			t.Errorf("LoadConfig() with %q error = nil, want a rejection", value)
@@ -247,5 +256,19 @@ func TestHostOf(t *testing.T) {
 		if got := hostOf(in); got != want {
 			t.Errorf("hostOf(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestLoadConfigRequiresTheSecretKeyFile(t *testing.T) {
+	_, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL": "postgres:///chatcms",
+	}))
+
+	var configErr *ConfigError
+	if !errors.As(err, &configErr) {
+		t.Fatalf("LoadConfig() error = %v, want a *ConfigError", err)
+	}
+	if configErr.Variable != "CHATCMS_SECRET_KEY_FILE" {
+		t.Errorf("Variable = %q, want CHATCMS_SECRET_KEY_FILE", configErr.Variable)
 	}
 }

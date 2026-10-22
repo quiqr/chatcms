@@ -41,6 +41,7 @@ func testConfig(t *testing.T) app.Config {
 		BaseURL:         "http://localhost",
 		StateDir:        t.TempDir(),
 		DatabaseURL:     testsupport.Postgres(t),
+		SecretKeyFile:   masterKeyFile(t),
 		ShutdownTimeout: 5 * time.Second,
 		SyncInterval:    time.Hour,
 		LogFormat:       "json",
@@ -244,7 +245,7 @@ func TestSyncJobRunsASync(t *testing.T) {
 		GitBin: gitBinary(t),
 		System: gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@example.org"},
 	}
-	sites := gitsync.NewSites(gitCfg, cfg.SitesDir())
+	sites := gitsync.NewSites(gitCfg, cfg.SitesDir(), nil)
 
 	remote := bareRemoteWithAPage(t, gitCfg)
 	repository, err := sites.Clone(t.Context(), "korenaar", remote)
@@ -322,6 +323,18 @@ func TestShutdownDrainsTheWorkerToo(t *testing.T) {
 	}
 
 	_ = server
+}
+
+// masterKeyFile writes a key for the secrets the server keeps, which it
+// refuses to start without.
+func masterKeyFile(t *testing.T) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "master-key")
+	if err := os.WriteFile(path, []byte(strings.Repeat("k", 32)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 func gitBinary(t *testing.T) string {
@@ -949,4 +962,222 @@ func TestNobodyGetsUnauthorizedRatherThanForbidden(t *testing.T) {
 	if response.StatusCode != http.StatusUnauthorized {
 		t.Errorf("status = %d, want 401 for a request from nobody", response.StatusCode)
 	}
+}
+
+// TestAcceptanceImportWithADeployKey is acceptance test 2 from
+// docs/BRIEFING-M01.md section 6, through the API: a project is set up, its
+// key is shown, the key is given to the host, the site is imported, and the
+// model is found.
+func TestAcceptanceImportWithADeployKey(t *testing.T) {
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	const address = "implementer@technative.example"
+	const password = "a long enough passphrase"
+
+	if _, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password); err != nil {
+		t.Fatal(err)
+	}
+
+	caller := newClient(t, server.Addr())
+	caller.warmUp()
+	in := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": address, "password": password}, true)
+	in.Body.Close()
+
+	created := caller.do(http.MethodPost, "/api/organisations",
+		map[string]any{"slug": "technative", "name": "TechNative"}, true)
+	created.Body.Close()
+
+	project := caller.do(http.MethodPost, "/api/organisations/technative/projects",
+		map[string]any{"slug": "korenaar", "name": "Korenaar Bakery", "domain": "korenaar.example"}, true)
+	project.Body.Close()
+	if project.StatusCode != http.StatusCreated {
+		t.Fatalf("creating the project = %d", project.StatusCode)
+	}
+
+	base := "/api/organisations/technative/projects/korenaar"
+
+	// The key is made and shown, so the implementer can give it to the host.
+	keyResponse := caller.do(http.MethodPost, base+"/key", nil, true)
+	keyPayload, _ := io.ReadAll(keyResponse.Body)
+	keyResponse.Body.Close()
+	if keyResponse.StatusCode != http.StatusCreated {
+		t.Fatalf("making a key = %d: %s", keyResponse.StatusCode, keyPayload)
+	}
+
+	var key struct {
+		PublicKey string `json:"publicKey"`
+		Advice    string `json:"advice"`
+	}
+	if err := json.Unmarshal(keyPayload, &key); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(key.PublicKey, "ssh-ed25519 ") {
+		t.Fatalf("public key = %q", key.PublicKey)
+	}
+	if strings.Contains(string(keyPayload), "PRIVATE") {
+		t.Fatalf("the answer carries a private key: %s", keyPayload)
+	}
+	if key.Advice == "" {
+		t.Error("nothing was said about what to do with the key")
+	}
+
+	// The customer's site, on a remote the key reaches. A repository on this
+	// machine needs no key, which is what makes this testable without a host.
+	remote := customerRemote(t, server)
+
+	imported := caller.do(http.MethodPost, base+"/import",
+		map[string]any{"kind": "repository", "address": remote}, true)
+	importPayload, _ := io.ReadAll(imported.Body)
+	imported.Body.Close()
+	if imported.StatusCode != http.StatusCreated {
+		t.Fatalf("importing = %d: %s", imported.StatusCode, importPayload)
+	}
+
+	var result struct {
+		Ready       bool `json:"ready"`
+		IsHugoSite  bool `json:"isHugoSite"`
+		HasModel    bool `json:"hasModel"`
+		Pages       int  `json:"pages"`
+		Collections int  `json:"collections"`
+	}
+	if err := json.Unmarshal(importPayload, &result); err != nil {
+		t.Fatal(err)
+	}
+	if !result.IsHugoSite || !result.HasModel || !result.Ready {
+		t.Fatalf("result = %+v, want a Hugo site with a model", result)
+	}
+	if result.Pages != 1 || result.Collections != 1 {
+		t.Errorf("pages = %d, collections = %d, want 1 and 1", result.Pages, result.Collections)
+	}
+
+	// The connection is good, and the answer carries no secret.
+	connection := caller.do(http.MethodPost, base+"/connection", nil, true)
+	connectionPayload, _ := io.ReadAll(connection.Body)
+	connection.Body.Close()
+	if connection.StatusCode != http.StatusOK {
+		t.Fatalf("testing the connection = %d: %s", connection.StatusCode, connectionPayload)
+	}
+
+	var reachable struct {
+		Good    bool   `json:"good"`
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(connectionPayload, &reachable); err != nil {
+		t.Fatal(err)
+	}
+	if !reachable.Good {
+		t.Errorf("the connection is not good: %s", reachable.Message)
+	}
+	if strings.Contains(string(connectionPayload), "PRIVATE") {
+		t.Error("the connection answer carries a private key")
+	}
+
+	// Publishing is recorded.
+	publishing := caller.do(http.MethodPut, base+"/publishing",
+		map[string]any{"to": "its-own-line", "form": "source"}, true)
+	publishingPayload, _ := io.ReadAll(publishing.Body)
+	publishing.Body.Close()
+	if publishing.StatusCode != http.StatusOK {
+		t.Fatalf("setting publishing = %d: %s", publishing.StatusCode, publishingPayload)
+	}
+	if !strings.Contains(string(publishingPayload), "quiqr/publish") {
+		t.Errorf("publishing = %s, want the default line offered", publishingPayload)
+	}
+
+	// The site can now be inspected without importing again.
+	site := caller.do(http.MethodGet, base+"/site", nil, false)
+	sitePayload, _ := io.ReadAll(site.Body)
+	site.Body.Close()
+	if site.StatusCode != http.StatusOK || !strings.Contains(string(sitePayload), `"ready":true`) {
+		t.Errorf("inspecting the site = %d: %s", site.StatusCode, sitePayload)
+	}
+}
+
+func TestThePrivateKeyIsNeverReturned(t *testing.T) {
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	const address = "implementer@technative.example"
+	const password = "a long enough passphrase"
+	if _, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password); err != nil {
+		t.Fatal(err)
+	}
+
+	caller := newClient(t, server.Addr())
+	caller.warmUp()
+	in := caller.do(http.MethodPost, "/api/sign-in", map[string]any{"email": address, "password": password}, true)
+	in.Body.Close()
+
+	caller.do(http.MethodPost, "/api/organisations",
+		map[string]any{"slug": "technative", "name": "TechNative"}, true).Body.Close()
+	caller.do(http.MethodPost, "/api/organisations/technative/projects",
+		map[string]any{"slug": "korenaar", "name": "Korenaar"}, true).Body.Close()
+
+	base := "/api/organisations/technative/projects/korenaar"
+	caller.do(http.MethodPost, base+"/key", nil, true).Body.Close()
+
+	for _, where := range []struct {
+		method string
+		path   string
+	}{
+		{http.MethodGet, base},
+		{http.MethodGet, base + "/key"},
+		{http.MethodGet, base + "/site"},
+		{http.MethodGet, base + "/publishing"},
+		{http.MethodGet, "/api/organisations/technative/projects"},
+	} {
+		response := caller.do(where.method, where.path, nil, false)
+		payload, _ := io.ReadAll(response.Body)
+		response.Body.Close()
+
+		for _, secret := range []string{"PRIVATE KEY", "deployPrivateKey", "BEGIN OPENSSH"} {
+			if strings.Contains(string(payload), secret) {
+				t.Errorf("%s %s carries %q: %s", where.method, where.path, secret, payload)
+			}
+		}
+	}
+}
+
+// customerRemote builds a bare repository holding a Hugo site with a Quiqr
+// model, standing in for the customer's own.
+func customerRemote(t *testing.T, server *app.Server) string {
+	t.Helper()
+
+	cfg := gitsync.Config{
+		GitBin: gitBinary(t),
+		System: gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@example.org"},
+	}
+
+	remote := filepath.Join(t.TempDir(), "customer.git")
+	gitRun(t, cfg, "", "init", "--bare", "--initial-branch=main", remote)
+
+	seed := filepath.Join(t.TempDir(), "seed")
+	gitRun(t, cfg, "", "clone", "--", remote, seed)
+
+	writeSeedFile(t, filepath.Join(seed, "hugo.toml"), "baseURL = 'https://korenaar.example'\n")
+	writeSeedFile(t, filepath.Join(seed, "quiqr", "model", "base.yaml"), `singles:
+  - key: home
+    title: Homepage
+    file: content/_index.md
+    fields:
+      - key: title
+        type: string
+collections:
+  - key: posts
+    title: Posts
+    folder: content/posts/
+    fields:
+      - key: title
+        type: string
+`)
+	writeSeedFile(t, filepath.Join(seed, "content", "_index.md"), "---\ntitle: Home\n---\n\nWelcome.\n")
+
+	gitRun(t, cfg, seed, "add", "--all")
+	gitRun(t, cfg, seed, "commit", "--message=The customer's site")
+	gitRun(t, cfg, seed, "push", "origin", "HEAD:refs/heads/main")
+
+	_ = server
+	return remote
 }

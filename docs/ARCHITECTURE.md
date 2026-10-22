@@ -26,7 +26,8 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/content`     | Collections and singles: list, create, rename, delete                         |
 | `internal/media`       | Upload, listing, thumbnails, alt text, usage lookup                           |
 | `internal/gitsync`     | The repository engine: clone, commit, fetch, push, conflict detection. Core package. |
-| `internal/secrets`     | Encryption at rest for per-project SSH deploy keys                            |
+| `internal/secrets`     | Encryption at rest, and generating deploy keys. The thing a hardware key store would replace |
+| `internal/onboarding`  | Bringing a customer's site in, its key, and where it publishes                |
 | `internal/redact`      | Removing credential-shaped text before it is logged, stored or shown          |
 | `internal/preview`     | Per-session Hugo preview servers, including idle shutdown                     |
 | `internal/runner`      | Sandboxed build execution behind an interface                                 |
@@ -82,6 +83,17 @@ Per-document permissions are out of scope for milestone 1, so `Can` takes a
 resource argument it mostly ignores today. Keep the argument. Owning an
 organisation carries the owner role on every project in it, so a project
 cannot end up with nobody who can administer it.
+
+**`internal/secrets`** seals everything that must not be readable in the
+database, with AES-256-GCM under one master key read from the file
+`CHATCMS_SECRET_KEY_FILE` names. Deploy keys are Ed25519, generated in process
+rather than by running `ssh-keygen`, so no private key is ever written to a
+temporary file on the way.
+
+Git reaches a remote by running `ssh -i <file>`, so a key has to be on disk
+while it is used. One directory under the state directory holds them, made
+owner-only when the server starts and removed when it stops. That is the cost
+of not writing an agent, and it is named here rather than discovered later.
 
 **`internal/auth`** issues sessions. OIDC is out of scope, so the identity
 source is an interface with one implementation: `Identity.Authenticate` takes

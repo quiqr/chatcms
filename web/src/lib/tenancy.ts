@@ -63,3 +63,70 @@ export function removePerson(organisation: string, project: string, personId: st
     `/api/organisations/${organisation}/projects/${project}/people/${personId}`,
   );
 }
+
+export type DeployKey = {
+  publicKey: string;
+  advice: string;
+};
+
+export type SiteReport = {
+  kind: string;
+  remote?: string;
+  isHugoSite: boolean;
+  hasModel: boolean;
+  ready: boolean;
+  pages: number;
+  collections: number;
+  problem?: string;
+  lookedFor?: string[];
+};
+
+export type Connection = {
+  good: boolean;
+  message: string;
+  publicKey?: string;
+};
+
+export type Publishing = {
+  to: "main-line" | "its-own-line";
+  branch?: string;
+  form: "source" | "built";
+};
+
+export const defaultPublishBranch = "quiqr/publish";
+
+function project(organisation: string, name: string) {
+  return `/api/organisations/${organisation}/projects/${name}`;
+}
+
+export function readKey(organisation: string, name: string) {
+  return get<DeployKey>(`${project(organisation, name)}/key`);
+}
+
+export function makeKey(organisation: string, name: string) {
+  return post<DeployKey>(`${project(organisation, name)}/key`);
+}
+
+export function readSite(organisation: string, name: string) {
+  return get<SiteReport>(`${project(organisation, name)}/site`);
+}
+
+export function importSite(
+  organisation: string,
+  name: string,
+  body: { kind: string; address: string; remote?: string },
+) {
+  return post<SiteReport>(`${project(organisation, name)}/import`, body);
+}
+
+export function testConnection(organisation: string, name: string) {
+  return post<Connection>(`${project(organisation, name)}/connection`);
+}
+
+export function readPublishing(organisation: string, name: string) {
+  return get<Publishing>(`${project(organisation, name)}/publishing`);
+}
+
+export function setPublishing(organisation: string, name: string, body: Publishing) {
+  return put<Publishing>(`${project(organisation, name)}/publishing`, body);
+}

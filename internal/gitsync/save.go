@@ -53,7 +53,15 @@ func (r *repo) Save(ctx context.Context, save Save) (Version, error) {
 		}
 	}
 
-	addArgs := append([]string{"add", "--all", "--"}, paths...)
+	// A save that names no file saves everything the working copy holds,
+	// which is what importing a site is: the files are already there and all
+	// of them belong in the first version.
+	everything := len(paths) == 0
+
+	addArgs := []string{"add", "--all"}
+	if !everything {
+		addArgs = append(append(addArgs, "--"), paths...)
+	}
 	if _, err := r.git.run(ctx, addArgs...); err != nil {
 		return Version{}, err
 	}
@@ -66,9 +74,12 @@ func (r *repo) Save(ctx context.Context, save Save) (Version, error) {
 		"commit",
 		"--author=" + save.Author.String(),
 		"--message=" + save.Message,
-		"--only", "--",
 	}
-	if _, err := r.git.run(ctx, append(commit, paths...)...); err != nil {
+	if !everything {
+		commit = append(commit, "--only", "--")
+		commit = append(commit, paths...)
+	}
+	if _, err := r.git.run(ctx, commit...); err != nil {
 		return Version{}, err
 	}
 

@@ -34,6 +34,9 @@ type Options struct {
 	Secure bool
 	// Tenancy serves organisations, projects and the people on them.
 	Tenancy TenancyService
+	// Onboarding serves setting a project up: its key, its site, and where
+	// it publishes.
+	Onboarding OnboardingService
 }
 
 func New(opts Options) http.Handler {
@@ -90,6 +93,27 @@ func New(opts Options) http.Handler {
 		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}/people/{person}",
 			RequireActor(removePersonHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people/{person}", MethodNotAllowed)
+	}
+
+	if opts.Onboarding != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/key", RequireActor(readKeyHandler(opts.Onboarding)))
+		mux.Handle("POST "+base+"/key", RequireActor(generateKeyHandler(opts.Onboarding)))
+		mux.HandleFunc(base+"/key", MethodNotAllowed)
+
+		mux.Handle("POST "+base+"/import", RequireActor(importSiteHandler(opts.Onboarding)))
+		mux.HandleFunc(base+"/import", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/site", RequireActor(inspectSiteHandler(opts.Onboarding)))
+		mux.HandleFunc(base+"/site", MethodNotAllowed)
+
+		mux.Handle("POST "+base+"/connection", RequireActor(testConnectionHandler(opts.Onboarding)))
+		mux.HandleFunc(base+"/connection", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/publishing", RequireActor(readPublishingHandler(opts.Onboarding)))
+		mux.Handle("PUT "+base+"/publishing", RequireActor(setPublishingHandler(opts.Onboarding)))
+		mux.HandleFunc(base+"/publishing", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

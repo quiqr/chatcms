@@ -8,7 +8,7 @@ import (
 )
 
 func TestSiteIDMustBeUsableAsADirectory(t *testing.T) {
-	sites := NewSites(testConfig(t), t.TempDir())
+	sites := NewSites(testConfig(t), t.TempDir(), nil)
 
 	for _, id := range []string{"", ".", "..", "a/b", `a\b`, ".hidden", "a:b"} {
 		if _, err := sites.Dir(id); !errors.Is(err, ErrUnusableSiteID) {
@@ -28,7 +28,7 @@ func TestSiteIDMustBeUsableAsADirectory(t *testing.T) {
 func TestSitesCloneAndOpen(t *testing.T) {
 	cfg := testConfig(t)
 	remote := bareRemote(t, cfg)
-	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"))
+	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"), nil)
 
 	repository, err := sites.Clone(t.Context(), "korenaar", remote)
 	if err != nil {
@@ -50,7 +50,7 @@ func TestSitesCloneAndOpen(t *testing.T) {
 func TestSitesListsWorkingCopies(t *testing.T) {
 	cfg := testConfig(t)
 	root := filepath.Join(t.TempDir(), "sites")
-	sites := NewSites(cfg, root)
+	sites := NewSites(cfg, root, nil)
 
 	if ids, err := sites.List(); err != nil || len(ids) != 0 {
 		t.Fatalf("List() = %v, %v, want nothing before any site exists", ids, err)

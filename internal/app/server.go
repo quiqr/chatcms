@@ -16,6 +16,8 @@ import (
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/onboarding"
+	"github.com/quiqr/chatcms/internal/secrets"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/tenancy"
 	"github.com/quiqr/chatcms/internal/version"
@@ -32,11 +34,13 @@ type Server struct {
 	http     *http.Server
 	known    int64
 
-	queue   *jobs.Queue
-	worker  *jobs.Worker
-	sites   *gitsync.Sites
-	auth    *auth.Service
-	tenancy *tenancy.Service
+	queue      *jobs.Queue
+	worker     *jobs.Worker
+	sites      *gitsync.Sites
+	keys       *onboarding.Keys
+	auth       *auth.Service
+	tenancy    *tenancy.Service
+	onboarding *onboarding.Service
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -63,26 +67,44 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 
 	server := &Server{cfg: cfg, logger: logger, db: db, known: known}
 
+	keeper, err := secrets.NewKeeper(cfg.SecretKeyFile)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	server.keys, err = onboarding.NewKeys(db, keeper, cfg.StateDir)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
 	server.sites = gitsync.NewSites(gitsync.Config{
 		GitBin:     cfg.GitBin,
 		SSHKeyPath: cfg.SSHKeyPath,
 		System:     gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)},
-	}, cfg.SitesDir())
+	}, cfg.SitesDir(), server.keys.PathForSite)
 
 	server.auth = auth.NewService(db, logger, cfg.BaseURL)
-	server.tenancy = tenancy.NewService(tenancy.NewStore(db), server.auth)
+	tenancyStore := tenancy.NewStore(db)
+	server.tenancy = tenancy.NewService(tenancyStore, server.auth)
+
+	server.onboarding = onboarding.NewService(db, tenancyStore, server.keys,
+		onboarding.NewImporter(db, server.sites, server.keys,
+			gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)}))
 
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
 
 	handler := httpapi.New(httpapi.Options{
-		Logger:  logger,
-		Health:  server.health,
-		Assets:  webui.Handler(),
-		Auth:    server.auth,
-		Tenancy: server.tenancy,
-		Secure:  strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
+		Logger:     logger,
+		Health:     server.health,
+		Assets:     webui.Handler(),
+		Auth:       server.auth,
+		Tenancy:    server.tenancy,
+		Onboarding: server.onboarding,
+		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
 	listener, err := net.Listen("tcp", cfg.Listen)
@@ -176,6 +198,9 @@ func (s *Server) Serve(ctx context.Context) error {
 	}
 	workers.Wait()
 
+	if err := s.keys.Close(); err != nil {
+		s.logger.Error("clearing the decrypted keys failed", "error", err)
+	}
 	s.db.Close()
 
 	if errors.Is(shutdownErr, ErrShutdownForced) {
@@ -206,6 +231,9 @@ func (s *Server) Auth() *auth.Service { return s.auth }
 // Tenancy exposes the organisations and projects, which the integration
 // tests use to set a scene without an endpoint for every step.
 func (s *Server) Tenancy() *tenancy.Service { return s.tenancy }
+
+// Onboarding exposes setting a project up, which the acceptance test drives.
+func (s *Server) Onboarding() *onboarding.Service { return s.onboarding }
 
 // hostOf is used for the address versions are written by, so history shows
 // where an edit came from rather than a placeholder domain.

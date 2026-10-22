@@ -467,3 +467,46 @@ func TestHistoryLimit(t *testing.T) {
 		t.Errorf("got %d versions, want the limit of 3", len(versions))
 	}
 }
+
+func TestSaveWithNoPathsSavesEverything(t *testing.T) {
+	repository, _, _ := cloned(t)
+	dir := repository.(*repo).dir
+
+	writeFile(t, filepath.Join(dir, "content", "one.md"), "one")
+	writeFile(t, filepath.Join(dir, "content", "two.md"), "two")
+
+	version, err := repository.Save(t.Context(), Save{
+		Message: "Import the site",
+		Author:  editor("joris"),
+	})
+	if err != nil {
+		t.Fatalf("Save() error = %v, want nil", err)
+	}
+
+	paths := map[string]bool{}
+	for _, path := range version.Paths {
+		paths[path] = true
+	}
+	for _, want := range []string{"content/one.md", "content/two.md"} {
+		if !paths[want] {
+			t.Errorf("version paths = %v, want %q among them", version.Paths, want)
+		}
+	}
+
+	status, _ := repository.Status(t.Context())
+	if status.UnsavedWork {
+		t.Error("something was left unsaved")
+	}
+}
+
+func TestSaveWithNoPathsAndNothingToSave(t *testing.T) {
+	repository, _, _ := cloned(t)
+
+	_, err := repository.Save(t.Context(), Save{
+		Message: "Nothing at all",
+		Author:  editor("joris"),
+	})
+	if !errors.Is(err, ErrNothingChanged) {
+		t.Errorf("Save() error = %v, want ErrNothingChanged", err)
+	}
+}

@@ -1,12 +1,14 @@
 package gitsync
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func TestOperationErrorSaysWhatFailed(t *testing.T) {
@@ -208,7 +210,7 @@ func TestStatusCountsEverythingWhenNothingWasFetched(t *testing.T) {
 }
 
 func TestSitesOpenRejectsAMissingSite(t *testing.T) {
-	sites := NewSites(testConfig(t), t.TempDir())
+	sites := NewSites(testConfig(t), t.TempDir(), nil)
 
 	if _, err := sites.Open(t.Context(), "absent"); !errors.Is(err, ErrNotAWorkingCopy) {
 		t.Errorf("Open() error = %v, want ErrNotAWorkingCopy", err)
@@ -224,7 +226,7 @@ func TestSitesOpenRejectsAMissingSite(t *testing.T) {
 func TestSitesListIgnoresStrayEntries(t *testing.T) {
 	cfg := testConfig(t)
 	root := filepath.Join(t.TempDir(), "sites")
-	sites := NewSites(cfg, root)
+	sites := NewSites(cfg, root, nil)
 
 	repository, err := sites.Clone(t.Context(), "korenaar", bareRemote(t, cfg))
 	if err != nil {
@@ -309,4 +311,170 @@ func TestSyncIntoAnEmptyWorkingCopy(t *testing.T) {
 	if _, err := fs.ReadFile(repository.FS(), "content/_index.md"); err != nil {
 		t.Errorf("the remote's content is not readable: %v", err)
 	}
+}
+
+func TestCreateMakesAWorkingCopyFromFiles(t *testing.T) {
+	cfg := testConfig(t)
+	remote := emptyBareRemote(t, cfg)
+	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"), nil)
+
+	content := fstest.MapFS{
+		"hugo.toml":              {Data: []byte("baseURL = 'https://example.org'\n")},
+		"content/_index.md":      {Data: []byte("---\ntitle: Home\n---\n")},
+		"quiqr/model/base.yaml":  {Data: []byte("singles: []\n")},
+		".git/should-not-arrive": {Data: []byte("x")},
+	}
+
+	repository, err := sites.Create(t.Context(), "korenaar", remote, content,
+		Identity{Name: "Quiqr ChatCMS", Email: "chatcms@example.org"}, "Import the site")
+	if err != nil {
+		t.Fatalf("Create() error = %v, want nil", err)
+	}
+	defer repository.Close()
+
+	for _, name := range []string{"hugo.toml", "content/_index.md", "quiqr/model/base.yaml"} {
+		if _, err := fs.ReadFile(repository.FS(), name); err != nil {
+			t.Errorf("%s did not arrive: %v", name, err)
+		}
+	}
+	if _, err := fs.ReadFile(repository.FS(), "should-not-arrive"); err == nil {
+		t.Error("something from version control's own directory was copied in")
+	}
+
+	versions, err := repository.History(t.Context(), 10)
+	if err != nil || len(versions) != 1 {
+		t.Fatalf("history = %+v, %v, want one version", versions, err)
+	}
+	if versions[0].Message != "Import the site" {
+		t.Errorf("message = %q", versions[0].Message)
+	}
+
+	// The remote was recorded, so publishing has somewhere to go.
+	if _, err := repository.Publish(t.Context()); err != nil {
+		t.Errorf("Publish() after Create error = %v, want nil", err)
+	}
+}
+
+func TestCreateRefusesWhereAWorkingCopyExists(t *testing.T) {
+	cfg := testConfig(t)
+	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"), nil)
+
+	repository, err := sites.Clone(t.Context(), "korenaar", bareRemote(t, cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository.Close()
+
+	_, err = sites.Create(t.Context(), "korenaar", "", fstest.MapFS{}, testIdentity(), "Again")
+	if !errors.Is(err, ErrAlreadyAWorkingCopy) {
+		t.Errorf("Create() error = %v, want ErrAlreadyAWorkingCopy", err)
+	}
+}
+
+func TestCreateWithNoRemote(t *testing.T) {
+	cfg := testConfig(t)
+	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"), nil)
+
+	repository, err := sites.Create(t.Context(), "korenaar", "",
+		fstest.MapFS{"README.md": {Data: []byte("a site")}}, testIdentity(), "Import")
+	if err != nil {
+		t.Fatalf("Create() error = %v, want nil", err)
+	}
+	defer repository.Close()
+
+	if _, err := fs.ReadFile(repository.FS(), "README.md"); err != nil {
+		t.Errorf("the content did not arrive: %v", err)
+	}
+}
+
+func TestReachableSaysWhetherTheRemoteAnswers(t *testing.T) {
+	cfg := testConfig(t)
+	root := filepath.Join(t.TempDir(), "sites")
+	sites := NewSites(cfg, root, nil)
+
+	remote := bareRemote(t, cfg)
+	repository, err := sites.Clone(t.Context(), "korenaar", remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository.Close()
+
+	if err := sites.Reachable(t.Context(), "korenaar", remote); err != nil {
+		t.Errorf("Reachable() error = %v, want nil for a remote that is there", err)
+	}
+
+	err = sites.Reachable(t.Context(), "korenaar", filepath.Join(t.TempDir(), "absent.git"))
+	if err == nil {
+		t.Fatal("Reachable() error = nil for a remote that is not there")
+	}
+	if !errors.Is(err, ErrRemoteUnreachable) && !errors.Is(err, ErrKeyRefused) {
+		t.Errorf("Reachable() error = %v, want it classified", err)
+	}
+}
+
+func TestClassifyRemoteTellsRefusalFromUnreachable(t *testing.T) {
+	refused := &OperationError{
+		Operation: "ls-remote",
+		Detail:    "git@example.org: Permission denied (publickey).",
+	}
+	if err := classifyRemote(refused); !errors.Is(err, ErrKeyRefused) {
+		t.Errorf("a refused key was classified as %v", err)
+	}
+
+	unreachable := &OperationError{
+		Operation: "ls-remote",
+		Detail:    "ssh: Could not resolve hostname example.org",
+	}
+	if err := classifyRemote(unreachable); !errors.Is(err, ErrRemoteUnreachable) {
+		t.Errorf("an unreachable remote was classified as %v", err)
+	}
+
+	// Anything that is not an operation failure is left as it was.
+	plain := errors.New("something else entirely")
+	if err := classifyRemote(plain); err != plain {
+		t.Errorf("classifyRemote changed an unrelated error into %v", err)
+	}
+}
+
+func TestSitesUseTheKeyTheLookupGives(t *testing.T) {
+	cfg := testConfig(t)
+	root := filepath.Join(t.TempDir(), "sites")
+
+	asked := []string{}
+	sites := NewSites(cfg, root, func(_ context.Context, id string) (string, error) {
+		asked = append(asked, id)
+		return "", nil
+	})
+
+	repository, err := sites.Clone(t.Context(), "korenaar", bareRemote(t, cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository.Close()
+
+	if len(asked) == 0 || asked[0] != "korenaar" {
+		t.Errorf("the lookup was asked for %v, want the site's own identifier", asked)
+	}
+}
+
+func TestSitesReportALookupFailure(t *testing.T) {
+	cfg := testConfig(t)
+	wanted := errors.New("this project has no key yet")
+
+	sites := NewSites(cfg, filepath.Join(t.TempDir(), "sites"),
+		func(context.Context, string) (string, error) { return "", wanted })
+
+	if _, err := sites.Clone(t.Context(), "korenaar", "somewhere"); !errors.Is(err, wanted) {
+		t.Errorf("Clone() error = %v, want the lookup's own error", err)
+	}
+	if _, err := sites.Open(t.Context(), "korenaar"); err == nil {
+		t.Error("Open() error = nil, want a failure")
+	}
+	if err := sites.Reachable(t.Context(), "korenaar", "somewhere"); !errors.Is(err, wanted) {
+		t.Errorf("Reachable() error = %v, want the lookup's own error", err)
+	}
+}
+
+func testIdentity() Identity {
+	return Identity{Name: "Quiqr ChatCMS", Email: "chatcms@example.org"}
 }
