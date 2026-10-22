@@ -111,12 +111,20 @@
         preBuild = "";
         doCheck = true;
         env = old.env // { CGO_ENABLED = 1; };
-        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.git pkgs.openssh ];
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+          pkgs.git
+          pkgs.openssh
+          pkgs.bubblewrap
+          pkgs.util-linux
+          pkgs.hugo
+          pkgs.procps
+        ];
         buildPhase = "runHook preBuild; runHook postBuild";
         checkPhase = ''
           runHook preCheck
           export HOME=$TMPDIR
           export CHATCMS_GIT_BIN=${pkgs.lib.getExe pkgs.git}
+          export CHATCMS_HUGO_BIN=${pkgs.lib.getExe pkgs.hugo}
           go vet ./...
           go test -race -covermode=atomic -coverprofile=coverage.out ./...
           runHook postCheck
@@ -136,6 +144,7 @@
           runHook preCheck
           export HOME=$TMPDIR
           export CHATCMS_GIT_BIN=${pkgs.lib.getExe pkgs.git}
+          export CHATCMS_HUGO_BIN=${pkgs.lib.getExe pkgs.hugo}
           go vet -tags=integration ./...
           go test -tags=integration -covermode=atomic -coverprofile=coverage.out ./...
           ${pkgs.bash}/bin/bash ${./scripts/coverage-gate.sh} coverage.out
@@ -183,6 +192,8 @@
           git
           jujutsu
           openssh
+          bubblewrap
+          util-linux
 
           playwright-driver.browsers
           prefetch-npm-deps
@@ -194,6 +205,8 @@
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
           CHATCMS_HUGO_BIN = pkgs.lib.getExe pkgs.hugo;
           CHATCMS_GIT_BIN = pkgs.lib.getExe pkgs.git;
+          CHATCMS_BWRAP_BIN = "${pkgs.bubblewrap}/bin/bwrap";
+          CHATCMS_PRLIMIT_BIN = "${pkgs.util-linux}/bin/prlimit";
         };
         shellHook = ''
           echo "Quiqr ChatCMS dev shell (${system})"

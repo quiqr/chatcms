@@ -31,6 +31,8 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/redact`      | Removing credential-shaped text before it is logged, stored or shown          |
 | `internal/preview`     | Per-session Hugo preview servers, including idle shutdown                     |
 | `internal/runner`      | Sandboxed build execution behind an interface                                 |
+| `internal/sitebuild`   | Running the pinned Hugo over a site, through a runner                         |
+| `internal/builds`      | What is remembered about every build, and the state it ended in               |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | The change summary, the publish pipeline, the publish record                  |
 | `internal/history`     | Version listing in plain language, and rollback                               |
@@ -64,9 +66,36 @@ needed, it is added as a method in this vocabulary rather than by handing out
 the repository path.
 
 **`internal/runner.Runner`** executes a build in isolation. Milestone 1 ships a
-Nix sandbox implementation. Firecracker micro VMs replace it later, so the
-interface speaks in terms of inputs, a command and collected outputs, never in
-terms of local paths that only make sense in-process.
+bubblewrap implementation. Firecracker micro virtual machines replace it
+later, so the interface speaks in terms of inputs, a command and collected
+outputs, never in terms of local paths that only make sense in-process.
+
+A task is inputs, a command, limits and the paths it wants collected. A result
+is an exit code, a log, those outputs and which limit was reached. Nothing in
+either names a process, a mount or a path on this machine.
+
+The implementation needs `bwrap` and `prlimit` on the machine, both named by
+settings and both in the NixOS module's path. If it cannot isolate, it refuses
+to run anything, and the server says at start-up that builds are unavailable.
+A build that quietly ran unsandboxed would be the worst available outcome: no
+protection, and no sign that there is none.
+
+What replacing it costs, and buys:
+
+| | bubblewrap | A machine of its own |
+| --- | --- | --- |
+| Isolation from the host | Namespaces, so a kernel bug is a host bug | A kernel of its own |
+| Memory limit | `prlimit` on the data segment, which is why a failure is read out of the log | Asked of the hypervisor, exactly |
+| Start-up | A few milliseconds | Tens to hundreds of milliseconds |
+| Where it runs | This machine | Anywhere |
+
+The interface is already the second one's shape. What changes is the
+implementation and the two tool settings; no caller moves.
+
+**`internal/builds`** keeps the record: the project, the reason, the start and
+finish, the state and the log. Builds left running when the server stopped are
+marked interrupted at the next start, because a record that stays running
+forever is worse than one that says it does not know.
 
 **`internal/policy.Can`** is the only authorisation decision point in the
 codebase. Handlers ask it; they never compare roles themselves, which a test

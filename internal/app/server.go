@@ -4,20 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/quiqr/chatcms/internal/auth"
+	"github.com/quiqr/chatcms/internal/builds"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/onboarding"
+	"github.com/quiqr/chatcms/internal/runner"
 	"github.com/quiqr/chatcms/internal/secrets"
+	"github.com/quiqr/chatcms/internal/sitebuild"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/tenancy"
 	"github.com/quiqr/chatcms/internal/version"
@@ -41,6 +48,7 @@ type Server struct {
 	auth       *auth.Service
 	tenancy    *tenancy.Service
 	onboarding *onboarding.Service
+	builds     *builds.Service
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -92,6 +100,11 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.onboarding = onboarding.NewService(db, tenancyStore, server.keys,
 		onboarding.NewImporter(db, server.sites, server.keys,
 			gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)}))
+
+	if err := server.startBuilds(ctx); err != nil {
+		db.Close()
+		return nil, err
+	}
 
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
@@ -234,6 +247,52 @@ func (s *Server) Tenancy() *tenancy.Service { return s.tenancy }
 
 // Onboarding exposes setting a project up, which the acceptance test drives.
 func (s *Server) Onboarding() *onboarding.Service { return s.onboarding }
+
+func (s *Server) Builds() *builds.Service { return s.builds }
+
+func (s *Server) startBuilds(ctx context.Context) error {
+	records := builds.NewRecords(s.db.Queries)
+
+	interrupted, err := records.InterruptLeftovers(ctx)
+	if err != nil {
+		return err
+	}
+	if interrupted > 0 {
+		s.logger.Warn("builds were still running when the server last stopped", "count", interrupted)
+	}
+
+	sandbox, err := runner.NewSandbox(runner.Config{
+		BwrapBin:   s.cfg.BwrapBin,
+		PrlimitBin: s.cfg.PrlimitBin,
+		WorkRoot:   filepath.Join(s.cfg.StateDir, "builds"),
+	})
+	if err != nil {
+		if !errors.Is(err, runner.ErrNoIsolation) {
+			return err
+		}
+		s.logger.Warn("builds are unavailable because they cannot be isolated on this machine", "reason", err)
+		return nil
+	}
+
+	builder, err := sitebuild.New(sandbox, s.cfg.HugoBin, sitebuild.Limits{
+		Timeout:     s.cfg.BuildTimeout,
+		MemoryBytes: s.cfg.BuildMemory,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.builds, err = builds.NewService(records, builder, s.siteFor)
+	return err
+}
+
+func (s *Server) siteFor(ctx context.Context, projectID uuid.UUID) (fs.FS, error) {
+	repository, err := s.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, err
+	}
+	return repository.FS(), nil
+}
 
 // hostOf is used for the address versions are written by, so history shows
 // where an edit came from rather than a placeholder domain.

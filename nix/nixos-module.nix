@@ -95,6 +95,38 @@ in
       description = "Git CLI used for all repository operations.";
     };
 
+    bubblewrapPackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.bubblewrap;
+      description = ''
+        Bubblewrap, which isolates every site build. Without it, builds are
+        refused rather than run unisolated.
+      '';
+    };
+
+    utilLinuxPackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.util-linux;
+      description = "Provides prlimit, which bounds the memory a build may use.";
+    };
+
+    buildTimeout = lib.mkOption {
+      type = lib.types.str;
+      default = "10m";
+      example = "2m";
+      description = "How long a site build may run before it is ended.";
+    };
+
+    buildMemory = lib.mkOption {
+      type = lib.types.str;
+      default = "2GiB";
+      example = "512MiB";
+      description = ''
+        How much memory a site build may use. A build that exceeds it is
+        ended and its log is kept.
+      '';
+    };
+
     extraEnvironment = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
@@ -140,7 +172,13 @@ in
       wants = [ "network-online.target" ];
       requires = lib.optional cfg.database.createLocally "postgresql.service";
 
-      path = [ cfg.gitPackage cfg.hugoPackage pkgs.openssh ];
+      path = [
+        cfg.gitPackage
+        cfg.hugoPackage
+        cfg.bubblewrapPackage
+        cfg.utilLinuxPackage
+        pkgs.openssh
+      ];
 
       environment = {
         CHATCMS_LISTEN = "${cfg.listenAddress}:${toString cfg.port}";
@@ -149,6 +187,10 @@ in
         CHATCMS_GIT_BIN = lib.getExe cfg.gitPackage;
         CHATCMS_HUGO_BIN = lib.getExe cfg.hugoPackage;
         CHATCMS_SECRET_KEY_FILE = cfg.secretKeyFile;
+        CHATCMS_BWRAP_BIN = "${cfg.bubblewrapPackage}/bin/bwrap";
+        CHATCMS_PRLIMIT_BIN = "${cfg.utilLinuxPackage}/bin/prlimit";
+        CHATCMS_BUILD_TIMEOUT = cfg.buildTimeout;
+        CHATCMS_BUILD_MEMORY = cfg.buildMemory;
       } // lib.optionalAttrs cfg.database.createLocally {
         CHATCMS_DATABASE_URL = "postgres:///${cfg.database.name}?host=/run/postgresql";
       } // lib.optionalAttrs (cfg.database.urlFile != null) {

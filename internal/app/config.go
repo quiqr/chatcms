@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,6 +21,10 @@ type Config struct {
 	SSHKeyPath      string
 	SecretKeyFile   string
 	SyncInterval    time.Duration
+	BwrapBin        string
+	PrlimitBin      string
+	BuildTimeout    time.Duration
+	BuildMemory     int64
 }
 
 // SitesDir is where every site's working copy lives.
@@ -63,6 +68,8 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_HUGO_BIN", &cfg.HugoBin, "hugo", false},
 		{"CHATCMS_SSH_KEY_PATH", &cfg.SSHKeyPath, "", false},
 		{"CHATCMS_SECRET_KEY_FILE", &cfg.SecretKeyFile, "", true},
+		{"CHATCMS_BWRAP_BIN", &cfg.BwrapBin, "bwrap", false},
+		{"CHATCMS_PRLIMIT_BIN", &cfg.PrlimitBin, "prlimit", false},
 	}
 
 	for _, field := range fields {
@@ -86,6 +93,7 @@ func LoadConfig(lookup Lookup) (Config, error) {
 	}{
 		{"CHATCMS_SHUTDOWN_TIMEOUT", &cfg.ShutdownTimeout, "20s"},
 		{"CHATCMS_SYNC_INTERVAL", &cfg.SyncInterval, "2m"},
+		{"CHATCMS_BUILD_TIMEOUT", &cfg.BuildTimeout, "10m"},
 	}
 
 	for _, field := range durations {
@@ -103,6 +111,18 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		*field.target = value
 	}
 
+	memory, err := resolve(lookup, "CHATCMS_BUILD_MEMORY")
+	if err != nil {
+		return Config{}, err
+	}
+	if memory == "" {
+		memory = "2GiB"
+	}
+	cfg.BuildMemory, err = ParseBytes(memory)
+	if err != nil {
+		return Config{}, &ConfigError{Variable: "CHATCMS_BUILD_MEMORY", Reason: reasonInvalid}
+	}
+
 	switch cfg.LogFormat {
 	case "auto", "json", "text":
 	default:
@@ -110,6 +130,38 @@ func LoadConfig(lookup Lookup) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+var byteUnits = []struct {
+	suffix string
+	scale  int64
+}{
+	{"GiB", 1 << 30},
+	{"MiB", 1 << 20},
+	{"KiB", 1 << 10},
+	{"G", 1 << 30},
+	{"M", 1 << 20},
+	{"K", 1 << 10},
+	{"B", 1},
+}
+
+func ParseBytes(raw string) (int64, error) {
+	text := strings.TrimSpace(raw)
+	scale := int64(1)
+	for _, unit := range byteUnits {
+		if trimmed, found := strings.CutSuffix(text, unit.suffix); found {
+			text, scale = strings.TrimSpace(trimmed), unit.scale
+			break
+		}
+	}
+	value, err := strconv.ParseInt(text, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	if value <= 0 {
+		return 0, fmt.Errorf("a size must be more than nothing")
+	}
+	return value * scale, nil
 }
 
 func resolve(lookup Lookup, name string) (string, error) {

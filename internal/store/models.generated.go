@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Build struct {
+	ID         pgtype.UUID        `json:"id"`
+	ProjectID  pgtype.UUID        `json:"project_id"`
+	Reason     string             `json:"reason"`
+	State      string             `json:"state"`
+	ExitCode   *int32             `json:"exit_code"`
+	Log        string             `json:"log"`
+	StartedAt  pgtype.Timestamptz `json:"started_at"`
+	FinishedAt pgtype.Timestamptz `json:"finished_at"`
+}
+
 type CredentialToken struct {
 	ID        pgtype.UUID        `json:"id"`
 	Kind      string             `json:"kind"`

@@ -272,3 +272,92 @@ func TestLoadConfigRequiresTheSecretKeyFile(t *testing.T) {
 		t.Errorf("Variable = %q, want CHATCMS_SECRET_KEY_FILE", configErr.Variable)
 	}
 }
+
+func TestBuildSettingsHaveDefaults(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+
+	if cfg.BwrapBin != "bwrap" || cfg.PrlimitBin != "prlimit" {
+		t.Errorf("sandbox tools = %q and %q, want the plain names", cfg.BwrapBin, cfg.PrlimitBin)
+	}
+	if cfg.BuildTimeout != 10*time.Minute {
+		t.Errorf("BuildTimeout = %v, want 10m", cfg.BuildTimeout)
+	}
+	if cfg.BuildMemory != 2<<30 {
+		t.Errorf("BuildMemory = %d, want two gibibytes", cfg.BuildMemory)
+	}
+}
+
+func TestBuildSettingsComeFromTheEnvironment(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+		"CHATCMS_BWRAP_BIN":       "/nix/store/bwrap",
+		"CHATCMS_PRLIMIT_BIN":     "/nix/store/prlimit",
+		"CHATCMS_BUILD_TIMEOUT":   "90s",
+		"CHATCMS_BUILD_MEMORY":    "512MiB",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+
+	if cfg.BwrapBin != "/nix/store/bwrap" || cfg.PrlimitBin != "/nix/store/prlimit" {
+		t.Errorf("sandbox tools = %q and %q", cfg.BwrapBin, cfg.PrlimitBin)
+	}
+	if cfg.BuildTimeout != 90*time.Second {
+		t.Errorf("BuildTimeout = %v, want 90s", cfg.BuildTimeout)
+	}
+	if cfg.BuildMemory != 512<<20 {
+		t.Errorf("BuildMemory = %d, want 512 mebibytes", cfg.BuildMemory)
+	}
+}
+
+func TestParseBytes(t *testing.T) {
+	good := map[string]int64{
+		"1024":    1024,
+		"1024B":   1024,
+		"2K":      2 << 10,
+		"2KiB":    2 << 10,
+		"512MiB":  512 << 20,
+		"512 MiB": 512 << 20,
+		"3G":      3 << 30,
+		"4GiB":    4 << 30,
+	}
+	for raw, want := range good {
+		got, err := ParseBytes(raw)
+		if err != nil {
+			t.Errorf("ParseBytes(%q) error = %v", raw, err)
+			continue
+		}
+		if got != want {
+			t.Errorf("ParseBytes(%q) = %d, want %d", raw, got, want)
+		}
+	}
+
+	for _, raw := range []string{"", "lots", "0", "-5", "-1GiB", "1.5GiB", "GiB"} {
+		if _, err := ParseBytes(raw); err == nil {
+			t.Errorf("ParseBytes(%q) error = nil, want a rejection", raw)
+		}
+	}
+}
+
+func TestAnInvalidBuildMemoryNamesTheVariable(t *testing.T) {
+	_, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+		"CHATCMS_BUILD_MEMORY":    "as much as it likes",
+	}))
+
+	var configErr *ConfigError
+	if !errors.As(err, &configErr) {
+		t.Fatalf("LoadConfig() error = %v, want a *ConfigError", err)
+	}
+	if configErr.Variable != "CHATCMS_BUILD_MEMORY" {
+		t.Errorf("Variable = %q, want CHATCMS_BUILD_MEMORY", configErr.Variable)
+	}
+}

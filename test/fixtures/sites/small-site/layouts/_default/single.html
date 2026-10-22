@@ -1,0 +1,5 @@
+{{ define "main" }}
+<article><h1>{{ .Title }}</h1>{{ .Content }}
+{{ with .Params.tags }}<ul>{{ range . }}<li>{{ . }}</li>{{ end }}</ul>{{ end }}
+</article>
+{{ end }}
