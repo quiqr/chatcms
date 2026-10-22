@@ -49,7 +49,7 @@
         ];
       };
 
-      vendorHash = "sha256-2K9m6EUifEBZ/iFw1ioE1ef5PqzlvgPHKVs61C3h0ss=";
+      vendorHash = "sha256-ZVtZ8rZCti2yq6AqH2x4siW69v1Z/7sKznGKDf4M4/k=";
 
       mkWeb = { pkgs, ... }: pkgs.buildNpmPackage {
         pname = "chatcms-web";

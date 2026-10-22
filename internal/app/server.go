@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
@@ -33,6 +34,7 @@ type Server struct {
 	queue  *jobs.Queue
 	worker *jobs.Worker
 	sites  *gitsync.Sites
+	auth   *auth.Service
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -65,6 +67,8 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		System:     gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)},
 	}, cfg.SitesDir())
 
+	server.auth = auth.NewService(db, logger, cfg.BaseURL)
+
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
@@ -73,6 +77,8 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Logger: logger,
 		Health: server.health,
 		Assets: webui.Handler(),
+		Auth:   server.auth,
+		Secure: strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
 	listener, err := net.Listen("tcp", cfg.Listen)
@@ -188,6 +194,10 @@ func Serve(ctx context.Context, cfg Config, logger *slog.Logger) error {
 	}
 	return server.Serve(ctx)
 }
+
+// Auth exposes the identity service, which the integration tests use to
+// create a person without an endpoint for it.
+func (s *Server) Auth() *auth.Service { return s.auth }
 
 // hostOf is used for the address versions are written by, so history shows
 // where an edit came from rather than a placeholder domain.

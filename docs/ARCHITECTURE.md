@@ -73,8 +73,16 @@ permissions are out of scope for milestone 1, so `Can` takes a resource
 argument it mostly ignores today. Keep the argument.
 
 **`internal/auth`** issues sessions. OIDC is out of scope, so the identity
-source is an interface with one implementation. Sessions must not assume a
-password ever existed.
+source is an interface with one implementation: `Identity.Authenticate` takes
+a `Claim`, which a password satisfies today and an assertion from a provider
+could satisfy later. Sessions do not assume a password ever existed, which is
+what an invited person looks like before they accept.
+
+A session is 32 random bytes in a cookie and a SHA-256 of them in the
+database, so a copy of the database grants nobody a session. Passwords are
+argon2id with the parameters written into the stored value, so raising them
+later leaves old hashes verifiable. A sign-in always issues a new session and
+revokes whatever the request arrived with.
 
 ## Request path
 

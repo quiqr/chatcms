@@ -58,3 +58,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - What an editor can read is checked by the build: a version control word in a
   screen a content creator sees fails it, as does a colour written outside the
   palette or a control too small to tap.
+- People can sign in, stay signed in on a device if they ask to, and sign out.
+  Signing out ends the session on the server, not just in the browser.
+- An invitation link sets a first password. It works once and then stops
+  working, as does a password reset link, and resetting a password ends every
+  session that person had.
+- Nothing ChatCMS says reveals whether an email address belongs to an account,
+  whether someone is signing in, asking for a reset, or using a link that has
+  already been used.
+- Repeated guessing is slowed down, counted both against the address being
+  tried and against whoever is trying.
+- Until there is a way to send email, an invitation or reset link is written to
+  the server log for an implementer to pass on by hand, and is never returned
+  to the browser.

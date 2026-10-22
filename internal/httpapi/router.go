@@ -26,6 +26,12 @@ type Options struct {
 	Logger *slog.Logger
 	Health HealthFunc
 	Assets http.Handler
+	// Auth answers who someone is. With none, every request carries nobody
+	// and the endpoints that need a person answer 401.
+	Auth AuthService
+	// Secure says the site is served over a secure connection, which decides
+	// whether cookies are marked as requiring one.
+	Secure bool
 }
 
 func New(opts Options) http.Handler {
@@ -38,6 +44,24 @@ func New(opts Options) http.Handler {
 
 	mux.Handle("GET /api/health", healthHandler(opts.Health))
 	mux.HandleFunc("/api/health", MethodNotAllowed)
+
+	if opts.Auth != nil {
+		mux.Handle("POST /api/sign-in", signInHandler(opts.Auth, opts.Secure))
+		mux.HandleFunc("/api/sign-in", MethodNotAllowed)
+
+		mux.Handle("POST /api/sign-out", signOutHandler(opts.Auth, opts.Secure))
+		mux.HandleFunc("/api/sign-out", MethodNotAllowed)
+
+		mux.Handle("GET /api/me", RequireActor(currentPersonHandler()))
+		mux.HandleFunc("/api/me", MethodNotAllowed)
+
+		mux.Handle("POST /api/password-reset", requestResetHandler(opts.Auth))
+		mux.HandleFunc("/api/password-reset", MethodNotAllowed)
+
+		mux.Handle("POST /api/set-password", setPasswordHandler(opts.Auth))
+		mux.HandleFunc("/api/set-password", MethodNotAllowed)
+	}
+
 	mux.HandleFunc("/api/", NotFound)
 
 	if opts.Assets != nil {
@@ -46,8 +70,14 @@ func New(opts Options) http.Handler {
 		mux.HandleFunc("/", NotFound)
 	}
 
+	var lookup LookupSession
+	if opts.Auth != nil {
+		lookup = opts.Auth.Lookup
+	}
+
 	var handler http.Handler = mux
-	handler = AnonymousActor(handler)
+	handler = RequireRequestToken(opts.Secure)(handler)
+	handler = WithSession(lookup, logger)(handler)
 	handler = Recover(logger)(handler)
 	handler = Logging(logger)(handler)
 	handler = RequestID(handler)

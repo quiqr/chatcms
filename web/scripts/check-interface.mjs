@@ -10,6 +10,12 @@ const sourceDir = join(root, "src");
 
 const AUDIENCE_MARKER = "chatcms-audience: implementer";
 
+// A checkbox or a radio is drawn small on purpose and is operated by its
+// label, which is what carries the hit area. A line marked this way is
+// skipped by the size rule, and the marker has to say which element provides
+// the target, so that the claim is visible in review.
+const TARGET_MARKER = "chatcms-target:";
+
 // Words the hand-off bans in editor-facing text, with the whole-word rule so
 // that "pullover" and "committee" are left alone.
 const BANNED_WORDS = [
@@ -80,7 +86,9 @@ for (const path of sources(sourceDir)) {
   }
 
   // Rule two: a control is big enough to hit.
-  for (const [index, line] of text.split("\n").entries()) {
+  const lines = text.split("\n");
+  for (const [index, line] of lines.entries()) {
+    if (index > 0 && lines[index - 1].includes(TARGET_MARKER)) continue;
     for (const match of line.matchAll(/\b(?:h|size)-(\d+)\b/g)) {
       const steps = Number(match[1]);
       const isControl = /Button|Item|Trigger|NavLink|button|input|select/.test(line) ||

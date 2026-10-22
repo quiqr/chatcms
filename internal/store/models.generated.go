@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CredentialToken struct {
+	ID        pgtype.UUID        `json:"id"`
+	Kind      string             `json:"kind"`
+	TokenHash []byte             `json:"token_hash"`
+	PersonID  pgtype.UUID        `json:"person_id"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	SpentAt   pgtype.Timestamptz `json:"spent_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Job struct {
 	ID        int64              `json:"id"`
 	Kind      string             `json:"kind"`
@@ -19,4 +29,25 @@ type Job struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	Subject   string             `json:"subject"`
+}
+
+type Person struct {
+	ID           pgtype.UUID        `json:"id"`
+	Email        string             `json:"email"`
+	DisplayName  string             `json:"display_name"`
+	PasswordHash *string            `json:"password_hash"`
+	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Session struct {
+	ID         pgtype.UUID        `json:"id"`
+	TokenHash  []byte             `json:"token_hash"`
+	PersonID   pgtype.UUID        `json:"person_id"`
+	Remembered bool               `json:"remembered"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
+	RevokedAt  pgtype.Timestamptz `json:"revoked_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }

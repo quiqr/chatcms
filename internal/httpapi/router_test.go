@@ -21,8 +21,16 @@ func healthyRouter(health Health) http.Handler {
 func get(t *testing.T, handler http.Handler, method, path string) *httptest.ResponseRecorder {
 	t.Helper()
 
+	request := httptest.NewRequest(method, path, nil)
+	// A request that changes something has to carry the token; the tests
+	// about that rule live in requesttoken_test.go.
+	if method != http.MethodGet && method != http.MethodHead && method != http.MethodOptions {
+		request.AddCookie(&http.Cookie{Name: RequestTokenCookie, Value: "a-token"})
+		request.Header.Set(RequestTokenHeader, "a-token")
+	}
+
 	recorder := httptest.NewRecorder()
-	handler.ServeHTTP(recorder, httptest.NewRequest(method, path, nil))
+	handler.ServeHTTP(recorder, request)
 	return recorder
 }
 

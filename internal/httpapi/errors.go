@@ -22,6 +22,9 @@ const (
 	CodePayloadTooLarge  = "payload_too_large"
 	CodeInternal         = "internal_error"
 	CodeUnavailable      = "unavailable"
+	CodeUnauthorized     = "unauthorized"
+	CodeForbidden        = "forbidden"
+	CodeTooManyAttempts  = "too_many_attempts"
 )
 
 func WriteJSON(w http.ResponseWriter, status int, body any) {

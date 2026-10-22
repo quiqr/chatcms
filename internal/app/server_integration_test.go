@@ -3,6 +3,7 @@
 package app_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +24,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/quiqr/chatcms/internal/app"
+	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
@@ -375,5 +379,356 @@ func writeSeedFile(t *testing.T, path, contents string) {
 	}
 	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// client keeps cookies the way a browser does, and repeats the request token
+// the way the application's own pages do.
+type client struct {
+	t       *testing.T
+	base    string
+	jar     *cookiejar.Jar
+	http    *http.Client
+	baseURL *url.URL
+}
+
+func newClient(t *testing.T, address string) *client {
+	t.Helper()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, err := url.Parse("http://" + address)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &client{t: t, base: "http://" + address, jar: jar, http: &http.Client{Jar: jar}, baseURL: parsed}
+}
+
+func (c *client) requestToken() string {
+	for _, cookie := range c.jar.Cookies(c.baseURL) {
+		if cookie.Name == httpapi.RequestTokenCookie {
+			return cookie.Value
+		}
+	}
+	return ""
+}
+
+func (c *client) sessionValue() string {
+	for _, cookie := range c.jar.Cookies(c.baseURL) {
+		if cookie.Name == httpapi.SessionCookie {
+			return cookie.Value
+		}
+	}
+	return ""
+}
+
+func (c *client) do(method, path string, body any, withToken bool) *http.Response {
+	c.t.Helper()
+
+	var reader io.Reader
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			c.t.Fatal(err)
+		}
+		reader = bytes.NewReader(encoded)
+	}
+
+	request, err := http.NewRequest(method, c.base+path, reader)
+	if err != nil {
+		c.t.Fatal(err)
+	}
+	request.Header.Set("Content-Type", "application/json")
+	if withToken {
+		request.Header.Set(httpapi.RequestTokenHeader, c.requestToken())
+	}
+
+	response, err := c.http.Do(request)
+	if err != nil {
+		c.t.Fatalf("%s %s failed: %v", method, path, err)
+	}
+	return response
+}
+
+// warmUp fetches something so the browser is given a request token.
+func (c *client) warmUp() {
+	response := c.do(http.MethodGet, "/api/health", nil, false)
+	response.Body.Close()
+}
+
+func signInHarness(t *testing.T) (*app.Server, *client, string) {
+	t.Helper()
+
+	cfg := testConfig(t)
+	server, _ := startServer(t, cfg)
+
+	const address = "joris@example.org"
+	const password = "a long enough passphrase"
+
+	if _, err := server.Auth().People().Create(t.Context(), address, "Joris Bakker", password); err != nil {
+		t.Fatalf("creating a person failed: %v", err)
+	}
+
+	caller := newClient(t, server.Addr())
+	caller.warmUp()
+	return server, caller, password
+}
+
+func TestSignInThroughTheAPI(t *testing.T) {
+	_, caller, password := signInHarness(t)
+
+	response := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "joris@example.org", "password": password}, true)
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(response.Body)
+		t.Fatalf("status = %d, want 200: %s", response.StatusCode, body)
+	}
+	if caller.sessionValue() == "" {
+		t.Fatal("no session cookie was set")
+	}
+
+	me := caller.do(http.MethodGet, "/api/me", nil, false)
+	defer me.Body.Close()
+
+	if me.StatusCode != http.StatusOK {
+		t.Fatalf("/api/me status = %d, want 200", me.StatusCode)
+	}
+
+	var person struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(me.Body).Decode(&person); err != nil {
+		t.Fatal(err)
+	}
+	if person.Email != "joris@example.org" {
+		t.Errorf("email = %q", person.Email)
+	}
+}
+
+func TestProtectedEndpointRefusesNobody(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	response := caller.do(http.MethodGet, "/api/me", nil, false)
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", response.StatusCode)
+	}
+
+	var envelope struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&envelope); err != nil {
+		t.Fatal(err)
+	}
+	if envelope.Error.Code != httpapi.CodeUnauthorized {
+		t.Errorf("code = %q, want %q", envelope.Error.Code, httpapi.CodeUnauthorized)
+	}
+}
+
+func TestSignInWithoutTheRequestTokenIsRefused(t *testing.T) {
+	_, caller, password := signInHarness(t)
+
+	response := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "joris@example.org", "password": password}, false)
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusForbidden {
+		t.Errorf("status = %d, want 403", response.StatusCode)
+	}
+	if caller.sessionValue() != "" {
+		t.Error("a session was issued although the request was refused")
+	}
+}
+
+func TestSignInRevokesTheSessionItArrivedWith(t *testing.T) {
+	server, caller, password := signInHarness(t)
+
+	first := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "joris@example.org", "password": password}, true)
+	first.Body.Close()
+	original := caller.sessionValue()
+
+	second := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "joris@example.org", "password": password}, true)
+	second.Body.Close()
+	replacement := caller.sessionValue()
+
+	if original == "" || replacement == "" {
+		t.Fatal("a sign-in did not set a session")
+	}
+	if original == replacement {
+		t.Fatal("signing in again reused the session it arrived with")
+	}
+
+	actor, err := server.Auth().Lookup(t.Context(), original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !actor.Anonymous {
+		t.Error("the session the sign-in arrived with still works")
+	}
+}
+
+func TestSignInRefusesWrongCredentials(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	for _, body := range []map[string]any{
+		{"email": "joris@example.org", "password": "not the password at all"},
+		{"email": "nobody@example.org", "password": "not the password at all"},
+	} {
+		response := caller.do(http.MethodPost, "/api/sign-in", body, true)
+		payload, _ := io.ReadAll(response.Body)
+		response.Body.Close()
+
+		if response.StatusCode != http.StatusUnauthorized {
+			t.Errorf("status = %d for %v, want 401", response.StatusCode, body["email"])
+		}
+		if strings.Contains(string(payload), "exist") || strings.Contains(string(payload), "unknown") {
+			t.Errorf("the answer hints at whether the address is known: %s", payload)
+		}
+	}
+}
+
+func TestSignOutRevokes(t *testing.T) {
+	server, caller, password := signInHarness(t)
+
+	in := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "joris@example.org", "password": password}, true)
+	in.Body.Close()
+	session := caller.sessionValue()
+
+	out := caller.do(http.MethodPost, "/api/sign-out", nil, true)
+	out.Body.Close()
+
+	if out.StatusCode != http.StatusNoContent {
+		t.Errorf("status = %d, want 204", out.StatusCode)
+	}
+
+	actor, err := server.Auth().Lookup(t.Context(), session)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !actor.Anonymous {
+		t.Error("the session still works after signing out")
+	}
+
+	me := caller.do(http.MethodGet, "/api/me", nil, false)
+	me.Body.Close()
+	if me.StatusCode != http.StatusUnauthorized {
+		t.Errorf("/api/me after signing out = %d, want 401", me.StatusCode)
+	}
+}
+
+func TestSignOutWithoutASession(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	response := caller.do(http.MethodPost, "/api/sign-out", nil, true)
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusNoContent {
+		t.Errorf("status = %d, want 204 even with nothing to sign out of", response.StatusCode)
+	}
+}
+
+func TestResetRequestSaysTheSameThingEitherWay(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	var answers []string
+	for _, address := range []string{"joris@example.org", "nobody@example.org"} {
+		response := caller.do(http.MethodPost, "/api/password-reset",
+			map[string]any{"email": address}, true)
+		payload, _ := io.ReadAll(response.Body)
+		response.Body.Close()
+
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("status = %d for %s, want 200", response.StatusCode, address)
+		}
+		answers = append(answers, string(payload))
+	}
+
+	if answers[0] != answers[1] {
+		t.Errorf("the answers differ:\n%s\n%s", answers[0], answers[1])
+	}
+	for _, answer := range answers {
+		if strings.Contains(answer, "token") {
+			t.Errorf("the answer carries a link: %s", answer)
+		}
+	}
+}
+
+func TestSetPasswordThroughTheAPI(t *testing.T) {
+	server, caller, _ := signInHarness(t)
+
+	person, err := server.Auth().People().Create(t.Context(), "invited@example.org", "Invited", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, _, err := server.Auth().Credentials().Issue(t.Context(), auth.KindInvitation, person.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response := caller.do(http.MethodPost, "/api/set-password",
+		map[string]any{"token": token, "password": "a brand new long passphrase"}, true)
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.StatusCode)
+	}
+
+	in := caller.do(http.MethodPost, "/api/sign-in",
+		map[string]any{"email": "invited@example.org", "password": "a brand new long passphrase"}, true)
+	in.Body.Close()
+	if in.StatusCode != http.StatusOK {
+		t.Errorf("signing in after setting a password = %d, want 200", in.StatusCode)
+	}
+}
+
+func TestSetPasswordRefusesAWeakOne(t *testing.T) {
+	server, caller, _ := signInHarness(t)
+
+	person, err := server.Auth().People().Create(t.Context(), "invited2@example.org", "Invited", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, _, err := server.Auth().Credentials().Issue(t.Context(), auth.KindInvitation, person.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response := caller.do(http.MethodPost, "/api/set-password",
+		map[string]any{"token": token, "password": "short"}, true)
+	payload, _ := io.ReadAll(response.Body)
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", response.StatusCode)
+	}
+	if !strings.Contains(string(payload), "12") {
+		t.Errorf("the message does not say what the minimum is: %s", payload)
+	}
+}
+
+func TestSetPasswordRefusesAnUnusableLink(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	response := caller.do(http.MethodPost, "/api/set-password",
+		map[string]any{"token": "nothing-like-a-token", "password": "a long enough passphrase"}, true)
+	payload, _ := io.ReadAll(response.Body)
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", response.StatusCode)
+	}
+	if !strings.Contains(strings.ToLower(string(payload)), "new one") {
+		t.Errorf("the message does not say what to do next: %s", payload)
 	}
 }

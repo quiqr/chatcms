@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -158,9 +159,10 @@ func TestPanicIsRecoveredAndLogged(t *testing.T) {
 
 func TestHandlerReadsActorFromContext(t *testing.T) {
 	var seen Actor
-	handler := AnonymousActor(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seen = ActorFrom(r.Context())
-	}))
+	handler := WithSession(nil, slog.New(slog.NewJSONHandler(io.Discard, nil)))(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			seen = ActorFrom(r.Context())
+		}))
 
 	handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/health", nil))
 
