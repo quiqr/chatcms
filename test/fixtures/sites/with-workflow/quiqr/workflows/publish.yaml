@@ -1,0 +1,7 @@
+on: publish
+steps:
+  - name: Checking pages and links
+    action: check
+    run: sh scripts/check-content.sh
+  - action: build
+  - action: publish

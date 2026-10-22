@@ -105,6 +105,15 @@
         };
       };
 
+      # workflowTools is what a site's own check may use. It is fixed and
+      # pinned: a workflow cannot ask for another tool, because doing that
+      # properly means shareable actions as Nix flakes, which milestone 1
+      # puts out of scope.
+      workflowToolPackages = pkgs: with pkgs; [ bash coreutils gnugrep gnused findutils diffutils ];
+
+      workflowTools = pkgs: nixpkgs.lib.concatStringsSep ":"
+        (map (tool: "${tool}/bin") (workflowToolPackages pkgs));
+
       mkGoTests = { pkgs, ... }@args: (mkServer args).overrideAttrs (old: {
         pname = "chatcmsd-tests";
         subPackages = null;
@@ -118,7 +127,7 @@
           pkgs.util-linux
           pkgs.hugo
           pkgs.procps
-        ];
+        ] ++ (workflowToolPackages pkgs);
         buildPhase = "runHook preBuild; runHook postBuild";
         checkPhase = ''
           runHook preCheck
@@ -207,6 +216,7 @@
           CHATCMS_GIT_BIN = pkgs.lib.getExe pkgs.git;
           CHATCMS_BWRAP_BIN = "${pkgs.bubblewrap}/bin/bwrap";
           CHATCMS_PRLIMIT_BIN = "${pkgs.util-linux}/bin/prlimit";
+          CHATCMS_WORKFLOW_TOOLS = workflowTools pkgs;
         };
         shellHook = ''
           echo "Quiqr ChatCMS dev shell (${system})"

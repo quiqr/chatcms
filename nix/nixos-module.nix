@@ -117,6 +117,28 @@ in
       description = "How long a site build may run before it is ended.";
     };
 
+    workflowTools = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = with pkgs; [ bash coreutils gnugrep gnused findutils diffutils ];
+      description = ''
+        What a site's own check step may use. Fixed and pinned: a workflow
+        cannot ask for another tool, because fetching software during a
+        publish is exactly what the sandbox exists to prevent.
+      '';
+    };
+
+    checkTimeout = lib.mkOption {
+      type = lib.types.str;
+      default = "5m";
+      description = "How long a site's own check may run before it is ended.";
+    };
+
+    checkMemory = lib.mkOption {
+      type = lib.types.str;
+      default = "1GiB";
+      description = "How much memory a site's own check may use.";
+    };
+
     buildMemory = lib.mkOption {
       type = lib.types.str;
       default = "2GiB";
@@ -191,6 +213,10 @@ in
         CHATCMS_PRLIMIT_BIN = "${cfg.utilLinuxPackage}/bin/prlimit";
         CHATCMS_BUILD_TIMEOUT = cfg.buildTimeout;
         CHATCMS_BUILD_MEMORY = cfg.buildMemory;
+        CHATCMS_WORKFLOW_TOOLS =
+          lib.concatStringsSep ":" (map (tool: "${tool}/bin") cfg.workflowTools);
+        CHATCMS_CHECK_TIMEOUT = cfg.checkTimeout;
+        CHATCMS_CHECK_MEMORY = cfg.checkMemory;
       } // lib.optionalAttrs cfg.database.createLocally {
         CHATCMS_DATABASE_URL = "postgres:///${cfg.database.name}?host=/run/postgresql";
       } // lib.optionalAttrs (cfg.database.urlFile != null) {

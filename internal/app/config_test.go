@@ -361,3 +361,65 @@ func TestAnInvalidBuildMemoryNamesTheVariable(t *testing.T) {
 		t.Errorf("Variable = %q, want CHATCMS_BUILD_MEMORY", configErr.Variable)
 	}
 }
+
+func TestWorkflowSettingsHaveDefaults(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+
+	if cfg.CheckTimeout != 5*time.Minute {
+		t.Errorf("CheckTimeout = %v, want 5m", cfg.CheckTimeout)
+	}
+	if cfg.CheckMemory != 1<<30 {
+		t.Errorf("CheckMemory = %d, want one gibibyte", cfg.CheckMemory)
+	}
+	if len(cfg.WorkflowTools) != 0 {
+		t.Errorf("WorkflowTools = %v, want none until Nix supplies them", cfg.WorkflowTools)
+	}
+}
+
+func TestTheWorkflowToolboxIsReadLikeAPath(t *testing.T) {
+	cfg, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+		"CHATCMS_WORKFLOW_TOOLS":  "/nix/store/bash/bin/sh:/nix/store/coreutils/bin/cat: :/nix/store/gnugrep/bin/grep",
+		"CHATCMS_CHECK_TIMEOUT":   "45s",
+		"CHATCMS_CHECK_MEMORY":    "256MiB",
+	}))
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v, want nil", err)
+	}
+
+	want := []string{"/nix/store/bash/bin/sh", "/nix/store/coreutils/bin/cat", "/nix/store/gnugrep/bin/grep"}
+	if len(cfg.WorkflowTools) != len(want) {
+		t.Fatalf("WorkflowTools = %v, want %v", cfg.WorkflowTools, want)
+	}
+	for index, tool := range want {
+		if cfg.WorkflowTools[index] != tool {
+			t.Errorf("tool %d = %q, want %q", index, cfg.WorkflowTools[index], tool)
+		}
+	}
+	if cfg.CheckTimeout != 45*time.Second || cfg.CheckMemory != 256<<20 {
+		t.Errorf("check limits = %v and %d", cfg.CheckTimeout, cfg.CheckMemory)
+	}
+}
+
+func TestAnInvalidCheckMemoryNamesItsOwnVariable(t *testing.T) {
+	_, err := LoadConfig(lookupFrom(map[string]string{
+		"CHATCMS_DATABASE_URL":    "postgres:///chatcms",
+		"CHATCMS_SECRET_KEY_FILE": "/run/secrets/master-key",
+		"CHATCMS_CHECK_MEMORY":    "plenty",
+	}))
+
+	var configErr *ConfigError
+	if !errors.As(err, &configErr) {
+		t.Fatalf("LoadConfig() error = %v, want a *ConfigError", err)
+	}
+	if configErr.Variable != "CHATCMS_CHECK_MEMORY" {
+		t.Errorf("Variable = %q, want CHATCMS_CHECK_MEMORY", configErr.Variable)
+	}
+}

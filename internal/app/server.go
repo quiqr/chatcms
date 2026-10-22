@@ -29,6 +29,7 @@ import (
 	"github.com/quiqr/chatcms/internal/tenancy"
 	"github.com/quiqr/chatcms/internal/version"
 	"github.com/quiqr/chatcms/internal/webui"
+	"github.com/quiqr/chatcms/internal/workflows"
 )
 
 var ErrShutdownForced = errors.New("in-flight requests did not finish within the shutdown timeout")
@@ -49,6 +50,7 @@ type Server struct {
 	tenancy    *tenancy.Service
 	onboarding *onboarding.Service
 	builds     *builds.Service
+	workflows  *workflows.Engine
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -250,6 +252,8 @@ func (s *Server) Onboarding() *onboarding.Service { return s.onboarding }
 
 func (s *Server) Builds() *builds.Service { return s.builds }
 
+func (s *Server) Workflows() *workflows.Engine { return s.workflows }
+
 func (s *Server) startBuilds(ctx context.Context) error {
 	records := builds.NewRecords(s.db.Queries)
 
@@ -283,7 +287,24 @@ func (s *Server) startBuilds(ctx context.Context) error {
 	}
 
 	s.builds, err = builds.NewService(records, builder, s.siteFor)
+	if err != nil {
+		return err
+	}
+
+	s.workflows, err = workflows.NewEngine(sandbox, builder, notYetPublishing{}, s.cfg.WorkflowTools, workflows.Limits{
+		CheckTimeout: s.cfg.CheckTimeout,
+		CheckMemory:  s.cfg.CheckMemory,
+	})
 	return err
+}
+
+// notYetPublishing stands in until the publish epic gives the publishing step
+// something to do. It refuses rather than pretending, so no path can quietly
+// report a publish that never happened.
+type notYetPublishing struct{}
+
+func (notYetPublishing) Publish(ctx context.Context, projectID uuid.UUID, built fs.FS) error {
+	return errors.New("publishing is not wired up yet")
 }
 
 func (s *Server) siteFor(ctx context.Context, projectID uuid.UUID) (fs.FS, error) {

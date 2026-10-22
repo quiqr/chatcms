@@ -92,6 +92,47 @@ What replacing it costs, and buys:
 The interface is already the second one's shape. What changes is the
 implementation and the two tool settings; no caller moves.
 
+**`internal/workflows`** reads what a site says happens on save, preview and
+publish, from YAML under `quiqr/workflows/`, and runs it:
+
+```yaml
+on: publish
+steps:
+  - name: Checking pages and links
+    action: check
+    run: ./scripts/check-links.sh
+  - action: build
+  - action: publish
+```
+
+A key the format does not define is a mistake, not something to ignore, and
+every error names the file and the step. A trigger the site says nothing
+about gets a default worked out from the project's publishing settings, so an
+imported site publishes correctly before anybody writes a workflow.
+
+Which steps are contained, and which are not:
+
+| Step | Runs code the site wrote | Sandboxed |
+| --- | --- | --- |
+| `check` | Yes, the command in `run` | Yes |
+| `build` | Yes, the site's templates and content | Yes |
+| `publish` | No | No; it needs the network and the deploy key |
+
+Saying "every step runs in the sandbox" would be a comfortable untruth. The
+sandbox bounds what the site's own code can do. Publishing is ChatCMS acting
+on the project's settings, with no site input to contain.
+
+A check gets a fixed, pinned toolbox, named by a setting and supplied by Nix.
+A site cannot add to it. Letting a workflow name its own dependencies means
+fetching software from the internet in the middle of a publish, which is the
+shareable-actions idea the briefing puts out of scope.
+
+A failure carries two things, kept apart in the type so the second is hard to
+leak: a sentence for the person who pressed the button, with no git word in
+it, and the raw output on the step. This package never decides who may see
+the second one; `policy.Can` with `see-technical-detail` does, where it is
+rendered.
+
 **`internal/builds`** keeps the record: the project, the reason, the start and
 finish, the state and the log. Builds left running when the server stopped are
 marked interrupted at the next start, because a record that stays running

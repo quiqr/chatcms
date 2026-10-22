@@ -25,6 +25,9 @@ type Config struct {
 	PrlimitBin      string
 	BuildTimeout    time.Duration
 	BuildMemory     int64
+	WorkflowTools   []string
+	CheckTimeout    time.Duration
+	CheckMemory     int64
 }
 
 // SitesDir is where every site's working copy lives.
@@ -94,6 +97,7 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_SHUTDOWN_TIMEOUT", &cfg.ShutdownTimeout, "20s"},
 		{"CHATCMS_SYNC_INTERVAL", &cfg.SyncInterval, "2m"},
 		{"CHATCMS_BUILD_TIMEOUT", &cfg.BuildTimeout, "10m"},
+		{"CHATCMS_CHECK_TIMEOUT", &cfg.CheckTimeout, "5m"},
 	}
 
 	for _, field := range durations {
@@ -111,17 +115,35 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		*field.target = value
 	}
 
-	memory, err := resolve(lookup, "CHATCMS_BUILD_MEMORY")
+	sizes := []struct {
+		name     string
+		target   *int64
+		fallback string
+	}{
+		{"CHATCMS_BUILD_MEMORY", &cfg.BuildMemory, "2GiB"},
+		{"CHATCMS_CHECK_MEMORY", &cfg.CheckMemory, "1GiB"},
+	}
+
+	for _, field := range sizes {
+		raw, err := resolve(lookup, field.name)
+		if err != nil {
+			return Config{}, err
+		}
+		if raw == "" {
+			raw = field.fallback
+		}
+		value, err := ParseBytes(raw)
+		if err != nil {
+			return Config{}, &ConfigError{Variable: field.name, Reason: reasonInvalid}
+		}
+		*field.target = value
+	}
+
+	tools, err := resolve(lookup, "CHATCMS_WORKFLOW_TOOLS")
 	if err != nil {
 		return Config{}, err
 	}
-	if memory == "" {
-		memory = "2GiB"
-	}
-	cfg.BuildMemory, err = ParseBytes(memory)
-	if err != nil {
-		return Config{}, &ConfigError{Variable: "CHATCMS_BUILD_MEMORY", Reason: reasonInvalid}
-	}
+	cfg.WorkflowTools = splitPaths(tools)
 
 	switch cfg.LogFormat {
 	case "auto", "json", "text":
@@ -130,6 +152,18 @@ func LoadConfig(lookup Lookup) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// splitPaths reads a colon-separated list the way PATH is written, so the
+// setting looks like every other list of program locations.
+func splitPaths(raw string) []string {
+	out := []string{}
+	for _, part := range strings.Split(raw, string(os.PathListSeparator)) {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 var byteUnits = []struct {
