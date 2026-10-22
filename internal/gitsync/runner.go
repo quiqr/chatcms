@@ -100,22 +100,33 @@ func sshCommand(keyPath string) string {
 // run executes git and returns its standard output. A failure carries git's
 // own message with anything credential-shaped removed.
 func (r *runner) run(ctx context.Context, args ...string) (string, error) {
+	out, err := r.runWith(ctx, nil, nil, args...)
+	return string(out), err
+}
+
+// runWith is run with something on standard input and settings of its own.
+// Building a tree without touching the working copy needs both: the file
+// list arrives on standard input and the index lives somewhere else.
+func (r *runner) runWith(ctx context.Context, in []byte, settings []string, args ...string) ([]byte, error) {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.CommandContext(ctx, r.bin, append(deterministicSettings(), args...)...)
 	cmd.Dir = r.dir
-	cmd.Env = r.env
+	cmd.Env = append(append([]string{}, r.env...), settings...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	if in != nil {
+		cmd.Stdin = bytes.NewReader(in)
+	}
 
 	if err := cmd.Run(); err != nil {
-		return stdout.String(), &OperationError{
+		return stdout.Bytes(), &OperationError{
 			Operation: args[0],
 			Detail:    redact.Secrets(strings.TrimSpace(stderr.String() + " " + stdout.String())),
 			Err:       err,
 		}
 	}
-	return stdout.String(), nil
+	return stdout.Bytes(), nil
 }
 
 func (r *runner) nulFields(ctx context.Context, args ...string) ([]string, error) {

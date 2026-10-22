@@ -27,6 +27,18 @@ type Repo interface {
 	Sync(ctx context.Context) (SyncResult, error)
 	// Publish sends local versions to the remote.
 	Publish(ctx context.Context) (PublishResult, error)
+	// PublishTo sends them to a named line on the remote instead. An empty
+	// name means the line the site is edited on.
+	PublishTo(ctx context.Context, line string) (PublishResult, error)
+	// PublishPages sends built pages to a line of their own, without making
+	// a version of the site's own files and without touching the working
+	// copy, so somebody can keep editing while it happens.
+	PublishPages(ctx context.Context, line string, pages fs.FS, author Identity, message string) (PublishResult, error)
+	// Changes lists what differs between the site as people see it and the
+	// site as it is now.
+	Changes(ctx context.Context) ([]Change, error)
+	// ReadPublished reads a file as the published site has it.
+	ReadPublished(ctx context.Context, name string) ([]byte, error)
 	// Resolve answers an unresolved difference and continues the exchange.
 	Resolve(ctx context.Context, resolutions map[string][]byte) (SyncResult, error)
 	// Abandon gives up an exchange and restores the site as it was.

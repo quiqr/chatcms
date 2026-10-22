@@ -1,11 +1,11 @@
 ---
 # chatcms-5uu2
 title: Publish flow
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:32Z
+updated_at: 2026-10-22T20:12:52Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-2c0p

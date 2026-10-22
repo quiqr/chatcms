@@ -1181,3 +1181,47 @@ collections:
 	_ = server
 	return remote
 }
+
+func TestThePublishEndpointsAreThereAndGuarded(t *testing.T) {
+	_, caller, _ := signInHarness(t)
+
+	base := "/api/organisations/technative/projects/korenaar"
+	for _, call := range []struct {
+		method string
+		path   string
+		token  bool
+	}{
+		{http.MethodGet, base + "/review", false},
+		{http.MethodGet, base + "/publishes", false},
+		{http.MethodPost, base + "/publishes", true},
+		{http.MethodGet, base + "/publishes/a-publish", false},
+	} {
+		response := caller.do(call.method, call.path, map[string]any{}, call.token)
+		response.Body.Close()
+
+		if response.StatusCode != http.StatusUnauthorized {
+			t.Errorf("%s %s = %d, want 401 for somebody not signed in",
+				call.method, call.path, response.StatusCode)
+		}
+	}
+
+	// Without the request token a write is refused before anybody is asked
+	// who it is, which is the order that matters.
+	response := caller.do(http.MethodPost, base+"/publishes", map[string]any{}, false)
+	response.Body.Close()
+	if response.StatusCode != http.StatusForbidden {
+		t.Errorf("a write with no request token = %d, want 403", response.StatusCode)
+	}
+}
+
+func TestPublishingIsWiredUpOrSaysWhyNot(t *testing.T) {
+	server, stop := startServer(t, testConfig(t))
+	defer stop()
+
+	if server.Publish() == nil && server.Workflows() != nil {
+		t.Error("builds are available but publishing is not wired up")
+	}
+	if server.Workflows() != nil && server.Publish() == nil {
+		t.Error("the workflow engine exists but nothing can publish")
+	}
+}

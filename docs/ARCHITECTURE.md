@@ -34,7 +34,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/sitebuild`   | Running the pinned Hugo over a site, through a runner                         |
 | `internal/builds`      | What is remembered about every build, and the state it ended in               |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
-| `internal/publish`     | The change summary, the publish pipeline, the publish record                  |
+| `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
 | `internal/history`     | Version listing in plain language, and rollback                               |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
@@ -91,6 +91,25 @@ What replacing it costs, and buys:
 
 The interface is already the second one's shape. What changes is the
 implementation and the two tool settings; no caller moves.
+
+**`internal/publish`** turns what differs from the published site into pages
+and fields, runs the publish workflow, and records what happened.
+
+It asks the repository three things the interface learned for it: what
+differs, what the live site holds for a file, and to publish to a named line
+either as source or as built pages. All four methods speak in sites and
+lines.
+
+Publishing built pages never touches the working copy. The tree is built with
+git's own plumbing in a temporary index, so somebody can keep typing while
+their site goes out. That is what makes "you can keep editing" true rather
+than hopeful.
+
+A failure carries two things, separate fields the whole way from the workflow
+outcome to the screen: a sentence for whoever pressed the button, with no git
+word in it, and the raw output. `policy.Can` with `see-technical-detail`
+decides who gets the second, asked in the service, which empties the field
+before it leaves.
 
 **`internal/workflows`** reads what a site says happens on save, preview and
 publish, from YAML under `quiqr/workflows/`, and runs it:

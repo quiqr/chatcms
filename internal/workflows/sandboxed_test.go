@@ -95,7 +95,7 @@ func TestASiteChecksItselfThenBuildsThenPublishes(t *testing.T) {
 		t.Fatalf("publishing was asked %d times, want once", publisher.called)
 	}
 
-	page, err := fs.ReadFile(publisher.given, "public/index.html")
+	page, err := fs.ReadFile(publisher.given, "index.html")
 	if err != nil {
 		t.Fatalf("the built page did not reach publishing: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestNothingACheckWroteReachesWhatIsPublished(t *testing.T) {
 	if _, err := fs.Stat(os.DirFS(checkedSite), "content/smuggled.md"); !errors.Is(err, fs.ErrNotExist) {
 		t.Fatal("a check wrote into the site fixture on disk")
 	}
-	if _, err := fs.Stat(publisher.given, "public/smuggled/index.html"); err == nil {
+	if _, err := fs.Stat(publisher.given, "smuggled/index.html"); err == nil {
 		t.Error("what a check wrote reached what is published")
 	}
 }

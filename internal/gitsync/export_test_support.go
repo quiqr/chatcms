@@ -14,3 +14,12 @@ func RunForTest(ctx context.Context, cfg Config, dir, home string, args ...strin
 	_, err := runner.run(ctx, args...)
 	return err
 }
+
+// OutputForTest runs git and gives back what it said, so a test can ask a
+// remote what it holds without this package growing a method nothing uses.
+func OutputForTest(ctx context.Context, cfg Config, dir, home string, args ...string) (string, error) {
+	if dir == "" {
+		dir = home
+	}
+	return newRunner(cfg, dir, home).run(ctx, args...)
+}

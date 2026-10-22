@@ -37,6 +37,8 @@ type Options struct {
 	// Onboarding serves setting a project up: its key, its site, and where
 	// it publishes.
 	Onboarding OnboardingService
+	// Publish serves the review of what changed and the act of publishing.
+	Publish PublishService
 }
 
 func New(opts Options) http.Handler {
@@ -114,6 +116,20 @@ func New(opts Options) http.Handler {
 		mux.Handle("GET "+base+"/publishing", RequireActor(readPublishingHandler(opts.Onboarding)))
 		mux.Handle("PUT "+base+"/publishing", RequireActor(setPublishingHandler(opts.Onboarding)))
 		mux.HandleFunc(base+"/publishing", MethodNotAllowed)
+	}
+
+	if opts.Publish != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/review", RequireActor(reviewHandler(opts.Publish)))
+		mux.HandleFunc(base+"/review", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/publishes", RequireActor(publishHistoryHandler(opts.Publish)))
+		mux.Handle("POST "+base+"/publishes", RequireActor(publishHandler(opts.Publish)))
+		mux.HandleFunc(base+"/publishes", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/publishes/{publish}", RequireActor(readPublishHandler(opts.Publish)))
+		mux.HandleFunc(base+"/publishes/{publish}", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

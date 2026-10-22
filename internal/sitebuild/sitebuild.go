@@ -101,3 +101,17 @@ func (b *Builder) Build(ctx context.Context, site fs.FS, opts Options) (*runner.
 	}
 	return result, err
 }
+
+// Pages is the built site itself rather than the folder holding it. A caller
+// publishing what was built wants the pages at the root, which is where they
+// land on a server.
+func Pages(result *runner.Result) fs.FS {
+	if result == nil || result.Outputs == nil {
+		return nil
+	}
+	pages, err := fs.Sub(result.Outputs, Output)
+	if err != nil {
+		return result.Outputs
+	}
+	return pages
+}

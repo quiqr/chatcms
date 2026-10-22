@@ -196,7 +196,7 @@ func (e *Engine) build(ctx context.Context, run Run) (*runner.Result, string, *T
 func (e *Engine) publish(ctx context.Context, run Run, built *runner.Result) (*Trouble, error) {
 	var pages fs.FS
 	if built != nil {
-		pages = built.Outputs
+		pages = sitebuild.Pages(built)
 	}
 
 	if err := e.publisher.Publish(ctx, run.ProjectID, pages); err != nil {

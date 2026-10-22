@@ -213,7 +213,7 @@ func TestBuildingHandsItsResultToPublishing(t *testing.T) {
 	if publisher.given == nil {
 		t.Fatal("publishing was given nothing after a build")
 	}
-	page, err := fs.ReadFile(publisher.given, "public/index.html")
+	page, err := fs.ReadFile(publisher.given, "index.html")
 	if err != nil {
 		t.Fatalf("ReadFile() error = %v", err)
 	}

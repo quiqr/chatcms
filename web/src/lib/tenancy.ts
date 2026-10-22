@@ -130,3 +130,67 @@ export function readPublishing(organisation: string, name: string) {
 export function setPublishing(organisation: string, name: string, body: Publishing) {
   return put<Publishing>(`${project(organisation, name)}/publishing`, body);
 }
+
+export type WordPart = "kept" | "gone" | "added";
+
+export type Word = {
+  part: WordPart;
+  text: string;
+};
+
+export type FieldChange = {
+  name: string;
+  words?: Word[];
+};
+
+export type ChangeKind =
+  | "changed-page"
+  | "new-page"
+  | "removed-page"
+  | "new-image"
+  | "removed-image"
+  | "other-file";
+
+export type Change = {
+  kind: ChangeKind;
+  section: string;
+  page: string;
+  by?: string;
+  at?: string;
+  fields?: FieldChange[];
+};
+
+export type Review = {
+  count: number;
+  lastPublished?: string;
+  changes: Change[];
+};
+
+export type PublishStep = {
+  title: string;
+  state: "succeeded" | "failed" | "not-run";
+};
+
+export type Publish = {
+  id: string;
+  state: "running" | "succeeded" | "failed" | "interrupted";
+  note?: string;
+  changeCount: number;
+  startedAt: string;
+  finishedAt?: string;
+  steps?: PublishStep[];
+  trouble?: string;
+  detail?: string;
+};
+
+export function readReview(organisation: string, name: string) {
+  return get<Review>(`${project(organisation, name)}/review`);
+}
+
+export function publishNow(organisation: string, name: string, note: string) {
+  return post<Publish>(`${project(organisation, name)}/publishes`, { note });
+}
+
+export function readPublishes(organisation: string, name: string) {
+  return get<{ publishes: Publish[] }>(`${project(organisation, name)}/publishes`);
+}

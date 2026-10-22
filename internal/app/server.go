@@ -22,6 +22,7 @@ import (
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/onboarding"
+	"github.com/quiqr/chatcms/internal/publish"
 	"github.com/quiqr/chatcms/internal/runner"
 	"github.com/quiqr/chatcms/internal/secrets"
 	"github.com/quiqr/chatcms/internal/sitebuild"
@@ -51,6 +52,7 @@ type Server struct {
 	onboarding *onboarding.Service
 	builds     *builds.Service
 	workflows  *workflows.Engine
+	publish    *publish.Web
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -108,6 +110,11 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		return nil, err
 	}
 
+	if err := server.startPublishing(ctx, tenancyStore); err != nil {
+		db.Close()
+		return nil, err
+	}
+
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
@@ -119,6 +126,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Auth:       server.auth,
 		Tenancy:    server.tenancy,
 		Onboarding: server.onboarding,
+		Publish:    server.publish,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
@@ -254,6 +262,8 @@ func (s *Server) Builds() *builds.Service { return s.builds }
 
 func (s *Server) Workflows() *workflows.Engine { return s.workflows }
 
+func (s *Server) Publish() *publish.Web { return s.publish }
+
 func (s *Server) startBuilds(ctx context.Context) error {
 	records := builds.NewRecords(s.db.Queries)
 
@@ -291,20 +301,42 @@ func (s *Server) startBuilds(ctx context.Context) error {
 		return err
 	}
 
-	s.workflows, err = workflows.NewEngine(sandbox, builder, notYetPublishing{}, s.cfg.WorkflowTools, workflows.Limits{
+	publisher, err := publish.NewPublisher(s.sites, publishTarget(s.db.Queries))
+	if err != nil {
+		return err
+	}
+
+	s.workflows, err = workflows.NewEngine(sandbox, builder, publisher, s.cfg.WorkflowTools, workflows.Limits{
 		CheckTimeout: s.cfg.CheckTimeout,
 		CheckMemory:  s.cfg.CheckMemory,
 	})
 	return err
 }
 
-// notYetPublishing stands in until the publish epic gives the publishing step
-// something to do. It refuses rather than pretending, so no path can quietly
-// report a publish that never happened.
-type notYetPublishing struct{}
+func (s *Server) startPublishing(ctx context.Context, tenancyStore *tenancy.Store) error {
+	records := publish.NewRecords(s.db.Queries)
 
-func (notYetPublishing) Publish(ctx context.Context, projectID uuid.UUID, built fs.FS) error {
-	return errors.New("publishing is not wired up yet")
+	interrupted, err := records.InterruptLeftovers(ctx)
+	if err != nil {
+		return err
+	}
+	if interrupted > 0 {
+		s.logger.Warn("publishes were still going when the server last stopped", "count", interrupted)
+	}
+
+	if s.workflows == nil {
+		s.logger.Warn("publishing is unavailable because builds cannot be isolated on this machine")
+		return nil
+	}
+
+	sources := publishSources{sites: s.sites, queries: s.db.Queries, baseURL: s.cfg.BaseURL}
+	service, err := publish.NewService(sources, s.workflows, records)
+	if err != nil {
+		return err
+	}
+
+	s.publish, err = publish.NewWeb(service, tenancyStore)
+	return err
 }
 
 func (s *Server) siteFor(ctx context.Context, projectID uuid.UUID) (fs.FS, error) {

@@ -92,6 +92,21 @@ type ProjectMember struct {
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
+type Publish struct {
+	ID          pgtype.UUID        `json:"id"`
+	ProjectID   pgtype.UUID        `json:"project_id"`
+	PersonID    pgtype.UUID        `json:"person_id"`
+	Note        string             `json:"note"`
+	State       string             `json:"state"`
+	ChangeCount int32              `json:"change_count"`
+	Summary     []byte             `json:"summary"`
+	Steps       []byte             `json:"steps"`
+	Trouble     string             `json:"trouble"`
+	Detail      string             `json:"detail"`
+	StartedAt   pgtype.Timestamptz `json:"started_at"`
+	FinishedAt  pgtype.Timestamptz `json:"finished_at"`
+}
+
 type Session struct {
 	ID         pgtype.UUID        `json:"id"`
 	TokenHash  []byte             `json:"token_hash"`
