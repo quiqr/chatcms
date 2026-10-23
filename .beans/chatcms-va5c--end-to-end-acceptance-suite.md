@@ -1,11 +1,11 @@
 ---
 # chatcms-va5c
 title: End-to-end acceptance suite
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:32Z
+updated_at: 2026-10-23T15:59:51Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-5uu2

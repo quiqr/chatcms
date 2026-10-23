@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -120,6 +121,24 @@ func bringASiteIn(ctx context.Context, db *store.DB, projectID uuid.UUID, owner 
 		System: gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@localhost"},
 	}
 
+	sites := gitsync.NewSites(cfg, filepath.Join(stateDir(), "sites"), nil)
+	author := gitsync.Identity{Name: owner.DisplayName, Email: owner.Email}
+
+	// A real site, when one is named, so that the same acceptance tests can be
+	// run against a customer's own repository rather than against the fixture.
+	if given := os.Getenv("CHATCMS_SEED_REMOTE"); given != "" {
+		repository, err := sites.Clone(ctx, projectID.String(), given)
+		if err != nil {
+			return err
+		}
+		defer repository.Close()
+
+		_, err = db.Pool().Exec(ctx,
+			`UPDATE projects SET remote = $2, source_kind = 'repository', source_address = $2 WHERE id = $1`,
+			pgtype.UUID{Bytes: projectID, Valid: true}, given)
+		return err
+	}
+
 	// An absolute path, because git runs from the working copy's own
 	// directory and a relative remote would be looked for there.
 	remote, err := filepath.Abs(filepath.Join(stateDir(), "dev-remotes", projectID.String()+".git"))
@@ -132,9 +151,6 @@ func bringASiteIn(ctx context.Context, db *store.DB, projectID uuid.UUID, owner 
 	if err := gitsync.InitBareForDevelopment(ctx, cfg, remote); err != nil {
 		return err
 	}
-
-	sites := gitsync.NewSites(cfg, filepath.Join(stateDir(), "sites"), nil)
-	author := gitsync.Identity{Name: owner.DisplayName, Email: owner.Email}
 
 	repository, err := sites.Create(ctx, projectID.String(), remote, aSmallSite(), author, "Bring the site in")
 	if err != nil {
@@ -173,7 +189,7 @@ title: Korenaar Bakery
 intro: We bake with apples and pears every morning.
 openToday: true
 style: traditional
-accent: "#8b5a2b"
+accent: '#8b5a2b'
 specialities:
   - Sourdough
   - Apple tart
@@ -194,7 +210,7 @@ title: Korenaar Bakery
 intro: We bake with plums and pears every morning.
 openToday: true
 style: traditional
-accent: "#8b5a2b"
+accent: '#8b5a2b'
 specialities:
   - Sourdough
   - Apple tart
@@ -209,6 +225,22 @@ seo:
 
 Come in and smell it.
 `
+
+// aLoaf is a picture, so that the media library has something in it and the
+// field that picks one has something to pick.
+func aLoaf() []byte {
+	raw, err := base64.StdEncoding.DecodeString(loafPNG)
+	if err != nil {
+		panic(err)
+	}
+	return raw
+}
+
+const loafPNG = "" +
+	"iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAlElEQVR4nO3PMQ3DUADE0EAsnCAppsIqgdyQyd+S" +
+	"pRs93Lu+9+dxv7HT+uu0QwHoQwHoQwHoQ68BlqOrD0D3Aeg+AN37AZajqw9A9wHoPgDd+wGWo6sPQPcB6D4A3fsB" +
+	"lqOrD0D3Aeg+AN37AZajqw9A9wHoPgDd+wGWo6sPQPcB6D4A3fsBlqOrD0D3Aeg+AN3rAX9D+3FaNCiw0QAAAABJ" +
+	"RU5ErkJggg=="
 
 func aSmallSite() fs.FS {
 	return fstest.MapFS{
@@ -269,6 +301,8 @@ collections:
   - key: news
     title: News
     folder: content/news
+    itemtitle: article
+    hideIndex: true
     fields:
       - key: title
         type: string
@@ -280,6 +314,7 @@ collections:
         type: markdown
         title: Page text
 `)},
+		"static/images/loaf.png":       {Data: aLoaf()},
 		"content/_index.md":            {Data: []byte(publishedHomePage)},
 		"content/news/_index.md":       {Data: []byte("---\ntitle: News\n---\n")},
 		"layouts/index.html":           {Data: []byte("<!doctype html>\n<html lang=\"nl\"><head><meta charset=\"utf-8\"><title>{{ .Site.Title }}</title></head>\n<body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>\n")},

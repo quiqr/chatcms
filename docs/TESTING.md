@@ -98,6 +98,24 @@ Every spec runs twice, at 1440 px and at 390 px. The phone pass also asserts no
 horizontal page scrolling and no touch target under 44 px, which the design
 calls for.
 
+Each spec gets a ChatCMS of its own: its own PostgreSQL, its own bare remote,
+its own seeded site and its own server, all removed afterwards. Nothing sleeps:
+every wait is for the thing itself, with a deadline. Running it:
+
+```bash
+nix build .#checks.x86_64-linux.e2e      # what the gate runs
+
+cd test/e2e && npx playwright test       # against a binary you built
+#   CHATCMS_BIN=result/bin/chatcmsd CHATCMS_SEED=./seed
+
+bash scripts/acceptance-against.sh git@github.com:someone/site.git
+#   the same specs against a real site rather than the fixture
+```
+
+`npx playwright test --project=shots-desk --project=shots-phone` captures every
+screen at both widths instead of asserting anything. What those captures say
+about the design is written down in `docs/design/COMPARISON.md`.
+
 Two further checks that are not screen flows:
 
 - The app builds and deploys through the flake and the NixOS module, tested

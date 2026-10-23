@@ -43,6 +43,9 @@ export function SignInPage() {
           </span>
 
           <h1 className="mt-8 text-[28px] font-semibold tracking-tight">Sign in</h1>
+          <p className="mt-2 text-[15px] text-muted-foreground">
+            Edit and publish your website. No technical knowledge needed.
+          </p>
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-[22px]">
             <Field
@@ -92,6 +95,18 @@ export function SignInPage() {
 
           <p className="mt-6 text-[13px] text-subtle-foreground">
             Got an invitation email? Use the link in it to set your password first.
+          </p>
+
+          <p className="mt-10 flex flex-wrap gap-4 text-[13px] text-subtle-foreground">
+            <a className="inline-flex min-h-11 items-center" href="https://chatcms.eu">
+              chatcms.eu
+            </a>
+            <a className="inline-flex min-h-11 items-center" href="/privacy">
+              Privacy
+            </a>
+            <a className="inline-flex min-h-11 items-center" href="/help">
+              Help
+            </a>
           </p>
         </div>
       </div>

@@ -24,7 +24,7 @@ pkgs.testers.runNixOSTest {
       script = ''
         mkdir -p /run/chatcms-secrets
         if [ ! -f /run/chatcms-secrets/master.key ]; then
-          head -c 32 /dev/urandom > /run/chatcms-secrets/master.key
+          od -An -tx1 -N32 /dev/urandom | tr -d " \n" > /run/chatcms-secrets/master.key
           chmod 600 /run/chatcms-secrets/master.key
         fi
       '';

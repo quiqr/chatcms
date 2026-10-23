@@ -247,6 +247,7 @@
         # A virtual machine can only be booted on Linux, so this check exists
         # there and not on a Mac, where the rest still runs.
         nixos-vm = import ./nix/vm-test.nix { inherit self pkgs; };
+        e2e = import ./nix/e2e.nix { inherit self pkgs system; };
       });
 
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);

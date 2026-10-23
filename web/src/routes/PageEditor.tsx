@@ -34,15 +34,34 @@ function Status({ state }: { state: Saving }) {
     trouble: "Not saved yet. We will keep trying.",
   }[state];
 
+  // Named, because the top bar carries a status too and two live regions
+  // saying the same words are two things a screen reader cannot tell apart.
   return (
-    <p aria-live="polite" className="text-sm text-subtle-foreground">
+    <p
+      aria-live="polite"
+      aria-label="Whether this page is saved"
+      className="text-sm text-subtle-foreground"
+    >
       {said}
     </p>
   );
 }
 
-export function PageEditor({ organisation }: { organisation: string }) {
-  const { project = "", page = "" } = useParams();
+export function PageEditor({
+  organisation,
+  onSaved,
+  onOpened,
+  headed = true,
+}: {
+  organisation: string;
+  /** onSaved is how the preview is told to show the site again. */
+  onSaved?: () => void;
+  /** onOpened hands the page's name to whoever draws the bar above it. */
+  onOpened?: (opened: { title: string; section: string }) => void;
+  /** headed is false when the bar above already says which page this is. */
+  headed?: boolean;
+}) {
+  const { project = "", "*": page = "" } = useParams();
   const [loaded, setLoaded] = useState<Page | null>(null);
   const [trouble, setTrouble] = useState("");
   const [state, setState] = useState<Saving>("saved");
@@ -59,7 +78,9 @@ export function PageEditor({ organisation }: { organisation: string }) {
     let cancelled = false;
     readPage(organisation, project, page)
       .then((answer) => {
-        if (!cancelled) setLoaded(answer);
+        if (cancelled) return;
+        setLoaded(answer);
+        onOpened?.({ title: answer.title, section: answer.section });
       })
       .catch((error: unknown) => {
         if (!cancelled) setTrouble(error instanceof Error ? error.message : "We could not open this page.");
@@ -83,11 +104,12 @@ export function PageEditor({ organisation }: { organisation: string }) {
         body: pending.body,
       });
       setState("saved");
+      onSaved?.();
     } catch (error: unknown) {
       setState("trouble");
       setTrouble(error instanceof Error ? error.message : "We could not save that.");
     }
-  }, [organisation, project, page]);
+  }, [organisation, project, page, onSaved]);
 
   const later = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -148,10 +170,14 @@ export function PageEditor({ organisation }: { organisation: string }) {
   return (
     <section className="flex max-w-[760px] flex-col gap-5">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-sm text-subtle-foreground">{loaded.section}</p>
-          <h2 className="text-lg font-semibold">{loaded.title}</h2>
-        </div>
+        {headed ? (
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm text-subtle-foreground">{loaded.section}</p>
+            <h2 className="text-lg font-semibold">{loaded.title}</h2>
+          </div>
+        ) : (
+          <span />
+        )}
         <Status state={state} />
       </header>
 

@@ -120,7 +120,9 @@ mkdir -p "$state"
 key="$state/master.key"
 if [ ! -f "$key" ]; then
     echo "==> making a master key for development"
-    head -c 32 /dev/urandom > "$key"
+    # Hex rather than raw bytes: the key file is read as text with whitespace
+    # trimmed, and raw bytes can begin or end with a space.
+    od -An -tx1 -N32 /dev/urandom | tr -d " \n" > "$key"
     chmod 600 "$key"
 fi
 

@@ -17,8 +17,8 @@ type stubPreview struct {
 	seen  []string
 }
 
-func (s *stubPreview) PreviewHandler(_ context.Context, _ Actor, organisation, project string) (http.Handler, error) {
-	s.asked = append(s.asked, organisation+"/"+project)
+func (s *stubPreview) PreviewHandler(_ context.Context, _ Actor, organisation, project, under string) (http.Handler, error) {
+	s.asked = append(s.asked, organisation+"/"+project+" under "+under)
 	if s.err != nil {
 		return nil, s.err
 	}
@@ -65,16 +65,15 @@ func TestAPreviewNeedsAPerson(t *testing.T) {
 	}
 }
 
-func TestThePreviewIsHandedThePathWithinTheSite(t *testing.T) {
-	cases := map[string]string{
-		"/preview/technative/korenaar":                     "/",
-		"/preview/technative/korenaar/":                    "/",
-		"/preview/technative/korenaar/news/":               "/news/",
-		"/preview/technative/korenaar/css/site.css":        "/css/site.css",
-		"/preview/technative/korenaar/news/one/index.html": "/news/one/index.html",
-	}
-
-	for path, want := range cases {
+func TestThePreviewServesTheWholePathItIsReachedAt(t *testing.T) {
+	// The preview is told to serve the site under this address, so the path
+	// is forwarded whole: stripping it would ask for a page it does not have.
+	for _, path := range []string{
+		"/preview/technative/korenaar",
+		"/preview/technative/korenaar/",
+		"/preview/technative/korenaar/news/",
+		"/preview/technative/korenaar/css/site.css",
+	} {
 		service := &stubPreview{}
 		handler := withPreview(service, true)
 
@@ -82,11 +81,12 @@ func TestThePreviewIsHandedThePathWithinTheSite(t *testing.T) {
 		if recorder.Code != http.StatusOK {
 			t.Fatalf("%s = %d, want 200", path, recorder.Code)
 		}
-		if len(service.seen) != 1 || service.seen[0] != want {
-			t.Errorf("%s was handed %v, want %q", path, service.seen, want)
+		if len(service.seen) != 1 || service.seen[0] != path {
+			t.Errorf("%s was handed %v, want the whole path", path, service.seen)
 		}
-		if len(service.asked) != 1 || service.asked[0] != "technative/korenaar" {
-			t.Errorf("%s asked for %v", path, service.asked)
+		want := "technative/korenaar under /preview/technative/korenaar/"
+		if len(service.asked) != 1 || service.asked[0] != want {
+			t.Errorf("%s asked for %v, want %q", path, service.asked, want)
 		}
 	}
 }

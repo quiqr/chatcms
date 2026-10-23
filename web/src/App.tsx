@@ -46,7 +46,7 @@ export function App() {
           element={<ProjectPage title="Content" body={<ContentPage organisation="technative" />} />}
         />
         <Route
-          path="/p/:project/content/:page"
+          path="/p/:project/content/*"
           element={<EditorPage organisation="technative" />}
         />
         <Route

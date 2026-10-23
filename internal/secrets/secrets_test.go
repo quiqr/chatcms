@@ -163,3 +163,48 @@ func TestNewKeeperFromBytesRefusesAShortKey(t *testing.T) {
 		t.Errorf("error = %v, want ErrKeyTooShort", err)
 	}
 }
+
+func TestRawKeyEndingInANewlineStillWorks(t *testing.T) {
+	// `head -c 32 /dev/urandom` writes raw bytes, and one time in a hundred
+	// the last of them is a newline. Trimming it would leave the key a byte
+	// short and the server would refuse to start, for no reason anybody
+	// could see.
+	raw := append([]byte(strings.Repeat("k", KeyLength-1)), '\n')
+
+	path := filepath.Join(t.TempDir(), "raw-key")
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := NewKeeper(path); err != nil {
+		t.Fatalf("NewKeeper() error = %v, want nil", err)
+	}
+}
+
+func TestATextKeyStillLosesItsNewline(t *testing.T) {
+	longer := strings.Repeat("k", KeyLength+4) + "\n"
+
+	path := filepath.Join(t.TempDir(), "text-key")
+	if err := os.WriteFile(path, []byte(longer), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	k, err := NewKeeper(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	same, err := NewKeeperFromBytes([]byte(strings.Repeat("k", KeyLength+4)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sealed, err := k.SealString(aSecret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opened, err := same.OpenString(sealed)
+	if err != nil || opened != aSecret {
+		t.Errorf("the newline was not dropped: %q, %v", opened, err)
+	}
+}

@@ -36,7 +36,7 @@ export function Segmented({
         <ToggleGroup.Item
           key={option.value}
           value={option.value}
-          className="h-9 rounded-sm px-2.5 text-[13px] font-medium text-muted-foreground transition-colors data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          className="h-11 rounded-sm px-2.5 sm:h-9 text-[13px] font-medium text-muted-foreground transition-colors data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         >
           {option.label}
         </ToggleGroup.Item>

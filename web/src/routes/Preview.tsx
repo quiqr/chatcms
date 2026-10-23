@@ -12,10 +12,18 @@ export function Preview({
   organisation,
   project,
   page,
+  showAgain = 0,
 }: {
   organisation: string;
   project: string;
   page?: string;
+  /**
+   * showAgain is bumped by whatever knows the site changed. Hugo rebuilds by
+   * itself, but the page already in the frame cannot be told so: its live
+   * reload talks to Hugo directly, and Hugo is not reachable from a browser
+   * on purpose.
+   */
+  showAgain?: number;
 }) {
   const [device, setDevice] = useState<"desktop" | "phone">("desktop");
   const [reloads, setReloads] = useState(0);
@@ -50,7 +58,7 @@ export function Preview({
 
       <div className="flex flex-1 justify-center overflow-hidden rounded-lg border border-border bg-card">
         <iframe
-          key={reloads}
+          key={`${reloads}-${showAgain}`}
           title="Your site"
           src={at}
           className={

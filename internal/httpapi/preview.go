@@ -11,7 +11,9 @@ import (
 type PreviewService interface {
 	// PreviewHandler gives what answers requests for one site's preview, or
 	// says why it cannot.
-	PreviewHandler(ctx context.Context, actor Actor, organisation, project string) (http.Handler, error)
+	// under is the address a browser reaches this site at, which the
+	// preview is told so that its own links point back through the app.
+	PreviewHandler(ctx context.Context, actor Actor, organisation, project, under string) (http.Handler, error)
 }
 
 // PreviewPrefix is where a preview is reached. It is under the app's own
@@ -27,16 +29,18 @@ func previewHandler(service PreviewService) http.Handler {
 			return
 		}
 
-		handler, err := service.PreviewHandler(r.Context(), ActorFrom(r.Context()), organisation, project)
+		under := PreviewPrefix + organisation + "/" + project + "/"
+		handler, err := service.PreviewHandler(r.Context(), ActorFrom(r.Context()), organisation, project, under)
 		if err != nil {
 			writeTenancyError(w, err)
 			return
 		}
 
-		// The preview is handed the path within the site, so that a site
-		// built for its own root is served as it was built.
+		// The whole path is forwarded, because the preview is told to serve
+		// the site under this very address: stripping it would ask for a
+		// page the preview does not have.
+		_ = rest
 		forward := r.Clone(r.Context())
-		forward.URL.Path = rest
 		forward.RequestURI = ""
 		handler.ServeHTTP(w, forward)
 	})

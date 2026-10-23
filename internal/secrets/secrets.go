@@ -85,7 +85,11 @@ func NewKeeperFromBytes(key []byte) (*Keeper, error) {
 // normalise lets a key file hold raw bytes or text with a trailing newline,
 // because both are what people produce.
 func normalise(raw []byte) []byte {
-	return []byte(strings.TrimRight(string(raw), "\r\n"))
+	trimmed := []byte(strings.TrimRight(string(raw), "\r\n"))
+	if len(trimmed) < KeyLength {
+		return raw
+	}
+	return trimmed
 }
 
 // Seal encrypts a secret. The nonce is fresh each time and is carried with

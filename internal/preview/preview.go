@@ -64,6 +64,7 @@ func (s Settings) withDefaults() Settings {
 type running struct {
 	id       string
 	dir      string
+	under    string
 	port     int
 	command  *exec.Cmd
 	proxy    *httputil.ReverseProxy
@@ -99,12 +100,14 @@ func NewServers(settings Settings) (*Servers, error) {
 	return servers, nil
 }
 
-// For gives something that answers requests for one site, starting a preview
-// if there is not one already. The directory is the site's working copy.
-func (s *Servers) For(ctx context.Context, id, dir string) (http.Handler, error) {
+// For gives something that answers requests for one site. "under" is the
+// address a browser reaches it at, which Hugo is told so that the links it
+// writes and the connection its live reload opens both point at the app
+// rather than at a port on this machine that no browser can reach.
+func (s *Servers) For(ctx context.Context, id, dir, under string) (http.Handler, error) {
 	s.mu.Lock()
 
-	if held, found := s.running[id]; found && held.dir == dir {
+	if held, found := s.running[id]; found && held.dir == dir && held.under == under {
 		held.lastSeen = s.now()
 		s.mu.Unlock()
 		return held.proxy, nil
@@ -123,7 +126,7 @@ func (s *Servers) For(ctx context.Context, id, dir string) (http.Handler, error)
 	}
 	s.mu.Unlock()
 
-	started, err := s.start(ctx, id, dir)
+	started, err := s.start(ctx, id, dir, under)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +141,7 @@ func (s *Servers) For(ctx context.Context, id, dir string) (http.Handler, error)
 	return started.proxy, nil
 }
 
-func (s *Servers) start(ctx context.Context, id, dir string) (*running, error) {
+func (s *Servers) start(ctx context.Context, id, dir, under string) (*running, error) {
 	port, err := freePort()
 	if err != nil {
 		return nil, err
@@ -147,17 +150,26 @@ func (s *Servers) start(ctx context.Context, id, dir string) (*running, error) {
 	// Hugo is told to bind only this machine: the preview is reached through
 	// the app, which is what asks who somebody is. A preview open to the
 	// network would be a customer's unpublished work with no sign-in at all.
-	command := exec.Command(s.settings.HugoBin,
+	arguments := []string{
 		"server",
 		"--source", dir,
 		"--bind", "127.0.0.1",
 		"--port", strconv.Itoa(port),
-		"--baseURL", "http://127.0.0.1:"+strconv.Itoa(port)+"/",
+		"--baseURL", under,
 		"--appendPort=false",
 		"--renderToMemory",
 		"--buildDrafts",
 		"--noBuildLock",
-	)
+	}
+
+	// Hugo tells the page how to reach it for a live reload, and by default
+	// it says its own port, which no browser can reach. It is behind the app,
+	// so it has to name the port the browser is already talking to.
+	if port := browserPort(under); port > 0 {
+		arguments = append(arguments, "--liveReloadPort", strconv.Itoa(port))
+	}
+
+	command := exec.Command(s.settings.HugoBin, arguments...)
 	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	command.Env = []string{"HOME=" + dir, "PATH=/usr/bin:/bin", "TZ=UTC"}
 
@@ -174,6 +186,7 @@ func (s *Servers) start(ctx context.Context, id, dir string) (*running, error) {
 	held := &running{
 		id:       id,
 		dir:      dir,
+		under:    under,
 		port:     port,
 		command:  command,
 		proxy:    httputil.NewSingleHostReverseProxy(where),
@@ -206,6 +219,29 @@ func waitFor(ctx context.Context, port int, within time.Duration) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return ErrNotReady
+}
+
+// browserPort is the port a browser uses to reach the app, taken from the
+// address the preview is served under.
+func browserPort(under string) int {
+	where, err := url.Parse(under)
+	if err != nil {
+		return 0
+	}
+	if named := where.Port(); named != "" {
+		if port, err := strconv.Atoi(named); err == nil {
+			return port
+		}
+		return 0
+	}
+	switch where.Scheme {
+	case "https":
+		return 443
+	case "http":
+		return 80
+	default:
+		return 0
+	}
 }
 
 func freePort() (int, error) {

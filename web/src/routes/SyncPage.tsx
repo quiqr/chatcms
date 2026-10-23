@@ -96,7 +96,6 @@ function Question({
 
 export function SyncPage({ organisation }: { organisation: string }) {
   const { project = "" } = useParams();
-  const [refresh, setRefresh] = useState(0);
   const [choices, setChoices] = useState<Record<string, Record<string, "mine" | "theirs">>>({});
   const [busy, setBusy] = useState(false);
   const [trouble, setTrouble] = useState("");
@@ -104,15 +103,19 @@ export function SyncPage({ organisation }: { organisation: string }) {
 
   const [standing] = useAsync<Standing>(
     () => readStanding(organisation, project),
-    [organisation, project, refresh],
+    [organisation, project],
   );
+
+  // What an action answered. Asking again afterwards would lose it: by then
+  // the work has arrived and the site is simply saved, so the person would
+  // never be told that somebody else had changed it.
+  const [after, setAfter] = useState<Standing | null>(null);
 
   async function run(what: () => Promise<Standing>) {
     setBusy(true);
     setTrouble("");
     try {
-      await what();
-      setRefresh(refresh + 1);
+      setAfter(await what());
     } catch (error: unknown) {
       setTrouble(error instanceof Error ? error.message : "That did not work.");
     } finally {
@@ -136,7 +139,7 @@ export function SyncPage({ organisation }: { organisation: string }) {
     return <p className="text-[15px]">{standing.message}</p>;
   }
 
-  const now = standing.value;
+  const now = after ?? standing.value;
   const conflicts = now.conflicts ?? [];
   const who = (now.arrivedFrom ?? []).join(" and ") || "Someone else";
 
@@ -224,7 +227,13 @@ export function SyncPage({ organisation }: { organisation: string }) {
 
       {conflicts.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => run(() => answerChanges(organisation, project, answers(conflicts)))} disabled={busy}>
+          <Button
+            onClick={() => {
+              setChoices({});
+              void run(() => answerChanges(organisation, project, answers(conflicts)));
+            }}
+            disabled={busy}
+          >
             {busy ? "Saving…" : "Save these answers"}
           </Button>
           <Button variant="ghost" onClick={() => run(() => abandonChanges(organisation, project))} disabled={busy}>

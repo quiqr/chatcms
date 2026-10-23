@@ -17,3 +17,4 @@ coverage.html
 playwright-report/
 test-results/
 .golden-tools/
+shots/

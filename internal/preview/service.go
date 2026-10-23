@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -25,18 +26,22 @@ var ErrIncomplete = errors.New("preview: the service is missing a part it needs"
 type Service struct {
 	sources Sources
 	servers *Servers
+	// baseURL is the address people reach this app at. The preview is told
+	// the whole address it is served under, so the links it writes and the
+	// connection its live reload opens both come back here.
+	baseURL string
 }
 
-func NewService(sources Sources, servers *Servers) (*Service, error) {
+func NewService(sources Sources, servers *Servers, baseURL string) (*Service, error) {
 	if sources == nil || servers == nil {
 		return nil, ErrIncomplete
 	}
-	return &Service{sources: sources, servers: servers}, nil
+	return &Service{sources: sources, servers: servers, baseURL: strings.TrimSuffix(baseURL, "/")}, nil
 }
 
 // Handler gives what answers requests for one site's preview. Anybody who may
 // read the project may preview it: looking is not changing.
-func (s *Service) Handler(ctx context.Context, actor policy.Actor, projectID uuid.UUID) (http.Handler, error) {
+func (s *Service) Handler(ctx context.Context, actor policy.Actor, projectID uuid.UUID, under string) (http.Handler, error) {
 	resource, err := s.sources.Resource(ctx, projectID)
 	if err != nil {
 		return nil, err
@@ -50,7 +55,7 @@ func (s *Service) Handler(ctx context.Context, actor policy.Actor, projectID uui
 		return nil, httpapi.ErrMissing
 	}
 
-	handler, err := s.servers.For(ctx, projectID.String(), dir)
+	handler, err := s.servers.For(ctx, projectID.String(), dir, s.baseURL+under)
 	if errors.Is(err, ErrTooMany) {
 		return nil, &httpapi.RefusedError{
 			Reason: "too many sites are being previewed at once; try again in a few minutes",

@@ -24,7 +24,7 @@ func NewWeb(service *Service, tenancyStore *tenancy.Store) (*Web, error) {
 	return &Web{service: service, tenancy: tenancyStore}, nil
 }
 
-func (w *Web) PreviewHandler(ctx context.Context, who httpapi.Actor, organisation, project string) (http.Handler, error) {
+func (w *Web) PreviewHandler(ctx context.Context, who httpapi.Actor, organisation, project, under string) (http.Handler, error) {
 	if who.Anonymous || who.ID == "" {
 		return nil, httpapi.ErrNotAllowed
 	}
@@ -46,7 +46,7 @@ func (w *Web) PreviewHandler(ctx context.Context, who httpapi.Actor, organisatio
 		return nil, err
 	}
 
-	return w.service.Handler(ctx, actor, found.ID)
+	return w.service.Handler(ctx, actor, found.ID, under)
 }
 
 var _ httpapi.PreviewService = (*Web)(nil)

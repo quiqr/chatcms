@@ -65,7 +65,7 @@ function renderEditor() {
   return render(
     <MemoryRouter initialEntries={["/p/korenaar/content/home"]}>
       <Routes>
-        <Route path="/p/:project/content/:page" element={<PageEditor organisation="technative" />} />
+        <Route path="/p/:project/content/*" element={<PageEditor organisation="technative" />} />
       </Routes>
     </MemoryRouter>,
   );

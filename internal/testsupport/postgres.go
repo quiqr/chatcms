@@ -5,6 +5,7 @@ package testsupport
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -125,8 +126,35 @@ func startCluster() {
 		return
 	}
 
+	stopWhenTheTestsAreOver(data, root)
+
 	clusterURL = fmt.Sprintf("postgres://postgres@/postgres?host=%s", socket)
 }
+
+// stopWhenTheTestsAreOver ties the cluster's life to this test binary's. A
+// cluster started with pg_ctl outlives whoever started it, so `go test
+// -tags=integration ./...` left one PostgreSQL per package running until the
+// machine was rebooted. The sitter holds a pipe to us: when we go, its read
+// ends, and it stops the cluster and takes the directory with it.
+func stopWhenTheTestsAreOver(data, root string) {
+	sitter := exec.Command("sh", "-c",
+		`cat >/dev/null; pg_ctl -D "$1" stop -m immediate >/dev/null 2>&1; rm -rf "$2"`,
+		"sh", data, root)
+
+	held, err := sitter.StdinPipe()
+	if err != nil {
+		return
+	}
+	if err := sitter.Start(); err != nil {
+		return
+	}
+
+	// Kept so that the pipe is not closed by the garbage collector while the
+	// tests are still running, which would stop the cluster under them.
+	keptOpen = append(keptOpen, held)
+}
+
+var keptOpen []io.Closer
 
 func run(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)

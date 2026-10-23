@@ -81,12 +81,12 @@ func asked(t *testing.T, handler http.Handler, path string) (int, string) {
 func TestAPreviewShowsTheSite(t *testing.T) {
 	made := servers(t, preview.Settings{})
 
-	handler, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery"))
+	handler, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery"), "http://example.org/preview/an/org/")
 	if err != nil {
 		t.Fatalf("For() error = %v", err)
 	}
 
-	status, body := asked(t, handler, "/")
+	status, body := asked(t, handler, "http://example.org/preview/an/org/")
 	if status != http.StatusOK {
 		t.Fatalf("status = %d, want 200: %s", status, body)
 	}
@@ -99,11 +99,11 @@ func TestAChangeShowsInThePreviewWithoutRestartingIt(t *testing.T) {
 	dir := aSite(t, "Korenaar Bakery")
 	made := servers(t, preview.Settings{})
 
-	handler, err := made.For(t.Context(), "one", dir)
+	handler, err := made.For(t.Context(), "one", dir, "http://example.org/preview/an/org/")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, body := asked(t, handler, "/"); !strings.Contains(body, "The body of Korenaar Bakery") {
+	if _, body := asked(t, handler, "http://example.org/preview/an/org/"); !strings.Contains(body, "The body of Korenaar Bakery") {
 		t.Fatalf("the preview starts with %q", body)
 	}
 
@@ -116,7 +116,7 @@ func TestAChangeShowsInThePreviewWithoutRestartingIt(t *testing.T) {
 	// shows, with a deadline, rather than by sleeping for a guess.
 	deadline := time.Now().Add(20 * time.Second)
 	for {
-		_, body := asked(t, handler, "/")
+		_, body := asked(t, handler, "http://example.org/preview/an/org/")
 		if strings.Contains(body, "Now with plums") {
 			break
 		}
@@ -135,10 +135,10 @@ func TestAskingTwiceUsesTheSamePreview(t *testing.T) {
 	dir := aSite(t, "Korenaar Bakery")
 	made := servers(t, preview.Settings{})
 
-	if _, err := made.For(t.Context(), "one", dir); err != nil {
+	if _, err := made.For(t.Context(), "one", dir, "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := made.For(t.Context(), "one", dir); err != nil {
+	if _, err := made.For(t.Context(), "one", dir, "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -150,7 +150,7 @@ func TestAskingTwiceUsesTheSamePreview(t *testing.T) {
 func TestAPreviewNobodyHasLookedAtIsStopped(t *testing.T) {
 	made := servers(t, preview.Settings{Idle: 15 * time.Minute})
 
-	if _, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery")); err != nil {
+	if _, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery"), "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
 	if made.Running() != 1 {
@@ -170,14 +170,14 @@ func TestAPreviewSomebodyIsLookingAtIsKept(t *testing.T) {
 	dir := aSite(t, "Korenaar Bakery")
 	made := servers(t, preview.Settings{Idle: 15 * time.Minute})
 
-	handler, err := made.For(t.Context(), "one", dir)
+	handler, err := made.For(t.Context(), "one", dir, "http://example.org/preview/an/org/")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	made.PretendTimeIs(func() time.Time { return time.Now().Add(20 * time.Minute) })
 	// Asking for it again is what looking at it does.
-	if _, err := made.For(t.Context(), "one", dir); err != nil {
+	if _, err := made.For(t.Context(), "one", dir, "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
 	made.SweepNow()
@@ -185,7 +185,7 @@ func TestAPreviewSomebodyIsLookingAtIsKept(t *testing.T) {
 	if made.Running() != 1 {
 		t.Errorf("%d previews are running, want the one somebody is looking at", made.Running())
 	}
-	if status, _ := asked(t, handler, "/"); status != http.StatusOK {
+	if status, _ := asked(t, handler, "http://example.org/preview/an/org/"); status != http.StatusOK {
 		t.Errorf("the kept preview answers %d", status)
 	}
 }
@@ -194,12 +194,12 @@ func TestOnlySoManyPreviewsRunAtOnce(t *testing.T) {
 	made := servers(t, preview.Settings{Most: 2})
 
 	for _, id := range []string{"one", "two"} {
-		if _, err := made.For(t.Context(), id, aSite(t, id)); err != nil {
+		if _, err := made.For(t.Context(), id, aSite(t, id), "http://example.org/preview/an/org/"); err != nil {
 			t.Fatalf("For(%q) error = %v", id, err)
 		}
 	}
 
-	_, err := made.For(t.Context(), "three", aSite(t, "three"))
+	_, err := made.For(t.Context(), "three", aSite(t, "three"), "http://example.org/preview/an/org/")
 	if !errors.Is(err, preview.ErrTooMany) {
 		t.Fatalf("For() error = %v, want ErrTooMany", err)
 	}
@@ -211,11 +211,11 @@ func TestOnlySoManyPreviewsRunAtOnce(t *testing.T) {
 func TestAPreviewIsStoppedWhenItsSiteMoves(t *testing.T) {
 	made := servers(t, preview.Settings{})
 
-	if _, err := made.For(t.Context(), "one", aSite(t, "First")); err != nil {
+	if _, err := made.For(t.Context(), "one", aSite(t, "First"), "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
 
-	handler, err := made.For(t.Context(), "one", aSite(t, "Second"))
+	handler, err := made.For(t.Context(), "one", aSite(t, "Second"), "http://example.org/preview/an/org/")
 	if err != nil {
 		t.Fatalf("For() with a new working copy error = %v", err)
 	}
@@ -223,7 +223,7 @@ func TestAPreviewIsStoppedWhenItsSiteMoves(t *testing.T) {
 	if made.Running() != 1 {
 		t.Errorf("%d previews are running, want one", made.Running())
 	}
-	_, body := asked(t, handler, "/")
+	_, body := asked(t, handler, "http://example.org/preview/an/org/")
 	if !strings.Contains(body, "Second") {
 		t.Errorf("the preview shows %q, want the site it was pointed at", body)
 	}
@@ -232,7 +232,7 @@ func TestAPreviewIsStoppedWhenItsSiteMoves(t *testing.T) {
 func TestStoppingEverythingLeavesNothingRunning(t *testing.T) {
 	made := servers(t, preview.Settings{})
 
-	if _, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery")); err != nil {
+	if _, err := made.For(t.Context(), "one", aSite(t, "Korenaar Bakery"), "http://example.org/preview/an/org/"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,7 +253,7 @@ func TestAPreviewOfSomethingThatWillNotBuildSaysSo(t *testing.T) {
 
 	made := servers(t, preview.Settings{Ready: 3 * time.Second})
 
-	_, err := made.For(t.Context(), "one", broken)
+	_, err := made.For(t.Context(), "one", broken, "http://example.org/preview/an/org/")
 	if !errors.Is(err, preview.ErrNotReady) {
 		t.Fatalf("For() error = %v, want ErrNotReady", err)
 	}

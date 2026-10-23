@@ -161,9 +161,11 @@ export function PeoplePage({ organisation }: { organisation: string }) {
                           <span className="truncate text-[15px]">
                             {member.displayName || member.email}
                           </span>
-                          <span className="truncate text-[13px] text-subtle-foreground">
-                            {member.email}
-                          </span>
+                          {member.displayName && (
+                            <span className="truncate text-[13px] text-subtle-foreground">
+                              {member.email}
+                            </span>
+                          )}
                         </span>
                         {member.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
                       </span>

@@ -79,7 +79,7 @@ export function EditorShell({
           </Button>
         </header>
 
-        <div data-testid="editor-slots" className="flex min-w-0 flex-1 flex-wrap items-stretch">
+        <main data-testid="editor-slots" className="flex min-w-0 flex-1 flex-wrap items-stretch">
           {layout !== "preview" && (
             <section
               data-testid="editor-slot-form"
@@ -106,7 +106,7 @@ export function EditorShell({
             hidden
             className="w-[340px] shrink-0 border-l border-border bg-card"
           />
-        </div>
+        </main>
       </div>
     </div>
   );

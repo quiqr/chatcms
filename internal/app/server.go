@@ -354,7 +354,7 @@ func (s *Server) startContent(tenancyStore *tenancy.Store) error {
 		return err
 	}
 
-	previewing, err := preview.NewService(previewSources{publishSources: sources.publishSources}, s.previews)
+	previewing, err := preview.NewService(previewSources{publishSources: sources.publishSources}, s.previews, s.cfg.BaseURL)
 	if err != nil {
 		return err
 	}
