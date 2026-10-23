@@ -6,7 +6,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/gitsync"
+	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/model"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/policy"
@@ -95,3 +97,71 @@ var _ publish.Sources = publishSources{}
 func pgUUID(id uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: id, Valid: true}
 }
+
+// historySources is what the history needs from the rest of the server: a
+// project's working copy, what people wrote when they published, and who is
+// acting.
+type historySources struct {
+	publishSources
+	records *publish.Records
+	people  *auth.Service
+}
+
+type historyCopy struct {
+	workingCopy
+}
+
+func (h historySources) Site(ctx context.Context, projectID uuid.UUID) (history.Site, func() error, error) {
+	repository, err := h.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	return historyCopy{workingCopy{Repo: repository}}, repository.Close, nil
+}
+
+// Notes is what somebody wrote when they published, by the version that
+// publish put live. A publish record does not name a version, so the version
+// live at the time is the most recent one made before it finished.
+func (h historySources) Notes(ctx context.Context, projectID uuid.UUID) (map[string]string, error) {
+	records, err := h.records.List(ctx, projectID, 200)
+	if err != nil {
+		return nil, err
+	}
+
+	repository, err := h.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, err
+	}
+	defer repository.Close()
+
+	versions, err := repository.History(ctx, history.DefaultLength)
+	if err != nil {
+		return nil, err
+	}
+
+	notes := map[string]string{}
+	for _, record := range records {
+		if record.Note == "" || record.FinishedAt == nil {
+			continue
+		}
+		for _, version := range versions {
+			if !version.Time.After(*record.FinishedAt) {
+				if _, taken := notes[version.ID]; !taken {
+					notes[version.ID] = record.Note
+				}
+				break
+			}
+		}
+	}
+	return notes, nil
+}
+
+func (h historySources) Who(ctx context.Context, personID uuid.UUID) (gitsync.Identity, error) {
+	person, err := h.people.People().ByID(ctx, personID)
+	if err != nil {
+		return gitsync.Identity{}, err
+	}
+	return gitsync.Identity{Name: person.DisplayName, Email: person.Email}, nil
+}
+
+var _ history.Sources = historySources{}

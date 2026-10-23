@@ -35,7 +35,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/builds`      | What is remembered about every build, and the state it ended in               |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
-| `internal/history`     | Version listing in plain language, and rollback                               |
+| `internal/history`     | The timeline in plain language, what a version holds, and going back          |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
 | `internal/version`     | The version string stamped by the build                                       |
@@ -91,6 +91,24 @@ What replacing it costs, and buys:
 
 The interface is already the second one's shape. What changes is the
 implementation and the two tool settings; no caller moves.
+
+**`internal/history`** lists what happened to a site and puts it back.
+
+Going back makes a new version holding an earlier version's content. It
+removes nothing, so the history keeps everything and going back is itself
+reversible: the version somebody moved away from is still in the timeline.
+Unpublished work is set aside rather than lost, which is accurate rather than
+soothing: the version holding it stays in the history and going back to that
+version brings it out again.
+
+A version's title comes from the note somebody wrote when publishing, or its
+own message, or a summary of what changed. The third exists because some
+messages are written by machinery, and those are both meaningless to a
+content creator and full of words the copy rules forbid.
+
+Showing what one version changed is the same question as showing what is
+waiting to be published, asked of a different pair of trees, so it reuses
+`internal/publish` through an adapter rather than being written twice.
 
 **`internal/publish`** turns what differs from the published site into pages
 and fields, runs the publish workflow, and records what happened.

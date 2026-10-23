@@ -19,6 +19,7 @@ import (
 	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/builds"
 	"github.com/quiqr/chatcms/internal/gitsync"
+	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/onboarding"
@@ -53,6 +54,7 @@ type Server struct {
 	builds     *builds.Service
 	workflows  *workflows.Engine
 	publish    *publish.Web
+	history    *history.Web
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -127,6 +129,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Tenancy:    server.tenancy,
 		Onboarding: server.onboarding,
 		Publish:    server.publish,
+		History:    server.history,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
@@ -264,6 +267,8 @@ func (s *Server) Workflows() *workflows.Engine { return s.workflows }
 
 func (s *Server) Publish() *publish.Web { return s.publish }
 
+func (s *Server) History() *history.Web { return s.history }
+
 func (s *Server) startBuilds(ctx context.Context) error {
 	records := builds.NewRecords(s.db.Queries)
 
@@ -336,6 +341,19 @@ func (s *Server) startPublishing(ctx context.Context, tenancyStore *tenancy.Stor
 	}
 
 	s.publish, err = publish.NewWeb(service, tenancyStore)
+	if err != nil {
+		return err
+	}
+
+	timeline, err := history.NewService(
+		historySources{publishSources: sources, records: records, people: s.auth},
+		service,
+	)
+	if err != nil {
+		return err
+	}
+
+	s.history, err = history.NewWeb(timeline, tenancyStore)
 	return err
 }
 

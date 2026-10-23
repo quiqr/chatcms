@@ -82,8 +82,8 @@ func describeOne(ctx context.Context, site Reader, m *model.Model, difference gi
 }
 
 func kindOf(difference gitsync.Change, place Place) Kind {
-	image := isImage(difference.Path)
-	content := place.Known || isContent(difference.Path)
+	image := IsImage(difference.Path)
+	content := place.Known || IsContent(difference.Path)
 
 	switch {
 	case difference.Kind == gitsync.Added && image:

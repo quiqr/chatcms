@@ -39,6 +39,8 @@ type Options struct {
 	Onboarding OnboardingService
 	// Publish serves the review of what changed and the act of publishing.
 	Publish PublishService
+	// History serves what was published when, and going back to a version.
+	History HistoryService
 }
 
 func New(opts Options) http.Handler {
@@ -130,6 +132,20 @@ func New(opts Options) http.Handler {
 
 		mux.Handle("GET "+base+"/publishes/{publish}", RequireActor(readPublishHandler(opts.Publish)))
 		mux.HandleFunc(base+"/publishes/{publish}", MethodNotAllowed)
+	}
+
+	if opts.History != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/versions", RequireActor(timelineHandler(opts.History)))
+		mux.HandleFunc(base+"/versions", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/versions/{version}", RequireActor(versionContentsHandler(opts.History)))
+		mux.HandleFunc(base+"/versions/{version}", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/versions/{version}/go-back", RequireActor(beforeGoingBackHandler(opts.History)))
+		mux.Handle("POST "+base+"/versions/{version}/go-back", RequireActor(goBackHandler(opts.History)))
+		mux.HandleFunc(base+"/versions/{version}/go-back", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

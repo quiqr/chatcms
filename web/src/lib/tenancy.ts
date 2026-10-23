@@ -194,3 +194,57 @@ export function publishNow(organisation: string, name: string, note: string) {
 export function readPublishes(organisation: string, name: string) {
   return get<{ publishes: Publish[] }>(`${project(organisation, name)}/publishes`);
 }
+
+export type Version = {
+  version: string;
+  title: string;
+  by?: string;
+  at?: string;
+  changes: number;
+  live: boolean;
+};
+
+export type VersionGroup = {
+  period: string;
+  entries: Version[];
+};
+
+export type VersionTimeline = {
+  unpublished: number;
+  groups: VersionGroup[];
+};
+
+export type GoBackWarning = {
+  title: string;
+  when?: string;
+  setAside: number;
+  reassurance: string;
+};
+
+export type WentBack = {
+  title: string;
+  published?: Publish;
+};
+
+export function readTimeline(organisation: string, name: string) {
+  return get<VersionTimeline>(`${project(organisation, name)}/versions`);
+}
+
+export function readVersion(organisation: string, name: string, version: string) {
+  return get<Review>(`${project(organisation, name)}/versions/${version}`);
+}
+
+export function beforeGoingBack(organisation: string, name: string, version: string) {
+  return get<GoBackWarning>(`${project(organisation, name)}/versions/${version}/go-back`);
+}
+
+export function goBackTo(
+  organisation: string,
+  name: string,
+  version: string,
+  publishRightAway: boolean,
+) {
+  return post<WentBack>(`${project(organisation, name)}/versions/${version}/go-back`, {
+    publishRightAway,
+  });
+}

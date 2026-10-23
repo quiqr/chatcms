@@ -39,6 +39,15 @@ type Repo interface {
 	Changes(ctx context.Context) ([]Change, error)
 	// ReadPublished reads a file as the published site has it.
 	ReadPublished(ctx context.Context, name string) ([]byte, error)
+	// GoBackTo makes a new version whose content is an earlier version's,
+	// throwing nothing away, so that going back can itself be undone.
+	GoBackTo(ctx context.Context, version string, author Identity, message string) (Version, error)
+	// ChangesIn says what one version changed.
+	ChangesIn(ctx context.Context, version string) ([]Change, error)
+	// At is the site as one version left it, read only.
+	At(ctx context.Context, version string) (fs.FS, error)
+	// Before is the site as it was just before one version.
+	Before(ctx context.Context, version string) (fs.FS, error)
 	// Resolve answers an unresolved difference and continues the exchange.
 	Resolve(ctx context.Context, resolutions map[string][]byte) (SyncResult, error)
 	// Abandon gives up an exchange and restores the site as it was.

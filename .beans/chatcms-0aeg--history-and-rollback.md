@@ -1,11 +1,11 @@
 ---
 # chatcms-0aeg
 title: History and rollback
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:32Z
+updated_at: 2026-10-23T07:13:51Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-5uu2

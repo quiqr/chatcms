@@ -71,7 +71,7 @@ func titleOr(title, key string) string {
 
 func sectionOf(name string) string {
 	switch {
-	case isImage(name):
+	case IsImage(name):
 		return "Images"
 	case strings.HasPrefix(name, "content/"):
 		return "Pages"
@@ -129,11 +129,13 @@ var imageExtensions = map[string]bool{
 	".svg": true, ".avif": true, ".bmp": true, ".ico": true, ".tiff": true,
 }
 
-func isImage(name string) bool {
+// IsImage says whether a path names a picture rather than a page.
+func IsImage(name string) bool {
 	return imageExtensions[strings.ToLower(path.Ext(name))]
 }
 
-func isContent(name string) bool {
+// IsContent says whether a path names something a content creator edits.
+func IsContent(name string) bool {
 	switch strings.ToLower(path.Ext(name)) {
 	case ".md", ".markdown", ".html", ".yaml", ".yml", ".toml", ".json":
 		return strings.HasPrefix(name, "content/") || strings.HasPrefix(name, "data/")

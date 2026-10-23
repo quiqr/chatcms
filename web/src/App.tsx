@@ -6,6 +6,7 @@ import { EditorPage } from "./routes/EditorPage";
 import { NotFound } from "./routes/NotFound";
 import { OrganisationPage } from "./routes/OrganisationPage";
 import { OnboardingPage } from "./routes/OnboardingPage";
+import { HistoryPage } from "./routes/HistoryPage";
 import { PeoplePage } from "./routes/PeoplePage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
@@ -44,7 +45,10 @@ export function App() {
           path="/p/:project/publish"
           element={<ProjectPage title="Publish" body={<PublishPage organisation="technative" />} />}
         />
-        <Route path="/p/:project/history" element={<ProjectPage title="History" />} />
+        <Route
+          path="/p/:project/history"
+          element={<ProjectPage title="History" body={<HistoryPage organisation="technative" />} />}
+        />
         <Route path="/p/:project/sync" element={<ProjectPage title="Sync status" />} />
 
         <Route path="*" element={<NotFound />} />

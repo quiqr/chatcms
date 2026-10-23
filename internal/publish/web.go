@@ -121,6 +121,18 @@ func (w *Web) PublishHistory(ctx context.Context, who httpapi.Actor, organisatio
 	return views, nil
 }
 
+// ReviewViewOf is how a summary of changes reaches the interface. It is
+// exported because the history shows what one version changed in exactly the
+// same shape as the review shows what is waiting.
+func ReviewViewOf(summary Summary) httpapi.ReviewView {
+	return reviewView(summary)
+}
+
+// PublishViewOf is how one publish reaches the interface.
+func PublishViewOf(record Record) httpapi.PublishView {
+	return publishView(record)
+}
+
 func reviewView(summary Summary) httpapi.ReviewView {
 	view := httpapi.ReviewView{Count: summary.Count(), Changes: []httpapi.ChangeView{}}
 	if summary.LastPublished != nil {

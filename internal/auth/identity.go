@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/quiqr/chatcms/internal/store"
 )
@@ -102,6 +103,18 @@ func (p *People) Create(ctx context.Context, email, displayName, password string
 // ByEmail finds a person by address, without regard to case.
 func (p *People) ByEmail(ctx context.Context, email string) (Person, error) {
 	row, err := p.db.Queries.GetPersonByEmail(ctx, strings.TrimSpace(email))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Person{}, ErrNoSuchPerson
+	}
+	if err != nil {
+		return Person{}, fmt.Errorf("reading the person failed: %w", err)
+	}
+	return personFrom(row), nil
+}
+
+// ByID finds a person by their identifier.
+func (p *People) ByID(ctx context.Context, personID uuid.UUID) (Person, error) {
+	row, err := p.db.Queries.GetPerson(ctx, pgtype.UUID{Bytes: personID, Valid: true})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Person{}, ErrNoSuchPerson
 	}
