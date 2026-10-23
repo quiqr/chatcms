@@ -138,6 +138,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Publish:    server.publish,
 		History:    server.history,
 		Content:    server.content,
+		Browse:     server.content,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 

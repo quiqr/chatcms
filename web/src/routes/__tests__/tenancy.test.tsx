@@ -194,3 +194,91 @@ describe("the people and roles screen", () => {
     );
   });
 });
+
+describe("making a new project", () => {
+  it("asks for a name, suggests an address, and goes to the setup screen", async () => {
+    const sent: Array<[string, unknown]> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((path: string, options?: RequestInit) => {
+        if (options?.body) sent.push([path, JSON.parse(String(options.body))]);
+        if (path === "/api/organisations") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ organisations: [{ slug: "technative", name: "TechNative" }] }),
+          });
+        }
+        if (options?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: async () => ({ slug: "korenaar", name: "Korenaar", domain: "", yourRole: "owner", youMay: [], unpublished: 0 }),
+          });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ projects: [] }) });
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <Routes>
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/p/:project/setup" element={<p>the setup screen</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /New project/ }));
+
+    const dialog = await screen.findByRole("dialog", { name: "New project" });
+    await userEvent.type(within(dialog).getByLabelText("Name"), "Korenaar Bakery");
+    expect(dialog).toHaveTextContent("/p/korenaar-bakery");
+
+    await userEvent.click(within(dialog).getByRole("button", { name: /Make it and set it up/ }));
+
+    expect(sent).toContainEqual([
+      "/api/organisations/technative/projects",
+      { slug: "korenaar-bakery", name: "Korenaar Bakery", domain: "" },
+    ]);
+    expect(await screen.findByText("the setup screen")).toBeInTheDocument();
+  });
+
+  it("says what the server said when a project cannot be made", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((path: string, options?: RequestInit) => {
+        if (path === "/api/organisations") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ organisations: [{ slug: "technative", name: "TechNative" }] }),
+          });
+        }
+        if (options?.method === "POST") {
+          return Promise.resolve({
+            ok: false,
+            status: 409,
+            json: async () => ({ error: { code: "refused", message: "There is already a project with that address." } }),
+          });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ projects: [] }) });
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/projects"]}>
+        <Routes>
+          <Route path="/projects" element={<ProjectsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /New project/ }));
+    const dialog = await screen.findByRole("dialog", { name: "New project" });
+    await userEvent.type(within(dialog).getByLabelText("Name"), "Korenaar");
+    await userEvent.click(within(dialog).getByRole("button", { name: /Make it and set it up/ }));
+
+    expect(await screen.findByText(/already a project with that address/)).toBeInTheDocument();
+  });
+});

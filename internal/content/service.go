@@ -20,6 +20,7 @@ import (
 type Site interface {
 	FS() fs.FS
 	Save(ctx context.Context, save gitsync.Save) (gitsync.Version, error)
+	Changes(ctx context.Context) ([]gitsync.Change, error)
 	Model() (*model.Model, error)
 }
 

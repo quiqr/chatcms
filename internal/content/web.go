@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -121,3 +122,89 @@ func controlViews(controls []Control) []httpapi.ControlView {
 }
 
 var _ httpapi.ContentService = (*Web)(nil)
+
+func (w *Web) ListContent(ctx context.Context, who httpapi.Actor, organisation, project string) ([]httpapi.SectionView, error) {
+	actor, id, err := w.reach(ctx, who, organisation, project)
+	if err != nil {
+		return nil, err
+	}
+
+	sections, err := w.service.List(ctx, actor, id)
+	if err != nil {
+		return nil, noModelIsRefusal(err)
+	}
+
+	views := make([]httpapi.SectionView, 0, len(sections))
+	for _, section := range sections {
+		view := httpapi.SectionView{
+			Key:      section.Key,
+			Title:    section.Title,
+			ItemName: section.ItemName,
+			Count:    section.Count,
+			Items:    make([]httpapi.ItemView, 0, len(section.Items)),
+		}
+		for _, item := range section.Items {
+			shown := httpapi.ItemView{
+				Key:     item.Key,
+				Title:   item.Title,
+				Waiting: item.Waiting,
+				By:      item.By,
+			}
+			if !item.At.IsZero() {
+				shown.At = item.At.Format(time.RFC3339)
+			}
+			view.Items = append(view.Items, shown)
+		}
+		views = append(views, view)
+	}
+	return views, nil
+}
+
+func (w *Web) CreatePage(ctx context.Context, who httpapi.Actor, organisation, project, section, title string) (httpapi.PageView, error) {
+	actor, id, err := w.reach(ctx, who, organisation, project)
+	if err != nil {
+		return httpapi.PageView{}, err
+	}
+
+	made, err := w.service.Create(ctx, actor, id, NewPage{Section: section, Title: title})
+	if err != nil {
+		return httpapi.PageView{}, noModelIsRefusal(err)
+	}
+	return pageView(made), nil
+}
+
+func (w *Web) RenamePage(ctx context.Context, who httpapi.Actor, organisation, project, page, title string) (httpapi.PageView, error) {
+	actor, id, err := w.reach(ctx, who, organisation, project)
+	if err != nil {
+		return httpapi.PageView{}, err
+	}
+
+	renamed, err := w.service.Rename(ctx, actor, id, page, title)
+	if err != nil {
+		return httpapi.PageView{}, noModelIsRefusal(err)
+	}
+	return pageView(renamed), nil
+}
+
+func (w *Web) DuplicatePage(ctx context.Context, who httpapi.Actor, organisation, project, page, title string) (httpapi.PageView, error) {
+	actor, id, err := w.reach(ctx, who, organisation, project)
+	if err != nil {
+		return httpapi.PageView{}, err
+	}
+
+	copied, err := w.service.Duplicate(ctx, actor, id, page, title)
+	if err != nil {
+		return httpapi.PageView{}, noModelIsRefusal(err)
+	}
+	return pageView(copied), nil
+}
+
+func (w *Web) DeletePage(ctx context.Context, who httpapi.Actor, organisation, project, page string) error {
+	actor, id, err := w.reach(ctx, who, organisation, project)
+	if err != nil {
+		return err
+	}
+	return noModelIsRefusal(w.service.Delete(ctx, actor, id, page))
+}
+
+var _ httpapi.BrowseService = (*Web)(nil)

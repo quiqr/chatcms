@@ -1,12 +1,13 @@
 import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { NavLink, useParams } from "react-router";
+import { NavLink, useNavigate, useParams } from "react-router";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import { Field } from "../components/ui/field";
 import { Tile } from "../components/ui/avatar";
 import { useAsync } from "../lib/useAsync";
-import { listOrganisations, listProjects, type Project } from "../lib/tenancy";
+import { createProject, listOrganisations, listProjects, type Project } from "../lib/tenancy";
 import { OrganisationShell } from "../shells/OrganisationShell";
 
 function status(project: Project) {
@@ -37,9 +38,89 @@ function ProjectCard({ organisation, project }: { organisation: string; project:
   );
 }
 
+/**
+ * NewProject asks for the two things a project needs before it can be set up:
+ * what it is called, and where it will live. The address is suggested from
+ * the name, which is what somebody would have typed anyway.
+ */
+function NewProject({
+  organisation,
+  onMade,
+  onCancel,
+}: {
+  organisation: string;
+  onMade: (slug: string) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [domain, setDomain] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [trouble, setTrouble] = useState("");
+
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  async function make() {
+    setBusy(true);
+    setTrouble("");
+    try {
+      const made = await createProject(organisation, { slug, name: name.trim(), domain });
+      onMade(made.slug);
+    } catch (error: unknown) {
+      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-project-title"
+      className="mt-6 flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
+    >
+      <h2 id="new-project-title" className="text-base font-semibold">
+        New project
+      </h2>
+      {trouble && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+          {trouble}
+        </p>
+      )}
+      <Field
+        label="Name"
+        hint={slug ? `Its address here will be /p/${slug}` : "What the customer calls their site"}
+        type="text"
+        value={name}
+        autoFocus
+        onChange={(event) => setName(event.target.value)}
+      />
+      <Field
+        label="Website address"
+        hint="Optional. Where the site is published, such as korenaar.example."
+        type="text"
+        value={domain}
+        onChange={(event) => setDomain(event.target.value)}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={make} disabled={busy || slug === ""}>
+          {busy ? "Making it…" : "Make it and set it up"}
+        </Button>
+        <Button variant="ghost" onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectsPage() {
   const { organisation: fromAddress } = useParams();
+  const goTo = useNavigate();
   const [search, setSearch] = useState("");
+  const [making, setMaking] = useState(false);
 
   const [organisations] = useAsync(listOrganisations, []);
   const current =
@@ -89,11 +170,22 @@ export function ProjectsPage() {
           />
         </label>
 
-        <Button variant="ink">
+        <Button variant="ink" onClick={() => setMaking(true)}>
           <Plus aria-hidden="true" className="size-4" />
           New project
         </Button>
       </div>
+
+      {making && (
+        <NewProject
+          organisation={current ?? ""}
+          onMade={(slug) => {
+            setMaking(false);
+            goTo(`/p/${slug}/setup`);
+          }}
+          onCancel={() => setMaking(false)}
+        />
+      )}
 
       {projects.state === "loading" && (
         <p className="mt-6 text-[15px] text-muted-foreground">Looking for your projects...</p>

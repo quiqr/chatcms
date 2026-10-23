@@ -79,6 +79,7 @@ type site struct {
 	model    *model.Model
 	modelErr error
 	saveErr  error
+	changes  []gitsync.Change
 }
 
 func (s *site) FS() fs.FS { return s.files }
@@ -92,6 +93,10 @@ func (s *site) Save(ctx context.Context, save gitsync.Save) (gitsync.Version, er
 		s.files[name] = &fstest.MapFile{Data: content}
 	}
 	return gitsync.Version{ID: "a-version"}, nil
+}
+
+func (s *site) Changes(ctx context.Context) ([]gitsync.Change, error) {
+	return s.changes, nil
 }
 
 func (s *site) Model() (*model.Model, error) {

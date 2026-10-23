@@ -35,7 +35,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/builds`      | What is remembered about every build, and the state it ended in               |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
-| `internal/content`     | One page as a form, and writing an edit back                                  |
+| `internal/content`     | What a site holds, one page as a form, and writing an edit back               |
 | `internal/history`     | The timeline in plain language, what a version holds, and going back          |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
@@ -110,6 +110,12 @@ A page's own text is editable only where the model declares a field for it,
 which is how the reference implementation works. Where it does not, the text
 is shown and an attempt to write it is refused with a reason rather than
 quietly dropped.
+
+It also answers what a site holds. A page's file is named after its title the
+way the old Quiqr names it, which is why renaming moves the file and rewrites
+the title together: to a content creator those are one act. Whether an item is
+waiting to be published comes from the same question the publish review asks,
+so the two cannot disagree.
 
 **`internal/history`** lists what happened to a site and puts it back.
 

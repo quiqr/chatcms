@@ -287,3 +287,48 @@ export function readPage(organisation: string, name: string, page: string) {
 export function savePage(organisation: string, name: string, page: string, edit: Edit) {
   return put<Page>(`${project(organisation, name)}/pages/${page}`, edit);
 }
+
+export type ContentItem = {
+  key: string;
+  title: string;
+  waiting?: boolean;
+  by?: string;
+  at?: string;
+};
+
+export type ContentSection = {
+  key: string;
+  title: string;
+  itemName?: string;
+  count: number;
+  items: ContentItem[];
+};
+
+export function readContent(organisation: string, name: string) {
+  return get<{ sections: ContentSection[] }>(`${project(organisation, name)}/content`);
+}
+
+export function createPage(organisation: string, name: string, section: string, title: string) {
+  return post<Page>(`${project(organisation, name)}/content`, { section, title });
+}
+
+export function renamePage(
+  organisation: string,
+  name: string,
+  page: string,
+  title: string,
+  copy = false,
+) {
+  return post<Page>(`${project(organisation, name)}/rename/${page}`, { title, copy });
+}
+
+export function deletePage(organisation: string, name: string, page: string) {
+  return remove<void>(`${project(organisation, name)}/pages/${page}`);
+}
+
+export function createProject(
+  organisation: string,
+  body: { slug: string; name: string; domain?: string },
+) {
+  return post<Project>(`/api/organisations/${organisation}/projects`, body);
+}

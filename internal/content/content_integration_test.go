@@ -366,3 +366,88 @@ func TestAPageThatIsNotThereIsNotFound(t *testing.T) {
 		}
 	}
 }
+
+func TestTheBrowserAndTheWholeLifeOfAPage(t *testing.T) {
+	h := newWebHarness(t)
+
+	sections, err := h.web.ListContent(t.Context(), h.editor, "technative", "korenaar")
+	if err != nil {
+		t.Fatalf("ListContent() error = %v", err)
+	}
+	if len(sections) != 2 {
+		t.Fatalf("sections = %+v", sections)
+	}
+
+	made, err := h.web.CreatePage(t.Context(), h.editor, "technative", "korenaar", "news", "Spring prices")
+	if err != nil {
+		t.Fatalf("CreatePage() error = %v", err)
+	}
+	if made.Key != "news/spring-prices" {
+		t.Fatalf("Key = %q", made.Key)
+	}
+
+	renamed, err := h.web.RenamePage(t.Context(), h.editor, "technative", "korenaar", made.Key, "Summer prices")
+	if err != nil {
+		t.Fatalf("RenamePage() error = %v", err)
+	}
+	if renamed.Key != "news/summer-prices" {
+		t.Errorf("Key = %q", renamed.Key)
+	}
+
+	copied, err := h.web.DuplicatePage(t.Context(), h.editor, "technative", "korenaar", renamed.Key, "Autumn prices")
+	if err != nil {
+		t.Fatalf("DuplicatePage() error = %v", err)
+	}
+
+	after, err := h.web.ListContent(t.Context(), h.editor, "technative", "korenaar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	named := map[string]bool{}
+	for _, section := range after {
+		for _, item := range section.Items {
+			named[item.Key] = true
+			if section.Key == "news" && !item.Waiting {
+				t.Errorf("%s is not marked as waiting to be published", item.Key)
+			}
+		}
+	}
+	for _, want := range []string{"news/summer-prices", "news/autumn-prices", "news/one"} {
+		if !named[want] {
+			t.Errorf("%s is missing from the browser", want)
+		}
+	}
+	if named["news/spring-prices"] {
+		t.Error("the renamed page is still listed under its old name")
+	}
+
+	if err := h.web.DeletePage(t.Context(), h.editor, "technative", "korenaar", copied.Key); err != nil {
+		t.Fatalf("DeletePage() error = %v", err)
+	}
+
+	finally, err := h.web.ListContent(t.Context(), h.editor, "technative", "korenaar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, section := range finally {
+		for _, item := range section.Items {
+			if item.Key == copied.Key {
+				t.Error("the removed page is still listed")
+			}
+		}
+	}
+}
+
+func TestAViewerMayBrowseAndChangeNothing(t *testing.T) {
+	h := newWebHarness(t)
+
+	if _, err := h.web.ListContent(t.Context(), h.viewer, "technative", "korenaar"); err != nil {
+		t.Errorf("ListContent() as a viewer error = %v, want it allowed", err)
+	}
+	if _, err := h.web.CreatePage(t.Context(), h.viewer, "technative", "korenaar", "news", "x"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("CreatePage() as a viewer error = %v, want ErrNotAllowed", err)
+	}
+	if err := h.web.DeletePage(t.Context(), h.viewer, "technative", "korenaar", "news/one"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("DeletePage() as a viewer error = %v, want ErrNotAllowed", err)
+	}
+}

@@ -74,7 +74,9 @@ export function EditorShell({
             className="hidden md:inline-flex"
           />
           <AssistantSlot />
-          <Button count={project.unpublished}>Publish</Button>
+          <Button asChild count={project.unpublished}>
+            <NavLink to={`/p/${project.slug}/publish`}>Publish</NavLink>
+          </Button>
         </header>
 
         <div data-testid="editor-slots" className="flex min-w-0 flex-1 flex-wrap items-stretch">
