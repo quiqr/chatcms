@@ -9,6 +9,10 @@ const apiTarget =
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // The same setting the server reads, so that one variable makes both
+    // halves reachable from another machine rather than only the half that
+    // happens to be listening.
+    host: process.env.CHATCMS_HOST || undefined,
     proxy: {
       "/api": {
         target: apiTarget,

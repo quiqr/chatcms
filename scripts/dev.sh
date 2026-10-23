@@ -18,7 +18,10 @@
 # it an address to listen on and the address that machine will use:
 #
 #   CHATCMS_HOST=0.0.0.0 bash scripts/dev.sh
-#   cd web && npm run dev -- --host
+#   cd web && CHATCMS_HOST=0.0.0.0 npm run dev
+#
+# Both halves read the same setting, so a phone that can reach one can reach
+# the other.
 #
 # Anything on the network can then reach it, with a password written in this
 # script, so do that on a network you trust and not on a shared one.
@@ -127,16 +130,17 @@ export CHATCMS_STATE_DIR="$state"
 export CHATCMS_LISTEN="$host:$port"
 export CHATCMS_BASE_URL="http://$reachable:$port"
 
-frontendFlag=""
+# The frontend reads the same two settings, so what to type is the same
+# words in the same order rather than a second set of flags to remember.
+frontendSettings=""
 if [ "$host" != "127.0.0.1" ] && [ "$host" != "localhost" ]; then
-    frontendFlag=" -- --host"
+    frontendSettings="CHATCMS_HOST=$host "
 fi
 
-frontendPort=""
+frontendFlag=""
 if [ -n "$instance" ]; then
-    frontendPort="CHATCMS_PORT=$port "
-    frontendFlag="${frontendFlag:- --}"
-    frontendFlag="$frontendFlag --port 5174"
+    frontendSettings="${frontendSettings}CHATCMS_PORT=$port "
+    frontendFlag=" -- --port 5174"
 fi
 
 if [ ! -d "$state/sites" ]; then
@@ -153,7 +157,7 @@ cat <<NOTICE
     studio-noord  has no site, so the setup screen has something to do
 
     The frontend in another terminal, with live reloading:
-      cd web && ${frontendPort}npm run dev$frontendFlag
+      cd web && ${frontendSettings}npm run dev$frontendFlag
 
     Ctrl-C stops this. The database keeps running; to put that away too:
       ${instance:+CHATCMS_INSTANCE=$instance }bash scripts/dev.sh stop
