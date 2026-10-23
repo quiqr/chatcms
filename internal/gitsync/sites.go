@@ -265,3 +265,21 @@ func checkSiteID(id string) error {
 	}
 	return nil
 }
+
+// InitBareForDevelopment makes an empty remote on disk, so that a developer
+// can exercise publishing without owning a git host. It is here rather than
+// in the development tool because every git invocation in this codebase
+// originates in this package, which docs/ARCHITECTURE.md requires and a test
+// over the sources enforces.
+func InitBareForDevelopment(ctx context.Context, cfg Config, path string) error {
+	if _, err := os.Stat(filepath.Join(path, "HEAD")); err == nil {
+		return nil
+	}
+	home, err := gitHome(filepath.Dir(path))
+	if err != nil {
+		return err
+	}
+	_, err = newRunner(cfg, filepath.Dir(path), home).run(ctx,
+		"init", "--bare", "--initial-branch=main", path)
+	return err
+}

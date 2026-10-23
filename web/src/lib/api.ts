@@ -36,6 +36,27 @@ export async function remove<T>(path: string): Promise<T> {
   return send<T>("DELETE", path);
 }
 
+/**
+ * ensureRequestToken returns the token this page must repeat in a header, and
+ * asks the server for one first if the page does not have it. The server sets
+ * the cookie on any request it answers, so a page it served itself always has
+ * one; a page served by something else, such as the development server, or a
+ * page whose cookie was cleared while it stayed open, does not.
+ */
+async function ensureRequestToken(): Promise<string> {
+  const held = requestToken();
+  if (held) {
+    return held;
+  }
+
+  try {
+    await fetch("/api/health", { credentials: "same-origin" });
+  } catch {
+    // The request that follows will fail with something a person can read.
+  }
+  return requestToken();
+}
+
 async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
 
@@ -43,7 +64,7 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
     headers["Content-Type"] = "application/json";
   }
   if (method !== "GET" && method !== "HEAD") {
-    headers[REQUEST_TOKEN_HEADER] = requestToken();
+    headers[REQUEST_TOKEN_HEADER] = await ensureRequestToken();
   }
 
   const response = await fetch(path, {
