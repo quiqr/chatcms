@@ -5,6 +5,10 @@
 #
 #   bash scripts/dev.sh          start the server, seeding only the first time
 #   bash scripts/dev.sh fresh    throw the database and the state away first
+#   bash scripts/dev.sh stop     stop a server left running, and the database
+#
+# Ctrl-C stops the server. The database keeps running, because the next start
+# is quicker with it up; "stop" puts it away as well.
 #
 # Then run the frontend in another terminal:
 #
@@ -40,6 +44,25 @@ fi
 if ! command -v postgres >/dev/null; then
     echo "dev: run this inside 'nix develop', which pins PostgreSQL, git and Hugo." >&2
     exit 1
+fi
+
+if [ "${1:-}" = "stop" ]; then
+    if pkill -f "$state/chatcmsd"; then
+        echo "==> stopped the server"
+    else
+        echo "==> no server of this script's was running"
+    fi
+    bash "$root/scripts/dev-db.sh" down >/dev/null 2>&1 && echo "==> stopped the database"
+
+    # Something else may hold the port: a server started another way, or
+    # another program altogether. Naming it is more use than killing it.
+    sleep 1
+    holder="$(ss -ltnp 2>/dev/null | grep ":$port " | grep -oP 'pid=\K[0-9]+' | head -1 || true)"
+    if [ -n "$holder" ]; then
+        echo "==> something still holds port $port: pid $holder ($(ps -p "$holder" -o comm= 2>/dev/null))"
+        echo "    stop it with: kill $holder"
+    fi
+    exit 0
 fi
 
 if [ "${1:-}" = "fresh" ]; then
@@ -88,6 +111,15 @@ cat <<NOTICE
       cd web && npm run dev$frontendFlag
     It serves on http://$reachable:5173 and sends /api here by itself.
 
+    Ctrl-C stops this. The database keeps running; to put that away too:
+      bash scripts/dev.sh stop
+
 NOTICE
 
-exec go run ./cmd/chatcmsd
+# Built rather than run with "go run", which starts the server as a child of
+# itself: stopping go run then leaves the server holding the port. One
+# process is one thing to stop, and Ctrl-C reaches it.
+echo "==> building"
+go build -o "$state/chatcmsd" ./cmd/chatcmsd
+
+exec "$state/chatcmsd"
