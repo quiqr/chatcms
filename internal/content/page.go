@@ -139,6 +139,7 @@ var rendered = map[string]bool{
 	"number": true, "slider": true, "date": true, "select": true,
 	"boolean": true, "color": true, "chips": true, "leaf-array": true,
 	"accordion": true, "hidden": true, "uniq": true,
+	"image-select": true, "bundle-image-thumbnail": true,
 }
 
 // Describe turns a page's fields and its current values into the controls an

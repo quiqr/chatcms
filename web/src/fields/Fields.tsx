@@ -8,6 +8,19 @@ import type { Control, Option } from "../lib/tenancy";
 
 export type Change = (path: string, value: unknown) => void;
 
+/**
+ * Picking opens the picture library so that a field can be filled from it.
+ * The editor supplies it; a form drawn without one shows the address instead,
+ * which is still editable.
+ */
+export type Picking = (choose: (path: string) => void) => void;
+
+const fieldContext = { picking: undefined as Picking | undefined };
+
+export function withPicking(picking: Picking | undefined) {
+  fieldContext.picking = picking;
+}
+
 function Label({ control, children }: { control: Control; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -308,6 +321,43 @@ function Group({ control, onChange }: { control: Control; onChange: Change }) {
   );
 }
 
+function Picture({ control, onChange }: { control: Control; onChange: Change }) {
+  const held = asText(control.value);
+  const picking = fieldContext.picking;
+
+  return (
+    <Label control={control}>
+      {held !== "" && (
+        <img
+          src={held}
+          alt=""
+          className="max-h-32 w-fit rounded-md border border-border bg-muted object-contain"
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          aria-label={control.title}
+          value={held}
+          placeholder="/images/..."
+          onChange={(event) => onChange(control.path, event.target.value || null)}
+          className="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-base sm:text-[15px]"
+        />
+        {picking && (
+          <Button variant="ghost" onClick={() => picking((path) => onChange(control.path, path))}>
+            {held === "" ? "Choose a picture" : "Replace"}
+          </Button>
+        )}
+        {held !== "" && (
+          <Button variant="ghost" onClick={() => onChange(control.path, null)}>
+            Remove
+          </Button>
+        )}
+      </div>
+    </Label>
+  );
+}
+
 function ReadOnly({ control }: { control: Control }) {
   return (
     <Label control={control}>
@@ -366,6 +416,9 @@ export function Draw({ control, onChange }: { control: Control; onChange: Change
       return <Slider control={control} onChange={onChange} />;
     case "color":
       return <Colour control={control} onChange={onChange} />;
+    case "image-select":
+    case "bundle-image-thumbnail":
+      return <Picture control={control} onChange={onChange} />;
     case "readonly":
     case "uniq":
       return <ReadOnly control={control} />;

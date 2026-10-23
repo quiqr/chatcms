@@ -36,6 +36,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
 | `internal/content`     | What a site holds, one page as a form, and writing an edit back               |
+| `internal/media`       | The pictures a site carries, what uses them, and small copies for a grid      |
 | `internal/history`     | The timeline in plain language, what a version holds, and going back          |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
@@ -116,6 +117,19 @@ way the old Quiqr names it, which is why renaming moves the file and rewrites
 the title together: to a content creator those are one act. Whether an item is
 waiting to be published comes from the same question the publish review asks,
 so the two cannot disagree.
+
+**`internal/media`** keeps the pictures. What a picture is comes from reading
+its bytes, never from its name: a name arrives from outside, and a misnamed
+file would be published as a broken picture on a customer's site.
+
+What uses a picture is worked out by reading the content each time rather than
+from an index, because an index would be wrong the first time anybody edited a
+page outside ChatCMS, which this product supports on purpose.
+
+A small copy is named after a hash of the bytes it was made from, which makes
+the thumbnail directory a cache in the strict sense: a changed picture gets a
+new name by itself, and deleting the whole directory costs only the work of
+making them again from the site in git.
 
 **`internal/history`** lists what happened to a site and puts it back.
 

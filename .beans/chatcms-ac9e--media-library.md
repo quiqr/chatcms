@@ -1,11 +1,11 @@
 ---
 # chatcms-ac9e
 title: Media library
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:31Z
+updated_at: 2026-10-23T15:04:32Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-gw8g

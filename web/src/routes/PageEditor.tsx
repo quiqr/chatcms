@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 
+import { Button } from "../components/ui/button";
 import { BodyEditor } from "../fields/BodyEditor";
-import { Draw } from "../fields/Fields";
+import { Draw, withPicking } from "../fields/Fields";
+import { MediaPage } from "./MediaPage";
 import { readPage, savePage, type Control, type Page } from "../lib/tenancy";
 
 type Saving = "saved" | "saving" | "trouble";
@@ -44,6 +46,9 @@ export function PageEditor({ organisation }: { organisation: string }) {
   const [loaded, setLoaded] = useState<Page | null>(null);
   const [trouble, setTrouble] = useState("");
   const [state, setState] = useState<Saving>("saved");
+  // choosing holds what to do with the picture somebody picks, which is how
+  // a field reaches the library without the library knowing about fields.
+  const [choosing, setChoosing] = useState<((path: string) => void) | null>(null);
 
   // waiting holds what has changed but has not been written yet, so that
   // several quick edits become one save rather than one each.
@@ -115,6 +120,29 @@ export function PageEditor({ organisation }: { organisation: string }) {
   }
   if (!loaded) {
     return <p className="text-[15px] text-subtle-foreground">Opening this page…</p>;
+  }
+
+  withPicking((choose) => setChoosing(() => choose));
+
+  if (choosing) {
+    return (
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">Choose a picture</h2>
+          <Button variant="ghost" onClick={() => setChoosing(null)}>
+            Back to the page
+          </Button>
+        </div>
+        <MediaPage
+          organisation={organisation}
+          picking
+          onUse={(image) => {
+            choosing("/" + image.path.replace(/^static\//, ""));
+            setChoosing(null);
+          }}
+        />
+      </section>
+    );
   }
 
   return (

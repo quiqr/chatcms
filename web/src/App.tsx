@@ -8,6 +8,7 @@ import { OnboardingPage } from "./routes/OnboardingPage";
 import { HistoryPage } from "./routes/HistoryPage";
 import { ContentPage } from "./routes/ContentPage";
 import { EditorPage } from "./routes/EditorPage";
+import { MediaPage } from "./routes/MediaPage";
 import { PeoplePage } from "./routes/PeoplePage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
@@ -47,7 +48,10 @@ export function App() {
           path="/p/:project/content/:page"
           element={<EditorPage organisation="technative" />}
         />
-        <Route path="/p/:project/media" element={<ProjectPage title="Media" />} />
+        <Route
+          path="/p/:project/media"
+          element={<ProjectPage title="Media" body={<MediaPage organisation="technative" />} />}
+        />
         <Route
           path="/p/:project/publish"
           element={<ProjectPage title="Publish" body={<PublishPage organisation="technative" />} />}

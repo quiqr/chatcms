@@ -46,6 +46,8 @@ type Options struct {
 	// Browse serves what a site holds, and making, renaming and removing
 	// pages.
 	Browse BrowseService
+	// Media serves the pictures a site carries.
+	Media MediaService
 }
 
 func New(opts Options) http.Handler {
@@ -172,6 +174,19 @@ func New(opts Options) http.Handler {
 		mux.HandleFunc(base+"/rename/{page...}", MethodNotAllowed)
 
 		mux.Handle("DELETE "+base+"/pages/{page...}", RequireActor(deletePageHandler(opts.Browse)))
+	}
+
+	if opts.Media != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/images", RequireActor(listMediaHandler(opts.Media)))
+		mux.Handle("POST "+base+"/images", RequireActor(addMediaHandler(opts.Media)))
+		mux.HandleFunc(base+"/images", MethodNotAllowed)
+
+		mux.Handle("GET "+base+"/images/{image}", RequireActor(readMediaHandler(opts.Media)))
+		mux.Handle("PUT "+base+"/images/{image}", RequireActor(describeMediaHandler(opts.Media)))
+		mux.Handle("DELETE "+base+"/images/{image}", RequireActor(removeMediaHandler(opts.Media)))
+		mux.HandleFunc(base+"/images/{image}", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

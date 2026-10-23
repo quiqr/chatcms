@@ -23,6 +23,7 @@ import (
 	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/media"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/publish"
 	"github.com/quiqr/chatcms/internal/runner"
@@ -57,6 +58,7 @@ type Server struct {
 	publish    *publish.Web
 	history    *history.Web
 	content    *content.Web
+	media      *media.Web
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -139,6 +141,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		History:    server.history,
 		Content:    server.content,
 		Browse:     server.content,
+		Media:      server.media,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
@@ -280,6 +283,8 @@ func (s *Server) History() *history.Web { return s.history }
 
 func (s *Server) Content() *content.Web { return s.content }
 
+func (s *Server) Media() *media.Web { return s.media }
+
 func (s *Server) startContent(tenancyStore *tenancy.Store) error {
 	sources := contentSources{
 		publishSources: publishSources{sites: s.sites, queries: s.db.Queries, baseURL: s.cfg.BaseURL},
@@ -292,6 +297,21 @@ func (s *Server) startContent(tenancyStore *tenancy.Store) error {
 	}
 
 	s.content, err = content.NewWeb(service, tenancyStore)
+	if err != nil {
+		return err
+	}
+
+	thumbnails, err := media.NewThumbnails(filepath.Join(s.cfg.StateDir, "thumbnails"))
+	if err != nil {
+		return err
+	}
+
+	library, err := media.NewLibrary(mediaSources{contentSources: sources}, queueSync{queue: s.queue}, thumbnails)
+	if err != nil {
+		return err
+	}
+
+	s.media, err = media.NewWeb(library, tenancyStore)
 	return err
 }
 

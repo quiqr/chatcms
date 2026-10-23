@@ -1,4 +1,4 @@
-import { get, post, put, remove } from "./api";
+import { get, post, put, remove, sendForm } from "./api";
 
 export type Organisation = {
   slug: string;
@@ -331,4 +331,43 @@ export function createProject(
   body: { slug: string; name: string; domain?: string },
 ) {
   return post<Project>(`/api/organisations/${organisation}/projects`, body);
+}
+
+export type Image = {
+  name: string;
+  path: string;
+  size: number;
+  by?: string;
+  at?: string;
+  alt?: string;
+  usedOn?: string[];
+};
+
+export function readImages(organisation: string, name: string) {
+  return get<{ images: Image[] }>(`${project(organisation, name)}/images`);
+}
+
+export function imageUrl(organisation: string, name: string, image: string, small = false) {
+  return `${project(organisation, name)}/images/${image}${small ? "?small=true" : ""}`;
+}
+
+export async function addImage(organisation: string, name: string, file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return sendForm<Image>(`${project(organisation, name)}/images`, body);
+}
+
+export function describeImage(organisation: string, name: string, image: string, alt: string) {
+  return put<Image>(`${project(organisation, name)}/images/${image}`, { alt });
+}
+
+export function removeImage(
+  organisation: string,
+  name: string,
+  image: string,
+  evenIfUsed = false,
+) {
+  return remove<void>(
+    `${project(organisation, name)}/images/${image}${evenIfUsed ? "?evenIfUsed=true" : ""}`,
+  );
 }

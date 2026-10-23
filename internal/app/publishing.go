@@ -11,6 +11,7 @@ import (
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/media"
 	"github.com/quiqr/chatcms/internal/model"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/policy"
@@ -207,3 +208,19 @@ func (q queueSync) SyncSoon(ctx context.Context, projectID uuid.UUID) error {
 
 var _ content.Sources = contentSources{}
 var _ content.Syncer = queueSync{}
+
+// mediaSources is what the picture library needs: the same working copy and
+// the same person lookup as editing a page.
+type mediaSources struct {
+	contentSources
+}
+
+func (m mediaSources) Site(ctx context.Context, projectID uuid.UUID) (media.Site, func() error, error) {
+	repository, err := m.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	return workingCopy{Repo: repository}, repository.Close, nil
+}
+
+var _ media.Sources = mediaSources{}
