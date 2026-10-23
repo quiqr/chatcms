@@ -9,6 +9,7 @@ node_modules/
 coverage.out
 coverage.html
 /chatcmsd
+/seed
 /tmp/
 .env
 .env.local
