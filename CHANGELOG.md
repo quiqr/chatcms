@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- The nine acceptance tests run by themselves, in a real browser against the
+  built binary, at a desk width and at a phone width, as part of
+  `nix flake check`. `scripts/acceptance-against.sh` runs the same tests
+  against a real site.
 
 - Project scaffold: OpenSpec, beans, Nix flake, ship gate and the milestone 01 backlog.
 - The server runs. `chatcmsd` listens, serves a JSON API, reports its health at
