@@ -1,11 +1,12 @@
 ---
 # chatcms-sbe1
 title: Form rendering and round-trip save
-status: in-progress
+status: completed
 type: epic
 priority: critical
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T21:00:04Z
+updated_at: 2026-10-23T14:00:00Z
+openspec-link: openspec/changes/archive/2026-10-23-add-form-editor
 parent: chatcms-8vem
 blocked_by:
     - chatcms-vho6
@@ -62,3 +63,54 @@ One correction to an already shipped package: `model.Field.GroupData` was a plai
 Coverage: `internal/forms` 91.8%, `internal/frontmatter` 84.9%, overall 84.2%. Only `internal/policy` is still absent from the core set.
 
 Still open on this epic: the browser side. Field renderers, the Markdown body editor, field to preview linking and autosave belong after the design foundation epic ships, and a second change closes this bean.
+
+Second of two changes shipped: `add-form-editor`, archived at
+`openspec/changes/archive/2026-10-23-add-form-editor`. Two more capabilities
+specified and built: `content/editing` and `interface/form-fields`.
+
+## Summary of Changes
+
+The editor works. A page opens as a form built from the site's own Quiqr
+model, every field type is drawn, and what is typed is saved by itself and
+written back byte for byte apart from what changed.
+
+**The browser is given controls with values and a path for each, not the
+model.** Working a path out means knowing that a grouping field may or may
+not group its data, which `internal/forms` already knows. Sending the model
+would mean writing those rules twice, in two languages, and having them
+drift.
+
+**A field this version cannot draw is shown as text, saying so.** Leaving it
+out would make a page look emptier than it is and lose what was in it on the
+first save. A test walks a model with a field nobody has implemented and
+checks it is both shown and saved.
+
+**A page's text is editable only where the model declares a field for it**,
+which is how the reference implementation works. Where it does not, the text
+is still shown and an attempt to write it is refused with a reason rather
+than quietly dropped. The first run of this drew that field twice, once as an
+ordinary control and once as the text editor; it is now drawn once.
+
+**No Save button.** An edit is held for a moment and written when typing
+stops, so a sentence is one save rather than forty, and whatever is waiting
+is written when the screen goes away.
+
+Three findings worth recording:
+
+- A model with a mistake in it was reported as a site with no model at all.
+  The parser already names the file and the field; that now reaches the
+  person who has to fix it.
+- My expectation that clearing a field removes the key was wrong. The
+  reference writes an absent value, `internal/forms` already does that, and
+  the contract wins over the hunch.
+- Two buttons in the list controls shared an accessible name with their
+  fields. Disambiguated by role rather than by changing the words.
+
+One interface-check change: a colour a content creator picks is the site's
+colour, not this interface's, so a token would be the wrong thing entirely.
+The check gained a marker for that, which has to name whose colour it is.
+
+Browsing, creating, renaming and deleting pages is the next epic, which this
+one unblocks, as does live preview.
+
+Coverage 84.1% overall, `internal/content` 82.9%, `internal/forms` 91.8%.
