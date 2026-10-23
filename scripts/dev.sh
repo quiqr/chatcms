@@ -4,7 +4,7 @@
 # of its own on disk, and the server. Run it inside `nix develop`.
 #
 #   bash scripts/dev.sh          start the server, seeding only the first time
-#   bash scripts/dev.sh fresh    throw the database and the state away first
+#   bash scripts/dev.sh fresh    throw this instance's database and state away
 #   bash scripts/dev.sh stop     stop a server left running, and the database
 #
 # Ctrl-C stops the server. The database keeps running, because the next start
@@ -23,13 +23,38 @@
 # Anything on the network can then reach it, with a password written in this
 # script, so do that on a network you trust and not on a shared one.
 #
+# A second instance, so that two people can work without treading on each
+# other, needs a name. It gets its own port, its own state and its own
+# database, sharing only the PostgreSQL that holds them:
+#
+#   CHATCMS_INSTANCE=test bash scripts/dev.sh
+#   cd web && CHATCMS_PORT=8081 npm run dev -- --port 5174
+#
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 root="$PWD"
 
-state="$root/.chatcms-state"
-port="${CHATCMS_PORT:-8080}"
+# An instance is a name, or nothing for the usual one. It decides the port,
+# where the state lives and which database is used, so that two of them never
+# write the same working copy.
+instance="${CHATCMS_INSTANCE:-}"
+if [ -n "$instance" ]; then
+    case "$instance" in
+        *[!a-z0-9]*)
+            echo "dev: an instance is named with small letters and digits, so that it can name a database too." >&2
+            exit 1
+            ;;
+    esac
+    state="$root/.chatcms-state-$instance"
+    database="chatcms_dev_$instance"
+    port="${CHATCMS_PORT:-8081}"
+else
+    state="$root/.chatcms-state"
+    database="chatcms_dev"
+    port="${CHATCMS_PORT:-8080}"
+fi
+
 host="${CHATCMS_HOST:-127.0.0.1}"
 
 # The address a browser will use. It is what invitation links are written
@@ -46,13 +71,22 @@ if ! command -v postgres >/dev/null; then
     exit 1
 fi
 
+export CHATCMS_DEV_DB="$database"
+
 if [ "${1:-}" = "stop" ]; then
     if pkill -f "$state/chatcmsd"; then
         echo "==> stopped the server"
     else
-        echo "==> no server of this script's was running"
+        echo "==> no server of this instance was running"
     fi
-    bash "$root/scripts/dev-db.sh" down >/dev/null 2>&1 && echo "==> stopped the database"
+
+    # The PostgreSQL is shared, so it is only put away when nothing else is
+    # using it. Another instance's server still running is reason to leave it.
+    if pgrep -f "\.chatcms-state[^/]*/chatcmsd" >/dev/null; then
+        echo "==> leaving the database up; another instance is still running"
+    else
+        bash "$root/scripts/dev-db.sh" down >/dev/null 2>&1 && echo "==> stopped the database"
+    fi
 
     # Something else may hold the port: a server started another way, or
     # another program altogether. Naming it is more use than killing it.
@@ -65,15 +99,19 @@ if [ "${1:-}" = "stop" ]; then
     exit 0
 fi
 
+bash "$root/scripts/dev-db.sh" up >/dev/null
+
+# Throwing away means this instance's database and state, never the whole
+# PostgreSQL, which another instance may be using. Use dev-db.sh reset to
+# throw that away on purpose.
 if [ "${1:-}" = "fresh" ]; then
-    echo "==> throwing away the database and the state"
-    bash "$root/scripts/dev-db.sh" reset >/dev/null
+    echo "==> throwing away $database and $(basename "$state")"
+    PGHOST="$root/.pgdata/sock" dropdb --if-exists "$database"
+    PGHOST="$root/.pgdata/sock" createdb "$database"
     rm -rf "$state"
-else
-    bash "$root/scripts/dev-db.sh" up >/dev/null
 fi
 
-url="postgres:///chatcms_dev?host=$root/.pgdata/sock"
+url="postgres:///$database?host=$root/.pgdata/sock"
 
 mkdir -p "$state"
 key="$state/master.key"
@@ -94,6 +132,13 @@ if [ "$host" != "127.0.0.1" ] && [ "$host" != "localhost" ]; then
     frontendFlag=" -- --host"
 fi
 
+frontendPort=""
+if [ -n "$instance" ]; then
+    frontendPort="CHATCMS_PORT=$port "
+    frontendFlag="${frontendFlag:- --}"
+    frontendFlag="$frontendFlag --port 5174"
+fi
+
 if [ ! -d "$state/sites" ]; then
     echo "==> seeding"
     go run ./cmd/seed "$url"
@@ -101,18 +146,17 @@ fi
 
 cat <<NOTICE
 
-==> ChatCMS on http://$reachable:$port
+==> ChatCMS on http://$reachable:$port${instance:+  (instance: $instance)}
     sign in as owner@example.org with: a long enough passphrase
 
     korenaar      has a site, unpublished work, and somewhere to publish to
     studio-noord  has no site, so the setup screen has something to do
 
     The frontend in another terminal, with live reloading:
-      cd web && npm run dev$frontendFlag
-    It serves on http://$reachable:5173 and sends /api here by itself.
+      cd web && ${frontendPort}npm run dev$frontendFlag
 
     Ctrl-C stops this. The database keeps running; to put that away too:
-      bash scripts/dev.sh stop
+      ${instance:+CHATCMS_INSTANCE=$instance }bash scripts/dev.sh stop
 
 NOTICE
 

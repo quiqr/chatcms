@@ -67,6 +67,7 @@ bash scripts/dev.sh                # everything: database, key, seed, server on 
 bash scripts/dev.sh fresh          # the same, throwing the database and state away first
 CHATCMS_HOST=0.0.0.0 bash scripts/dev.sh   # reachable from a phone on the same network
 bash scripts/dev.sh stop           # stop a server left running, and the database
+CHATCMS_INSTANCE=test bash scripts/dev.sh  # a second server: own port, state and database
 bash scripts/dev-db.sh up          # local Postgres in ./.pgdata, prints the URL
 bash scripts/dev-db.sh reset       # throw the database away and start over
 
