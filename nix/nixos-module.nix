@@ -208,7 +208,10 @@ in
         CHATCMS_STATE_DIR = cfg.stateDir;
         CHATCMS_GIT_BIN = lib.getExe cfg.gitPackage;
         CHATCMS_HUGO_BIN = lib.getExe cfg.hugoPackage;
-        CHATCMS_SECRET_KEY_FILE = cfg.secretKeyFile;
+        # systemd reads the key as root and hands the service a copy only it
+        # can read, so the key on disk stays owned by root and the service
+        # does not run as root to read it. %d is where systemd puts it.
+        CHATCMS_SECRET_KEY_FILE = "%d/master-key";
         CHATCMS_BWRAP_BIN = "${cfg.bubblewrapPackage}/bin/bwrap";
         CHATCMS_PRLIMIT_BIN = "${cfg.utilLinuxPackage}/bin/prlimit";
         CHATCMS_BUILD_TIMEOUT = cfg.buildTimeout;
@@ -225,6 +228,7 @@ in
 
       serviceConfig = {
         ExecStart = "${lib.getExe cfg.package}";
+        LoadCredential = [ "master-key:${cfg.secretKeyFile}" ];
         User = cfg.user;
         Group = cfg.group;
         Restart = "on-failure";

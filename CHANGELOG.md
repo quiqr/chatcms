@@ -8,6 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Editing. A page opens as a form built from the site's own Quiqr model, every
+  field type is drawn, and what is typed is saved by itself with no Save
+  button anywhere. Saving writes the file back byte for byte apart from what
+  changed.
+- A content browser: the site's pages and collections, with a mark on anything
+  waiting to be published, search, and making, renaming, copying and removing
+  pages.
+- A picture library: add, search, describe for screen readers, see which pages
+  use a picture, and pick one from a form field. What a picture is comes from
+  reading it, never from what the file was called.
+- Publishing. A review of what changed, said as pages and fields with the
+  words that differ marked, an optional note, and then the publish itself, to
+  the main line or a line of its own, as source files or as built pages.
+- History, and going back. The timeline reads in plain language, and going
+  back to an earlier version is itself something that can be undone, because
+  it makes a version rather than removing any.
+- Live preview of a site while editing it, reached through the app so that
+  unpublished work is never readable by anybody who may not see the project.
+- Declarative workflows in `quiqr/workflows/`, so a site can say what happens
+  when it is saved, previewed or published.
+- Site builds run isolated, with a time and memory limit, and no network.
+- Sync status in the five states the designs ask for, and a question per field
+  when two people changed the same thing.
+- A NixOS module and a virtual machine test that boots it, runs the migrations
+  from an empty database, and asserts the master key never reaches the Nix
+  store. See `docs/DEPLOYING.md`.
+
 - Project scaffold: OpenSpec, beans, Nix flake, ship gate and the milestone 01 backlog.
 - The server runs. `chatcmsd` listens, serves a JSON API, reports its health at
   `/api/health`, and stops gracefully without dropping a request in flight.

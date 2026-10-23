@@ -237,12 +237,16 @@
         default = mkDevShell args;
       });
 
-      checks = forAllSystems (args: {
+      checks = forAllSystems ({ pkgs, system, ... }@args: {
         go-build = mkServer args;
         go-test = mkGoTests args;
         integration = mkIntegrationTests args;
         frontend = mkWeb args;
         sqlc = mkSqlcCheck args;
+      } // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        # A virtual machine can only be booted on Linux, so this check exists
+        # there and not on a Mac, where the rest still runs.
+        nixos-vm = import ./nix/vm-test.nix { inherit self pkgs; };
       });
 
       formatter = forAllSystems ({ pkgs, ... }: pkgs.nixpkgs-fmt);

@@ -1,11 +1,11 @@
 ---
 # chatcms-o5xn
 title: 'Deployment: NixOS module and release'
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:32Z
+updated_at: 2026-10-23T15:38:35Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-io95
