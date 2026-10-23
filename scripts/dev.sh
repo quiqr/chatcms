@@ -10,6 +10,15 @@
 #
 #   cd web && npm run dev
 #
+# To reach it from another machine, such as a phone on the same network, give
+# it an address to listen on and the address that machine will use:
+#
+#   CHATCMS_HOST=0.0.0.0 bash scripts/dev.sh
+#   cd web && npm run dev -- --host
+#
+# Anything on the network can then reach it, with a password written in this
+# script, so do that on a network you trust and not on a shared one.
+#
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -17,6 +26,16 @@ root="$PWD"
 
 state="$root/.chatcms-state"
 port="${CHATCMS_PORT:-8080}"
+host="${CHATCMS_HOST:-127.0.0.1}"
+
+# The address a browser will use. It is what invitation links are written
+# with, so on a network it has to be the address that machine can reach
+# rather than this one's idea of itself.
+reachable="${CHATCMS_REACHABLE_HOST:-$host}"
+if [ "$reachable" = "0.0.0.0" ] || [ "$reachable" = "::" ]; then
+    reachable="$(hostname -I 2>/dev/null | awk '{print $1}')"
+    reachable="${reachable:-127.0.0.1}"
+fi
 
 if ! command -v postgres >/dev/null; then
     echo "dev: run this inside 'nix develop', which pins PostgreSQL, git and Hugo." >&2
@@ -44,8 +63,13 @@ fi
 export CHATCMS_DATABASE_URL="$url"
 export CHATCMS_SECRET_KEY_FILE="$key"
 export CHATCMS_STATE_DIR="$state"
-export CHATCMS_LISTEN="127.0.0.1:$port"
-export CHATCMS_BASE_URL="http://127.0.0.1:$port"
+export CHATCMS_LISTEN="$host:$port"
+export CHATCMS_BASE_URL="http://$reachable:$port"
+
+frontendFlag=""
+if [ "$host" != "127.0.0.1" ] && [ "$host" != "localhost" ]; then
+    frontendFlag=" -- --host"
+fi
 
 if [ ! -d "$state/sites" ]; then
     echo "==> seeding"
@@ -54,15 +78,15 @@ fi
 
 cat <<NOTICE
 
-==> ChatCMS on http://127.0.0.1:$port
+==> ChatCMS on http://$reachable:$port
     sign in as owner@example.org with: a long enough passphrase
 
     korenaar      has a site, unpublished work, and somewhere to publish to
     studio-noord  has no site, so the setup screen has something to do
 
     The frontend in another terminal, with live reloading:
-      cd web && npm run dev
-    It serves on http://localhost:5173 and sends /api here by itself.
+      cd web && npm run dev$frontendFlag
+    It serves on http://$reachable:5173 and sends /api here by itself.
 
 NOTICE
 

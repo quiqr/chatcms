@@ -65,6 +65,7 @@ go test ./...                      # fast unit loop, no database needed
 go test -tags=integration ./...    # adds the tests that need PostgreSQL
 bash scripts/dev.sh                # everything: database, key, seed, server on :8080
 bash scripts/dev.sh fresh          # the same, throwing the database and state away first
+CHATCMS_HOST=0.0.0.0 bash scripts/dev.sh   # reachable from a phone on the same network
 bash scripts/dev-db.sh up          # local Postgres in ./.pgdata, prints the URL
 bash scripts/dev-db.sh reset       # throw the database away and start over
 
