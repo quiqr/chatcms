@@ -1,11 +1,12 @@
 ---
 # chatcms-o5xn
 title: 'Deployment: NixOS module and release'
-status: in-progress
+status: completed
 type: epic
 priority: normal
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-23T15:38:35Z
+updated_at: 2026-10-23T22:00:00Z
+openspec-link: openspec/changes/archive/2026-10-23-add-deployment
 parent: chatcms-8vem
 blocked_by:
     - chatcms-io95
@@ -39,3 +40,27 @@ must be proven, not assumed.
 
 - `docs/BRIEFING-M01.md` section 6, the closing paragraph.
 - `nix/nixos-module.nix`.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-23-add-deployment`.
+
+A NixOS virtual machine now boots the module in the gate: the database and the
+service come up, the migrations run from an empty database, the sign-in page
+is served, the service restarts with its data intact, and the pinned git, Hugo
+and sandbox are the ones it uses.
+
+**The test failed on its first run exactly as a first deployment would have:**
+a master key owned by root with mode 0600, and a service running as
+`chatcms`. The obvious fix is to widen the key's permissions, which is the
+wrong direction for a secret. systemd's `LoadCredential` reads it as root and
+hands the service a copy only that service can see, so the key stays
+root-owned and the service stays non-root. The test asserts all three: still
+`root 600`, the service started, and no copy of its contents anywhere in the
+Nix store.
+
+Absence from the store is searched for rather than assumed: a path outside the
+store proves nothing if something copied the bytes in.
+
+`docs/DEPLOYING.md` and `docs/RELEASING.md` are written, and the changelog
+says what this milestone added.
