@@ -7,8 +7,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/quiqr/chatcms/internal/auth"
+	"github.com/quiqr/chatcms/internal/content"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/history"
+	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/model"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/policy"
@@ -165,3 +167,43 @@ func (h historySources) Who(ctx context.Context, personID uuid.UUID) (gitsync.Id
 }
 
 var _ history.Sources = historySources{}
+
+// contentSources is what editing one page needs: a project's working copy,
+// who is editing, and what they may do.
+type contentSources struct {
+	publishSources
+	people *auth.Service
+}
+
+func (c contentSources) Site(ctx context.Context, projectID uuid.UUID) (content.Site, func() error, error) {
+	repository, err := c.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	return workingCopy{Repo: repository}, repository.Close, nil
+}
+
+func (c contentSources) Who(ctx context.Context, personID uuid.UUID) (gitsync.Identity, error) {
+	person, err := c.people.People().ByID(ctx, personID)
+	if err != nil {
+		return gitsync.Identity{}, err
+	}
+	return gitsync.Identity{Name: person.DisplayName, Email: person.Email}, nil
+}
+
+// queueSync asks for the site to be brought level with its remote soon, so
+// that an edit reaches it without anybody waiting for the next round.
+type queueSync struct {
+	queue *jobs.Queue
+}
+
+func (q queueSync) SyncSoon(ctx context.Context, projectID uuid.UUID) error {
+	if q.queue == nil {
+		return nil
+	}
+	_, err := q.queue.Enqueue(ctx, gitsync.SyncJobKind, projectID.String(), nil)
+	return err
+}
+
+var _ content.Sources = contentSources{}
+var _ content.Syncer = queueSync{}

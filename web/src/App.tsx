@@ -2,11 +2,11 @@ import { Navigate, Route, Routes } from "react-router";
 
 import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toast";
-import { EditorPage } from "./routes/EditorPage";
 import { NotFound } from "./routes/NotFound";
 import { OrganisationPage } from "./routes/OrganisationPage";
 import { OnboardingPage } from "./routes/OnboardingPage";
 import { HistoryPage } from "./routes/HistoryPage";
+import { EditorPage } from "./routes/EditorPage";
 import { PeoplePage } from "./routes/PeoplePage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
@@ -39,7 +39,10 @@ export function App() {
         <Route path="/p/:project/settings" element={<ProjectPage title="Project settings" />} />
         <Route path="/p/:project/workflows" element={<ProjectPage title="Workflows" />} />
         <Route path="/p/:project/content" element={<ProjectPage title="Content" />} />
-        <Route path="/p/:project/content/:page" element={<EditorPage />} />
+        <Route
+          path="/p/:project/content/:page"
+          element={<EditorPage organisation="technative" />}
+        />
         <Route path="/p/:project/media" element={<ProjectPage title="Media" />} />
         <Route
           path="/p/:project/publish"

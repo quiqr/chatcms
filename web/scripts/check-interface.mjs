@@ -16,6 +16,12 @@ const AUDIENCE_MARKER = "chatcms-audience: implementer";
 // the target, so that the claim is visible in review.
 const TARGET_MARKER = "chatcms-target:";
 
+// A colour a content creator chooses is their site's, not this interface's,
+// so a token would be the wrong thing entirely. A line marked this way is
+// skipped by the colour rule, and the marker has to say whose colour it is,
+// so that the claim is visible in review.
+const CONTENT_COLOUR_MARKER = "chatcms-content-colour:";
+
 // Words the hand-off bans in editor-facing text, with the whole-word rule so
 // that "pullover" and "committee" are left alone.
 const BANNED_WORDS = [
@@ -77,8 +83,10 @@ for (const path of sources(sourceDir)) {
   const forImplementers = text.includes(AUDIENCE_MARKER);
 
   // Rule one: no colour written by hand, anywhere in the interface.
-  for (const [index, line] of text.split("\n").entries()) {
+  const everyLine = text.split("\n");
+  for (const [index, line] of everyLine.entries()) {
     if (line.includes(AUDIENCE_MARKER)) continue;
+    if (index > 0 && everyLine[index - 1].includes(CONTENT_COLOUR_MARKER)) continue;
     const match = line.match(COLOUR);
     if (match) {
       problems.push(`${name}:${index + 1} writes the colour ${match[0]}; every colour comes from a token`);

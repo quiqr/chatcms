@@ -152,7 +152,7 @@ func bringASiteIn(ctx context.Context, db *store.DB, projectID uuid.UUID, owner 
 		Message: "Edit the home page",
 		Author:  gitsync.Identity{Name: "Marieke de Vries", Email: "marieke@korenaar.example"},
 		Writes: map[string][]byte{
-			"content/_index.md":             []byte("---\ntitle: Korenaar Bakery\nintro: We bake with plums and pears every morning.\n---\n\nCome in and smell it.\n"),
+			"content/_index.md":             []byte(editedHomePage),
 			"content/news/spring-prices.md": []byte("---\ntitle: Spring prices\ndate: 2026-03-01T09:00:00Z\n---\n\nOur prices for spring are in.\n"),
 		},
 	}); err != nil {
@@ -164,6 +164,51 @@ func bringASiteIn(ctx context.Context, db *store.DB, projectID uuid.UUID, owner 
 		pgtype.UUID{Bytes: projectID, Valid: true}, remote)
 	return err
 }
+
+// publishedHomePage is the page as the live site has it, and editedHomePage
+// is the same page with one word changed, so that the review before
+// publishing has a word to show as having changed.
+const publishedHomePage = `---
+title: Korenaar Bakery
+intro: We bake with apples and pears every morning.
+openToday: true
+style: traditional
+accent: "#8b5a2b"
+specialities:
+  - Sourdough
+  - Apple tart
+opening:
+  - day: Monday
+    hours: 7 to 18
+  - day: Saturday
+    hours: 7 to 16
+seo:
+  description: A bakery on the Oude Gracht.
+---
+
+Come in and smell it.
+`
+
+const editedHomePage = `---
+title: Korenaar Bakery
+intro: We bake with plums and pears every morning.
+openToday: true
+style: traditional
+accent: "#8b5a2b"
+specialities:
+  - Sourdough
+  - Apple tart
+opening:
+  - day: Monday
+    hours: 7 to 18
+  - day: Saturday
+    hours: 7 to 16
+seo:
+  description: A bakery on the Oude Gracht.
+---
+
+Come in and smell it.
+`
 
 func aSmallSite() fs.FS {
 	return fstest.MapFS{
@@ -177,8 +222,49 @@ func aSmallSite() fs.FS {
         type: string
         title: Page title
       - key: intro
-        type: markdown
+        type: string
         title: Introduction
+        multiLine: true
+      - key: openToday
+        type: boolean
+        title: Open today
+      - key: style
+        type: select
+        title: Shop style
+        options:
+          - value: traditional
+            text: Traditional
+          - value: modern
+            text: Modern
+      - key: accent
+        type: color
+        title: Accent colour
+      - key: specialities
+        type: leaf-array
+        title: Specialities
+        field:
+          key: speciality
+          type: string
+      - key: opening
+        type: accordion
+        title: Opening hours
+        fields:
+          - key: day
+            type: string
+            title: Day
+          - key: hours
+            type: string
+            title: Hours
+      - key: seo
+        type: section
+        title: Search
+        fields:
+          - key: description
+            type: string
+            title: Description
+      - key: mainContent
+        type: markdown
+        title: Page text
 collections:
   - key: news
     title: News
@@ -190,8 +276,11 @@ collections:
       - key: date
         type: date
         title: Date
+      - key: mainContent
+        type: markdown
+        title: Page text
 `)},
-		"content/_index.md":            {Data: []byte("---\ntitle: Korenaar Bakery\nintro: We bake with apples and pears every morning.\n---\n\nCome in and smell it.\n")},
+		"content/_index.md":            {Data: []byte(publishedHomePage)},
 		"content/news/_index.md":       {Data: []byte("---\ntitle: News\n---\n")},
 		"layouts/index.html":           {Data: []byte("<!doctype html>\n<html lang=\"nl\"><head><meta charset=\"utf-8\"><title>{{ .Site.Title }}</title></head>\n<body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>\n")},
 		"layouts/_default/single.html": {Data: []byte("<!doctype html>\n<html lang=\"nl\"><head><meta charset=\"utf-8\"><title>{{ .Title }}</title></head>\n<body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>\n")},

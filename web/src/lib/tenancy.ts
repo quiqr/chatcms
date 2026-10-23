@@ -248,3 +248,42 @@ export function goBackTo(
     publishRightAway,
   });
 }
+
+export type Option = {
+  value: string;
+  label: string;
+};
+
+export type Control = {
+  path: string;
+  type: string;
+  title: string;
+  tip?: string;
+  value?: unknown;
+  options?: Option[];
+  fields?: Control[];
+  config?: Record<string, unknown>;
+  unknown?: boolean;
+};
+
+export type Page = {
+  key: string;
+  title: string;
+  section: string;
+  fields: Control[];
+  body: string;
+  hasBody: boolean;
+};
+
+export type Edit = {
+  values?: Record<string, unknown>;
+  body?: string;
+};
+
+export function readPage(organisation: string, name: string, page: string) {
+  return get<Page>(`${project(organisation, name)}/pages/${page}`);
+}
+
+export function savePage(organisation: string, name: string, page: string, edit: Edit) {
+  return put<Page>(`${project(organisation, name)}/pages/${page}`, edit);
+}

@@ -18,6 +18,7 @@ import (
 
 	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/builds"
+	"github.com/quiqr/chatcms/internal/content"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/httpapi"
@@ -55,6 +56,7 @@ type Server struct {
 	workflows  *workflows.Engine
 	publish    *publish.Web
 	history    *history.Web
+	content    *content.Web
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -121,6 +123,11 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
 
+	if err := server.startContent(tenancyStore); err != nil {
+		db.Close()
+		return nil, err
+	}
+
 	handler := httpapi.New(httpapi.Options{
 		Logger:     logger,
 		Health:     server.health,
@@ -130,6 +137,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Onboarding: server.onboarding,
 		Publish:    server.publish,
 		History:    server.history,
+		Content:    server.content,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
@@ -268,6 +276,23 @@ func (s *Server) Workflows() *workflows.Engine { return s.workflows }
 func (s *Server) Publish() *publish.Web { return s.publish }
 
 func (s *Server) History() *history.Web { return s.history }
+
+func (s *Server) Content() *content.Web { return s.content }
+
+func (s *Server) startContent(tenancyStore *tenancy.Store) error {
+	sources := contentSources{
+		publishSources: publishSources{sites: s.sites, queries: s.db.Queries, baseURL: s.cfg.BaseURL},
+		people:         s.auth,
+	}
+
+	service, err := content.NewService(sources, queueSync{queue: s.queue})
+	if err != nil {
+		return err
+	}
+
+	s.content, err = content.NewWeb(service, tenancyStore)
+	return err
+}
 
 func (s *Server) startBuilds(ctx context.Context) error {
 	records := builds.NewRecords(s.db.Queries)

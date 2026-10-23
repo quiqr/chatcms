@@ -7,10 +7,11 @@ import { EditorShell, type EditorLayout } from "../shells/EditorShell";
 import { PhoneShell } from "../shells/PhoneShell";
 import { AssistantSlot } from "../shells/ProjectShell";
 import { useIsPhone } from "../shells/useIsPhone";
+import { PageEditor } from "./PageEditor";
 import { Placeholder } from "./Placeholder";
 
-export function EditorPage() {
-  const { project: slug } = useParams();
+export function EditorPage({ organisation }: { organisation: string }) {
+  const { project: slug, page = "" } = useParams();
   const project =
     demoProjects.find((candidate) => candidate.slug === slug) ??
     demoProjects[0]!;
@@ -22,10 +23,10 @@ export function EditorPage() {
       <div>
         <EditorShell
           project={project}
-          breadcrumb="News / About us"
+          breadcrumb={page}
           layout={layout}
           onLayoutChange={setLayout}
-          form={<Placeholder screen="Page fields" />}
+          form={<PageEditor organisation={organisation} />}
           preview={<Placeholder screen="Preview" />}
         />
       </div>
@@ -45,7 +46,7 @@ export function EditorPage() {
         </>
       }
     >
-      <Placeholder screen="Page fields" />
+      <PageEditor organisation={organisation} />
     </PhoneShell>
   );
 }

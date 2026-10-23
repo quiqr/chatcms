@@ -35,6 +35,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/builds`      | What is remembered about every build, and the state it ended in               |
 | `internal/workflows`   | Parsing and running the declarative YAML workflows                            |
 | `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
+| `internal/content`     | One page as a form, and writing an edit back                                  |
 | `internal/history`     | The timeline in plain language, what a version holds, and going back          |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
@@ -91,6 +92,24 @@ What replacing it costs, and buys:
 
 The interface is already the second one's shape. What changes is the
 implementation and the two tool settings; no caller moves.
+
+**`internal/content`** turns a page into the controls an interface draws, and
+writes an edit back through `internal/forms`, which is what keeps the file
+byte for byte as it was apart from what changed.
+
+The browser is given controls with values and a path for each, rather than the
+model. Working a path out means knowing that a grouping field may or may not
+group its data, which the binder already knows; sending the model would mean
+writing those rules twice, in two languages, and having them drift.
+
+A kind of field this version cannot draw is shown as plain text, saying so,
+rather than left out. Leaving it out would make a page look emptier than it is
+and lose what was in it on the first save.
+
+A page's own text is editable only where the model declares a field for it,
+which is how the reference implementation works. Where it does not, the text
+is shown and an attempt to write it is refused with a reason rather than
+quietly dropped.
 
 **`internal/history`** lists what happened to a site and puts it back.
 

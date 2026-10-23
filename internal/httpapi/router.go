@@ -41,6 +41,8 @@ type Options struct {
 	Publish PublishService
 	// History serves what was published when, and going back to a version.
 	History HistoryService
+	// Content serves one page as a form, and writes an edit back.
+	Content ContentService
 }
 
 func New(opts Options) http.Handler {
@@ -146,6 +148,14 @@ func New(opts Options) http.Handler {
 		mux.Handle("GET "+base+"/versions/{version}/go-back", RequireActor(beforeGoingBackHandler(opts.History)))
 		mux.Handle("POST "+base+"/versions/{version}/go-back", RequireActor(goBackHandler(opts.History)))
 		mux.HandleFunc(base+"/versions/{version}/go-back", MethodNotAllowed)
+	}
+
+	if opts.Content != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/pages/{page...}", RequireActor(readPageHandler(opts.Content)))
+		mux.Handle("PUT "+base+"/pages/{page...}", RequireActor(savePageHandler(opts.Content)))
+		mux.HandleFunc(base+"/pages/{page...}", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)
