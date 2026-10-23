@@ -29,7 +29,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/secrets`     | Encryption at rest, and generating deploy keys. The thing a hardware key store would replace |
 | `internal/onboarding`  | Bringing a customer's site in, its key, and where it publishes                |
 | `internal/redact`      | Removing credential-shaped text before it is logged, stored or shown          |
-| `internal/preview`     | Per-session Hugo preview servers, including idle shutdown                     |
+| `internal/preview`     | A Hugo server per site, reached through the app, stopped when nobody looks    |
 | `internal/runner`      | Sandboxed build execution behind an interface                                 |
 | `internal/sitebuild`   | Running the pinned Hugo over a site, through a runner                         |
 | `internal/builds`      | What is remembered about every build, and the state it ended in               |
@@ -131,6 +131,17 @@ A small copy is named after a hash of the bytes it was made from, which makes
 the thumbnail directory a cache in the strict sense: a changed picture gets a
 new name by itself, and deleting the whole directory costs only the work of
 making them again from the site in git.
+
+**`internal/preview`** runs a Hugo server per site. It binds this machine only
+and is reached through the app's own address, because the app is what asks who
+somebody is: a preview listening on its own would be a customer's unpublished
+work with no sign-in in front of it.
+
+Nothing tells a preview to rebuild. Hugo watches the working copy that saving
+writes to, so a change appears by itself; the test waits for it rather than
+sleeping for a guess. Previews are swept by one loop rather than a timer each,
+and the sweeper asks a function for the time so that a quarter of an hour of
+idleness can be tested in milliseconds.
 
 **`internal/sitesync`** turns what the repository engine reports into
 something a content creator can act on. The engine answers in files; this

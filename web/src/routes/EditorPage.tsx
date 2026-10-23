@@ -8,7 +8,7 @@ import { PhoneShell } from "../shells/PhoneShell";
 import { AssistantSlot } from "../shells/ProjectShell";
 import { useIsPhone } from "../shells/useIsPhone";
 import { PageEditor } from "./PageEditor";
-import { Placeholder } from "./Placeholder";
+import { Preview } from "./Preview";
 
 export function EditorPage({ organisation }: { organisation: string }) {
   const { project: slug, page = "" } = useParams();
@@ -27,7 +27,7 @@ export function EditorPage({ organisation }: { organisation: string }) {
           layout={layout}
           onLayoutChange={setLayout}
           form={<PageEditor organisation={organisation} />}
-          preview={<Placeholder screen="Preview" />}
+          preview={<Preview organisation={organisation} project={slug ?? ""} page={page} />}
         />
       </div>
     );

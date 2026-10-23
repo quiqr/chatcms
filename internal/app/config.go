@@ -28,6 +28,8 @@ type Config struct {
 	WorkflowTools   []string
 	CheckTimeout    time.Duration
 	CheckMemory     int64
+	PreviewIdle     time.Duration
+	PreviewsAtOnce  int
 }
 
 // SitesDir is where every site's working copy lives.
@@ -98,6 +100,7 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_SYNC_INTERVAL", &cfg.SyncInterval, "2m"},
 		{"CHATCMS_BUILD_TIMEOUT", &cfg.BuildTimeout, "10m"},
 		{"CHATCMS_CHECK_TIMEOUT", &cfg.CheckTimeout, "5m"},
+		{"CHATCMS_PREVIEW_IDLE", &cfg.PreviewIdle, "15m"},
 	}
 
 	for _, field := range durations {
@@ -137,6 +140,18 @@ func LoadConfig(lookup Lookup) (Config, error) {
 			return Config{}, &ConfigError{Variable: field.name, Reason: reasonInvalid}
 		}
 		*field.target = value
+	}
+
+	atOnce, err := resolve(lookup, "CHATCMS_PREVIEWS_AT_ONCE")
+	if err != nil {
+		return Config{}, err
+	}
+	if atOnce == "" {
+		atOnce = "8"
+	}
+	cfg.PreviewsAtOnce, err = strconv.Atoi(atOnce)
+	if err != nil || cfg.PreviewsAtOnce <= 0 {
+		return Config{}, &ConfigError{Variable: "CHATCMS_PREVIEWS_AT_ONCE", Reason: reasonInvalid}
 	}
 
 	tools, err := resolve(lookup, "CHATCMS_WORKFLOW_TOOLS")

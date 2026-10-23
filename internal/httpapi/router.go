@@ -50,6 +50,8 @@ type Options struct {
 	Media MediaService
 	// Sync serves how a site stands and settling what two people changed.
 	Sync SyncService
+	// Preview serves a site as a reader will see it.
+	Preview PreviewService
 }
 
 func New(opts Options) http.Handler {
@@ -205,6 +207,10 @@ func New(opts Options) http.Handler {
 
 		mux.Handle("POST "+base+"/standing/abandon", RequireActor(abandonChangesHandler(opts.Sync)))
 		mux.HandleFunc(base+"/standing/abandon", MethodNotAllowed)
+	}
+
+	if opts.Preview != nil {
+		mux.Handle(PreviewPrefix, RequireActor(previewHandler(opts.Preview)))
 	}
 
 	mux.HandleFunc("/api/", NotFound)

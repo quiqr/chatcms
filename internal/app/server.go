@@ -25,6 +25,7 @@ import (
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/media"
 	"github.com/quiqr/chatcms/internal/onboarding"
+	"github.com/quiqr/chatcms/internal/preview"
 	"github.com/quiqr/chatcms/internal/publish"
 	"github.com/quiqr/chatcms/internal/runner"
 	"github.com/quiqr/chatcms/internal/secrets"
@@ -61,6 +62,8 @@ type Server struct {
 	content    *content.Web
 	media      *media.Web
 	standing   *sitesync.Web
+	preview    *preview.Web
+	previews   *preview.Servers
 }
 
 func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, error) {
@@ -145,6 +148,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Browse:     server.content,
 		Media:      server.media,
 		Sync:       server.standing,
+		Preview:    server.preview,
 		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
@@ -239,6 +243,9 @@ func (s *Server) Serve(ctx context.Context) error {
 	}
 	workers.Wait()
 
+	if s.previews != nil {
+		s.previews.Close()
+	}
 	if err := s.keys.Close(); err != nil {
 		s.logger.Error("clearing the decrypted keys failed", "error", err)
 	}
@@ -251,6 +258,11 @@ func (s *Server) Serve(ctx context.Context) error {
 }
 
 func (s *Server) Close() error {
+	// A Hugo server outliving the app would hold a port and a working copy
+	// with nothing left to end it.
+	if s.previews != nil {
+		s.previews.Close()
+	}
 	if s.db != nil {
 		s.db.Close()
 	}
@@ -290,6 +302,8 @@ func (s *Server) Media() *media.Web { return s.media }
 
 func (s *Server) Standing() *sitesync.Web { return s.standing }
 
+func (s *Server) Preview() *preview.Web { return s.preview }
+
 func (s *Server) startContent(tenancyStore *tenancy.Store) error {
 	sources := contentSources{
 		publishSources: publishSources{sites: s.sites, queries: s.db.Queries, baseURL: s.cfg.BaseURL},
@@ -327,6 +341,25 @@ func (s *Server) startContent(tenancyStore *tenancy.Store) error {
 	}
 
 	s.standing, err = sitesync.NewWeb(standing, tenancyStore)
+	if err != nil {
+		return err
+	}
+
+	s.previews, err = preview.NewServers(preview.Settings{
+		HugoBin: s.cfg.HugoBin,
+		Idle:    s.cfg.PreviewIdle,
+		Most:    s.cfg.PreviewsAtOnce,
+	})
+	if err != nil {
+		return err
+	}
+
+	previewing, err := preview.NewService(previewSources{publishSources: sources.publishSources}, s.previews)
+	if err != nil {
+		return err
+	}
+
+	s.preview, err = preview.NewWeb(previewing, tenancyStore)
 	return err
 }
 

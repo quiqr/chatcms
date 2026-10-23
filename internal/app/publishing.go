@@ -15,6 +15,7 @@ import (
 	"github.com/quiqr/chatcms/internal/model"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/policy"
+	"github.com/quiqr/chatcms/internal/preview"
 	"github.com/quiqr/chatcms/internal/publish"
 	"github.com/quiqr/chatcms/internal/sitesync"
 	"github.com/quiqr/chatcms/internal/store"
@@ -264,3 +265,15 @@ func (s syncSources) Technical(ctx context.Context, projectID uuid.UUID) (sitesy
 }
 
 var _ sitesync.Sources = syncSources{}
+
+// previewSources says where a site's working copy is, which is all a preview
+// needs beyond knowing who may see it.
+type previewSources struct {
+	publishSources
+}
+
+func (p previewSources) Dir(ctx context.Context, projectID uuid.UUID) (string, error) {
+	return p.sites.Dir(projectID.String())
+}
+
+var _ preview.Sources = previewSources{}
