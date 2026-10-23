@@ -10,6 +10,7 @@ import { ContentPage } from "./routes/ContentPage";
 import { EditorPage } from "./routes/EditorPage";
 import { MediaPage } from "./routes/MediaPage";
 import { PeoplePage } from "./routes/PeoplePage";
+import { SyncPage } from "./routes/SyncPage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
@@ -60,7 +61,10 @@ export function App() {
           path="/p/:project/history"
           element={<ProjectPage title="History" body={<HistoryPage organisation="technative" />} />}
         />
-        <Route path="/p/:project/sync" element={<ProjectPage title="Sync status" />} />
+        <Route
+          path="/p/:project/sync"
+          element={<ProjectPage title="Sync status" body={<SyncPage organisation="technative" />} />}
+        />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -1,11 +1,11 @@
 ---
 # chatcms-8d4z
 title: Sync status and conflict surfacing
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-21T15:32:21Z
-updated_at: 2026-10-21T15:32:32Z
+updated_at: 2026-10-23T15:18:26Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-gw8g

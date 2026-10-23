@@ -143,3 +143,10 @@ func IsContent(name string) bool {
 		return false
 	}
 }
+
+// LocateFields is the fields the model declares for a file, which is what
+// reading it as a form needs. It is exported because more than one thing has
+// to read a page the way its model says.
+func LocateFields(m *model.Model, name string) []model.Field {
+	return Locate(m, name).Fields
+}

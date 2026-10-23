@@ -48,6 +48,8 @@ type Options struct {
 	Browse BrowseService
 	// Media serves the pictures a site carries.
 	Media MediaService
+	// Sync serves how a site stands and settling what two people changed.
+	Sync SyncService
 }
 
 func New(opts Options) http.Handler {
@@ -187,6 +189,22 @@ func New(opts Options) http.Handler {
 		mux.Handle("PUT "+base+"/images/{image}", RequireActor(describeMediaHandler(opts.Media)))
 		mux.Handle("DELETE "+base+"/images/{image}", RequireActor(removeMediaHandler(opts.Media)))
 		mux.HandleFunc(base+"/images/{image}", MethodNotAllowed)
+	}
+
+	if opts.Sync != nil {
+		base := "/api/organisations/{organisation}/projects/{project}"
+
+		mux.Handle("GET "+base+"/standing", RequireActor(siteStandingHandler(opts.Sync)))
+		mux.HandleFunc(base+"/standing", MethodNotAllowed)
+
+		mux.Handle("POST "+base+"/standing/bring", RequireActor(bringChangesHandler(opts.Sync)))
+		mux.HandleFunc(base+"/standing/bring", MethodNotAllowed)
+
+		mux.Handle("POST "+base+"/standing/answer", RequireActor(answerChangesHandler(opts.Sync)))
+		mux.HandleFunc(base+"/standing/answer", MethodNotAllowed)
+
+		mux.Handle("POST "+base+"/standing/abandon", RequireActor(abandonChangesHandler(opts.Sync)))
+		mux.HandleFunc(base+"/standing/abandon", MethodNotAllowed)
 	}
 
 	mux.HandleFunc("/api/", NotFound)

@@ -371,3 +371,53 @@ export function removeImage(
     `${project(organisation, name)}/images/${image}${evenIfUsed ? "?evenIfUsed=true" : ""}`,
   );
 }
+
+export type SyncState = "saved" | "saving" | "offline" | "arrived" | "asking";
+
+export type FieldConflict = {
+  path: string;
+  name: string;
+  mine: string;
+  theirs: string;
+  words?: Word[];
+};
+
+export type PageConflict = {
+  page?: string;
+  title: string;
+  file: string;
+  who?: string;
+  wholeFile?: boolean;
+  fields?: FieldConflict[];
+};
+
+export type Standing = {
+  state: SyncState;
+  said: string;
+  unpublished: number;
+  arrivedFrom?: string[];
+  conflicts?: PageConflict[];
+  technical?: { branch: string; remote: string; head: string };
+};
+
+export type Answer = {
+  file: string;
+  fields?: Record<string, "mine" | "theirs">;
+  whole?: "mine" | "theirs";
+};
+
+export function readStanding(organisation: string, name: string) {
+  return get<Standing>(`${project(organisation, name)}/standing`);
+}
+
+export function bringChanges(organisation: string, name: string) {
+  return post<Standing>(`${project(organisation, name)}/standing/bring`);
+}
+
+export function answerChanges(organisation: string, name: string, answers: Answer[]) {
+  return post<Standing>(`${project(organisation, name)}/standing/answer`, { answers });
+}
+
+export function abandonChanges(organisation: string, name: string) {
+  return post<Standing>(`${project(organisation, name)}/standing/abandon`);
+}

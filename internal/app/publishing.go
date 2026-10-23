@@ -16,6 +16,7 @@ import (
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/policy"
 	"github.com/quiqr/chatcms/internal/publish"
+	"github.com/quiqr/chatcms/internal/sitesync"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/workflows"
 )
@@ -224,3 +225,42 @@ func (m mediaSources) Site(ctx context.Context, projectID uuid.UUID) (media.Site
 }
 
 var _ media.Sources = mediaSources{}
+
+// syncSources is what saying how a site stands needs.
+type syncSources struct {
+	publishSources
+	gitCfg gitsync.Config
+}
+
+func (s syncSources) Site(ctx context.Context, projectID uuid.UUID) (sitesync.Site, func() error, error) {
+	repository, err := s.sites.Open(ctx, projectID.String())
+	if err != nil {
+		return nil, nil, err
+	}
+	return workingCopy{Repo: repository}, repository.Close, nil
+}
+
+// Technical is where a site keeps its work, for somebody allowed to see such
+// things. It is the one place in the product where these words belong.
+func (s syncSources) Technical(ctx context.Context, projectID uuid.UUID) (sitesync.Technical, error) {
+	row, err := s.queries.GetProject(ctx, pgUUID(projectID))
+	if err != nil {
+		return sitesync.Technical{}, err
+	}
+
+	technical := sitesync.Technical{Remote: row.Remote, Line: "main"}
+	if row.PublishBranch != "" {
+		technical.Line = row.PublishBranch
+	}
+
+	repository, err := s.sites.Open(ctx, projectID.String())
+	if err == nil {
+		defer repository.Close()
+		if versions, err := repository.History(ctx, 1); err == nil && len(versions) > 0 {
+			technical.Head = versions[0].ID
+		}
+	}
+	return technical, nil
+}
+
+var _ sitesync.Sources = syncSources{}

@@ -37,6 +37,7 @@ projection: a cached, rebuildable view in Postgres of something git owns.
 | `internal/publish`     | What changed as pages and fields, the publish itself, and its record          |
 | `internal/content`     | What a site holds, one page as a form, and writing an edit back               |
 | `internal/media`       | The pictures a site carries, what uses them, and small copies for a grid      |
+| `internal/sitesync`    | How a site stands, and what two people changed, as pages and fields           |
 | `internal/history`     | The timeline in plain language, what a version holds, and going back          |
 | `internal/jobs`        | Background job queue and worker, backed by Postgres. Knows nothing about sites |
 | `internal/store`       | sqlc-generated query code plus thin helpers. Generated; do not hand-edit.     |
@@ -130,6 +131,21 @@ A small copy is named after a hash of the bytes it was made from, which makes
 the thumbnail directory a cache in the strict sense: a changed picture gets a
 new name by itself, and deleting the whole directory costs only the work of
 making them again from the site in git.
+
+**`internal/sitesync`** turns what the repository engine reports into
+something a content creator can act on. The engine answers in files; this
+turns a file into a page and a page into questions about its fields, using the
+same model and form loader the editor uses. Nothing about conflicts moved into
+the engine and nothing about git moved out of it.
+
+Only a file that holds words gets field questions: a picture parses as a
+document whose body is the binary, and offering that as two answers would be a
+screen of mojibake. A field nobody answers about keeps what was written here,
+because doing nothing should never throw away the work of the person doing it.
+
+Technical detail is left out of the answer for somebody who may not see it,
+not merely unrendered: a screen that hides what it was sent is one view-source
+away from being wrong about who may see what.
 
 **`internal/history`** lists what happened to a site and puts it back.
 
