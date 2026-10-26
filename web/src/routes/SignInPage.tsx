@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { Checkbox, Field } from "../components/ui/field";
@@ -8,6 +8,7 @@ import { signIn } from "../lib/session";
 
 export function SignInPage() {
   const navigate = useNavigate();
+  const [address] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -21,7 +22,11 @@ export function SignInPage() {
 
     try {
       await signIn(email, password, remember);
-      navigate("/projects");
+      // Back where the session ran out, when that is where somebody came
+      // from. Only within this site: an address from elsewhere in a link is
+      // how a person is sent somewhere they did not mean to go.
+      const then = address.get("then");
+      navigate(then && then.startsWith("/") && !then.startsWith("//") ? then : "/projects");
     } catch (error) {
       setProblem(
         error instanceof RequestFailed

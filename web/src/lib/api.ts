@@ -74,9 +74,32 @@ export async function sendForm<T>(path: string, body: FormData): Promise<T> {
 
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
+    askToSignIn(response.status, path);
     throw new RequestFailed(errorFrom(payload, response.status));
   }
   return payload as T;
+}
+
+/**
+ * askToSignIn sends somebody whose session has gone to the sign-in screen,
+ * remembering where they were so that signing in puts them back. It lives
+ * here rather than on one screen because every screen can be the one open
+ * when a session runs out, and a screen that answers "nothing here" to that
+ * is a screen that looks broken.
+ *
+ * Signing in itself is left alone: a refused password is a 401 too, and it
+ * belongs on the form rather than in a reload.
+ */
+function askToSignIn(status: number, path: string) {
+  if (status !== 401) return;
+  if (typeof window === "undefined") return;
+  if (path.startsWith("/api/sign-in") || path.startsWith("/api/set-password")) return;
+
+  const here = window.location.pathname;
+  if (here === "/sign-in") return;
+
+  const back = here + window.location.search;
+  window.location.assign(`/sign-in?then=${encodeURIComponent(back)}`);
 }
 
 async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -103,6 +126,7 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
   const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
+    askToSignIn(response.status, path);
     throw new RequestFailed(errorFrom(payload, response.status));
   }
   return payload as T;

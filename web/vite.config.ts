@@ -18,6 +18,14 @@ export default defineConfig({
         target: apiTarget,
         changeOrigin: true,
       },
+      // The preview is served by the Go server under the app's own address,
+      // so the development server has to forward it too, websocket and all:
+      // Hugo's live reload rides on one.
+      "/preview": {
+        target: apiTarget,
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   build: {

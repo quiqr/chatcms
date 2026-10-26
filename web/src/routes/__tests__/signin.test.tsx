@@ -1,14 +1,18 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SignInPage } from "../SignInPage";
 
-function renderPage() {
+function renderPage(at = "/sign-in") {
   return render(
-    <MemoryRouter initialEntries={["/sign-in"]}>
-      <SignInPage />
+    <MemoryRouter initialEntries={[at]}>
+      <Routes>
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/projects" element={<p>the projects</p>} />
+        <Route path="/p/:project/content" element={<p>the content browser</p>} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -105,5 +109,68 @@ describe("the sign-in screen", () => {
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Nothing is lost");
+  });
+
+  it("goes to the projects after signing in", async () => {
+    document.cookie = "chatcms_request_token=a-token; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "1", email: "joris@example.org", displayName: "Joris" }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(screen.getByLabelText("Email"), "joris@example.org");
+    await user.type(screen.getByLabelText("Password"), "a long enough passphrase");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("the projects")).toBeInTheDocument();
+  });
+
+  it("goes back to where the session ran out", async () => {
+    document.cookie = "chatcms_request_token=a-token; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "1", email: "joris@example.org", displayName: "Joris" }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage("/sign-in?then=%2Fp%2Fkorenaar%2Fcontent");
+
+    await user.type(screen.getByLabelText("Email"), "joris@example.org");
+    await user.type(screen.getByLabelText("Password"), "a long enough passphrase");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("the content browser")).toBeInTheDocument();
+  });
+
+  it("ignores an address that leads off this site", async () => {
+    document.cookie = "chatcms_request_token=a-token; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: "1", email: "joris@example.org", displayName: "Joris" }),
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage("/sign-in?then=%2F%2Fsomewhere.example%2Ftake-your-session");
+
+    await user.type(screen.getByLabelText("Email"), "joris@example.org");
+    await user.type(screen.getByLabelText("Password"), "a long enough passphrase");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText("the projects")).toBeInTheDocument();
   });
 });
