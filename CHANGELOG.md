@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- Invitations and password resets are sent. Until now they were issued and
+  written to the log, so nobody could be invited without an implementer
+  pasting a link by hand. Sending goes through the job queue, so a slow mail
+  server delays an invitation rather than losing it. With no mail server
+  configured the link still goes to the log, so a small installation does not
+  have to set up SMTP before anybody can sign in. Development runs Mailpit,
+  started with everything else.
+- The two screens those links need: choosing a password from an invitation or
+  a reset, and asking for a reset. Setting a password now signs you in, rather
+  than asking you to prove twice what you just proved once.
 - An application administrator: the person who runs the installation. They
   create organisations and say who owns them, appoint other administrators,
   and see what has been done. Administering is deliberately not editing: it

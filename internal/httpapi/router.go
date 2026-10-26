@@ -81,7 +81,7 @@ func New(opts Options) http.Handler {
 		mux.Handle("POST /api/password-reset", requestResetHandler(opts.Auth))
 		mux.HandleFunc("/api/password-reset", MethodNotAllowed)
 
-		mux.Handle("POST /api/set-password", setPasswordHandler(opts.Auth))
+		mux.Handle("POST /api/set-password", setPasswordHandler(opts.Auth, opts.Secure))
 		mux.HandleFunc("/api/set-password", MethodNotAllowed)
 	}
 

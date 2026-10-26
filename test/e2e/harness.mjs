@@ -20,6 +20,8 @@ export class Harness {
     this.server = null;
     this.mailpit = null;
     this.mailLog = "";
+    this.sendsMail = false;
+    this.whyNoMail = "";
   }
 
   // theInbox is where mail this run sent can be read.
@@ -66,15 +68,7 @@ export class Harness {
     // other's mail.
     this.smtpPort = this.port + 3000;
     this.inboxPort = this.port + 6000;
-    this.mailpit = spawn(process.env.CHATCMS_MAILPIT_BIN ?? "mailpit", [
-      "--listen", `127.0.0.1:${this.inboxPort}`,
-      "--smtp", `127.0.0.1:${this.smtpPort}`,
-      "--database", join(this.root, "mailpit.db"),
-      "--quiet",
-    ], { stdio: ["ignore", "pipe", "pipe"] });
-    this.mailpit.stdout.on("data", () => {});
-    this.mailpit.stderr.on("data", (chunk) => (this.mailLog += chunk));
-    await this.waitUntilTheInboxAnswers();
+    await this.startTheInbox();
 
     this.server = spawn(process.env.CHATCMS_BIN ?? "chatcmsd", [], {
       env: {
@@ -84,7 +78,10 @@ export class Harness {
         CHATCMS_STATE_DIR: this.state,
         CHATCMS_LISTEN: `127.0.0.1:${this.port}`,
         CHATCMS_BASE_URL: this.url,
-        CHATCMS_MAIL_HOST: "127.0.0.1",
+        // With no Mailpit there is nowhere to send, and the server says so
+        // and writes links to its log instead, which is what it does on an
+        // installation with no mail server.
+        CHATCMS_MAIL_HOST: this.sendsMail ? "127.0.0.1" : "",
         CHATCMS_MAIL_PORT: String(this.smtpPort),
         CHATCMS_MAIL_FROM: "chatcms@localhost",
         // Mailpit has no certificate, and asking for one would mean nothing
@@ -99,6 +96,35 @@ export class Harness {
     this.server.stderr.on("data", (chunk) => (this.log += chunk));
 
     await this.waitUntilAnswering();
+  }
+
+  // startTheInbox runs a Mailpit for this harness. A missing Mailpit is not
+  // fatal: the server is then started with nowhere to send, so the specs
+  // that need mail fail saying so and the thirty that do not still run. One
+  // missing tool should break the thing that needs it, not everything.
+  async startTheInbox() {
+    const binary = process.env.CHATCMS_MAILPIT_BIN ?? "mailpit";
+
+    try {
+      this.mailpit = spawn(binary, [
+        "--listen", `127.0.0.1:${this.inboxPort}`,
+        "--smtp", `127.0.0.1:${this.smtpPort}`,
+        "--database", join(this.root, "mailpit.db"),
+        "--quiet",
+      ], { stdio: ["ignore", "pipe", "pipe"] });
+
+      this.mailpit.on("error", (why) => (this.mailLog += `${why.message}\n`));
+      this.mailpit.stdout.on("data", () => {});
+      this.mailpit.stderr.on("data", (chunk) => (this.mailLog += chunk));
+
+      await this.waitUntilTheInboxAnswers();
+      this.sendsMail = true;
+    } catch (why) {
+      this.sendsMail = false;
+      this.whyNoMail = `${binary} could not be started: ${why.message}`;
+      if (this.mailpit && this.mailpit.exitCode === null) this.mailpit.kill("SIGKILL");
+      this.mailpit = null;
+    }
   }
 
   async waitUntilTheInboxAnswers() {
@@ -122,6 +148,9 @@ export class Harness {
   // arrives, which is how a test follows an invitation the way a person
   // would rather than reading a token out of the database.
   async waitForAMessage(to) {
+    if (!this.sendsMail) {
+      throw new Error(`this run has no mail server, so nothing was sent: ${this.whyNoMail}`);
+    }
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
       const answer = await fetch(`${this.theInbox}/api/v1/search?query=${encodeURIComponent("to:" + to)}`);

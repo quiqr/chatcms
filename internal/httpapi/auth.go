@@ -15,7 +15,7 @@ type AuthService interface {
 	SignOut(ctx context.Context, token string) error
 	Lookup(ctx context.Context, token string) (Actor, error)
 	RequestPasswordReset(ctx context.Context, email, caller string) error
-	SetPasswordWithToken(ctx context.Context, token, password string) error
+	SetPasswordWithToken(ctx context.Context, token, password string) (Actor, string, time.Time, error)
 }
 
 // These are the failures the HTTP layer tells apart. Everything else is an
@@ -156,7 +156,7 @@ func requestResetHandler(auth AuthService) http.Handler {
 	})
 }
 
-func setPasswordHandler(auth AuthService) http.Handler {
+func setPasswordHandler(auth AuthService, secure bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body setPasswordRequest
 		if err := Decode(w, r, &body); err != nil {
@@ -164,7 +164,7 @@ func setPasswordHandler(auth AuthService) http.Handler {
 			return
 		}
 
-		err := auth.SetPasswordWithToken(r.Context(), body.Token, body.Password)
+		actor, token, expires, err := auth.SetPasswordWithToken(r.Context(), body.Token, body.Password)
 		switch {
 		case errors.Is(err, ErrLinkUnusable):
 			WriteError(w, http.StatusBadRequest, CodeBadRequest,
@@ -179,9 +179,11 @@ func setPasswordHandler(auth AuthService) http.Handler {
 			return
 		}
 
-		WriteJSON(w, http.StatusOK, map[string]string{
-			"message": "Your password is set. You can sign in now.",
-		})
+		// Signed in straight away: somebody who has proved they hold the
+		// address and chosen a password has done everything signing in would
+		// ask for.
+		SetSessionCookie(w, token, expires, secure)
+		WriteJSON(w, http.StatusOK, actorResponse(actor))
 	})
 }
 

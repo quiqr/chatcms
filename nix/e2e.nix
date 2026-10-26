@@ -44,6 +44,9 @@ pkgs.runCommand "chatcms-acceptance-tests"
     pkgs.bubblewrap
     pkgs.util-linux
     pkgs.coreutils
+    # Each run starts a Mailpit of its own, so that a test reads the message
+    # that was sent rather than a line in a log.
+    pkgs.mailpit
   ];
 
   src = specs;
@@ -62,6 +65,7 @@ pkgs.runCommand "chatcms-acceptance-tests"
   export CHATCMS_SEED=${seed}/bin/seed
   export CHATCMS_GIT_BIN=${pkgs.git}/bin/git
   export CHATCMS_HUGO_BIN=${pkgs.hugo}/bin/hugo
+  export CHATCMS_MAILPIT_BIN=${pkgs.mailpit}/bin/mailpit
   export CI=1
 
   cp -r $src/. .

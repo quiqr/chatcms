@@ -23,5 +23,7 @@ export function requestPasswordReset(email: string) {
 }
 
 export function setPasswordWithToken(token: string, password: string) {
-  return post<{ message: string }>("/api/set-password", { token, password });
+  // Answers with who you now are: setting a password signs you in, because
+  // you have just proved everything signing in would ask for.
+  return post<Person>("/api/set-password", { token, password });
 }

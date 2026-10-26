@@ -46,6 +46,9 @@ test("an invitation arrives as a message, and the link in it sets a password", a
     await page.getByRole("button", { name: /Set .*password|Save/i }).click();
 
     await page.waitForURL(/projects|p\//);
+    // Waited for the destination to be drawn, so that the phone rules below
+    // are checked against a screen rather than against a navigation.
+    await expect(page.locator("main")).toBeVisible();
   });
 
   await worksOnAPhone(page, testInfo);

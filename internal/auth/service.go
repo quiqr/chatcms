@@ -159,17 +159,34 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email, caller string
 	return nil
 }
 
-// SetPasswordWithToken spends an invitation or a reset link.
-func (s *Service) SetPasswordWithToken(ctx context.Context, token, password string) error {
-	_, err := s.credentials.Spend(ctx, token, password, s.people, s.sessions)
+// SetPasswordWithToken spends an invitation or a reset link and signs that
+// person in. Somebody who has just proved they hold the address and chosen a
+// password has done everything signing in would ask for; making them do it
+// again is a form to fill in for nothing, and the first thing an invited
+// person would meet.
+func (s *Service) SetPasswordWithToken(ctx context.Context, token, password string) (httpapi.Actor, string, time.Time, error) {
+	person, err := s.credentials.Spend(ctx, token, password, s.people, s.sessions)
 
 	switch {
 	case errors.Is(err, ErrBadToken):
-		return httpapi.ErrLinkUnusable
+		return httpapi.Anonymous(), "", time.Time{}, httpapi.ErrLinkUnusable
 	case errors.Is(err, ErrPasswordTooShort), errors.Is(err, ErrPasswordTooCommon):
-		return &httpapi.PasswordRejectedError{Reason: err.Error()}
+		return httpapi.Anonymous(), "", time.Time{}, &httpapi.PasswordRejectedError{Reason: err.Error()}
+	case err != nil:
+		return httpapi.Anonymous(), "", time.Time{}, err
 	}
-	return err
+
+	// Not remembered: a link from an email is often opened on somebody
+	// else's machine, and a session that outlives the browser is one they
+	// did not ask for.
+	sessionToken, session, err := s.sessions.Issue(ctx, person.ID, false)
+	if err != nil {
+		return httpapi.Anonymous(), "", time.Time{}, err
+	}
+
+	s.send(ctx, "password changed", person, "", time.Time{}, mail.PasswordChanged(""))
+
+	return actorOf(person), sessionToken, session.ExpiresAt, nil
 }
 
 func (s *Service) linkFor(token string) string {

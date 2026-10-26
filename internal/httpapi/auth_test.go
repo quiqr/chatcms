@@ -57,9 +57,13 @@ func (s *stubAuth) RequestPasswordReset(_ context.Context, email, _ string) erro
 	return s.resetErr
 }
 
-func (s *stubAuth) SetPasswordWithToken(_ context.Context, token, password string) error {
+func (s *stubAuth) SetPasswordWithToken(_ context.Context, token, password string) (Actor, string, time.Time, error) {
 	s.setRequested = append(s.setRequested, [2]string{token, password})
-	return s.setErr
+	if s.setErr != nil {
+		return Anonymous(), "", time.Time{}, s.setErr
+	}
+	return Actor{ID: "person-1", Email: "invited@example.org"},
+		"a-session-token", time.Now().Add(time.Hour), nil
 }
 
 func withAuth(auth AuthService) http.Handler {
@@ -310,7 +314,9 @@ func TestSetPasswordReportsEachOutcome(t *testing.T) {
 		status   int
 		contains string
 	}{
-		"accepted":   {nil, http.StatusOK, "sign in"},
+		// Setting a password now signs that person in, so what comes back is
+		// who they are rather than an instruction to sign in.
+		"accepted":   {nil, http.StatusOK, "invited@example.org"},
 		"bad link":   {ErrLinkUnusable, http.StatusBadRequest, "new one"},
 		"bad word":   {&PasswordRejectedError{Reason: "a password needs at least 12 characters"}, http.StatusBadRequest, "12"},
 		"gone wrong": {context.DeadlineExceeded, http.StatusInternalServerError, "went wrong"},
@@ -328,6 +334,27 @@ func TestSetPasswordReportsEachOutcome(t *testing.T) {
 				t.Errorf("body = %s, want it to contain %q", recorder.Body, tc.contains)
 			}
 		})
+	}
+}
+
+func TestSettingAPasswordSignsThemIn(t *testing.T) {
+	// An invitation that ends at a sign-in form asks somebody to prove twice
+	// what they just proved once.
+	recorder := call(t, withAuth(&stubAuth{}), http.MethodPost, "/api/set-password",
+		map[string]any{"token": "a-token", "password": "a long enough passphrase"})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", recorder.Code)
+	}
+
+	var carried bool
+	for _, cookie := range recorder.Result().Cookies() {
+		if cookie.Name == SessionCookie && cookie.Value != "" {
+			carried = true
+		}
+	}
+	if !carried {
+		t.Error("setting a password did not hand back a session")
 	}
 }
 

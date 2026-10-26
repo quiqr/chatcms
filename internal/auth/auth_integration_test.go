@@ -320,7 +320,7 @@ func TestAcceptingAnInvitation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := h.service.SetPasswordWithToken(t.Context(), token, password); err != nil {
+	if _, _, _, err := h.service.SetPasswordWithToken(t.Context(), token, password); err != nil {
 		t.Fatalf("SetPasswordWithToken() error = %v, want nil", err)
 	}
 
@@ -337,7 +337,7 @@ func TestBadTokensAreRefusedAlike(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := h.service.SetPasswordWithToken(t.Context(), spent, password); err != nil {
+	if _, _, _, err := h.service.SetPasswordWithToken(t.Context(), spent, password); err != nil {
 		t.Fatal(err)
 	}
 
@@ -351,9 +351,9 @@ func TestBadTokensAreRefusedAlike(t *testing.T) {
 	}
 
 	answers := map[string]error{
-		"spent":        h.service.SetPasswordWithToken(t.Context(), spent, password),
-		"expired":      h.service.SetPasswordWithToken(t.Context(), expired, password),
-		"never issued": h.service.SetPasswordWithToken(t.Context(), "nothing-like-a-token", password),
+		"spent":        failureOf(h.service.SetPasswordWithToken(t.Context(), spent, password)),
+		"expired":      failureOf(h.service.SetPasswordWithToken(t.Context(), expired, password)),
+		"never issued": failureOf(h.service.SetPasswordWithToken(t.Context(), "nothing-like-a-token", password)),
 	}
 
 	for name, err := range answers {
@@ -379,7 +379,7 @@ func TestResetEndsOtherSessions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := h.service.SetPasswordWithToken(t.Context(), reset, "a different long passphrase"); err != nil {
+	if _, _, _, err := h.service.SetPasswordWithToken(t.Context(), reset, "a different long passphrase"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -457,3 +457,8 @@ func TestSignInIsRateLimited(t *testing.T) {
 		t.Errorf("SignIn() while limited = %v, want ErrTooManyAttempts", err)
 	}
 }
+
+
+// failureOf keeps only what a table of refusals is about, now that setting a
+// password also hands back a session.
+func failureOf(_ httpapi.Actor, _ string, _ time.Time, err error) error { return err }

@@ -95,6 +95,50 @@ level=WARN msg="builds are unavailable because they cannot be isolated on this m
 A container without user namespaces will say this. `RestrictNamespaces` is
 deliberately off in the service for the same reason.
 
+## Sending mail
+
+Invitations and password resets are sent through a mail server you name. With
+none named, ChatCMS still works: the link is written to the service log
+instead, which suits an installation run by the person who owns it and
+nothing larger. Anything with customers on it needs a real one.
+
+```nix
+services.chatcms.mail = {
+  host = "smtp.example.org";
+  port = 587;
+  from = "chatcms@example.org";
+  username = "chatcms";
+  passwordFile = "/var/lib/secrets/chatcms-mail";   # never in the Nix store
+};
+```
+
+`from` defaults to `chatcms@` the host of `baseUrl`, which is what a
+receiving server is most likely to accept. Leave `startTLS` on for anything
+reachable over a network; it is only turned off for a development mail
+catcher with no certificate.
+
+Sending happens on the job queue, so a mail server that is slow or refusing
+delays an invitation rather than losing it, and a failure shows up as a
+failed job rather than as a message nobody got.
+
+Check it after deploying by inviting yourself. If nothing arrives, the
+service log says whether the message was queued, sent, or refused, and by
+whom.
+
+## Appointing the first administrator
+
+Creating an organisation needs somebody who administers the installation, and
+a new one has nobody who could appoint anybody. Name an address:
+
+```nix
+services.chatcms.firstAdministrator = "you@example.org";
+```
+
+The account must already exist. That account is made an administrator every
+time the service starts, which is harmless when it already is, and the log
+says whether anything changed. Until the account exists, the service starts
+and says it could not appoint anybody; the next start finds them.
+
 ## Settings worth knowing
 
 Everything is a module option; the full list is in `nix/nixos-module.nix`.
@@ -103,6 +147,8 @@ The ones that matter most often:
 | Option | What it decides |
 | --- | --- |
 | `baseUrl` | What invitation links say. Wrong here means invitations nobody can use. |
+| `firstAdministrator` | Who may create organisations on a new installation |
+| `mail.*` | Where invitations and resets are sent |
 | `buildMemory`, `buildTimeout` | What one site's build may use |
 | `checkMemory`, `checkTimeout` | What a site's own check may use |
 | `previewIdle`, `previewsAtOnce` | How long an unused preview is kept, and how many run |

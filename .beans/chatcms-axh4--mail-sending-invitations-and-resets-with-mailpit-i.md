@@ -1,11 +1,11 @@
 ---
 # chatcms-axh4
 title: 'Mail: sending invitations and resets, with Mailpit in development'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-26T16:45:24Z
-updated_at: 2026-10-26T16:45:24Z
+updated_at: 2026-10-26T21:48:31Z
 parent: chatcms-8vem
 ---
 
