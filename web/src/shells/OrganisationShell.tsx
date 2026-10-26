@@ -4,6 +4,7 @@ import { NavLink } from "react-router";
 
 import { Avatar } from "../components/ui/avatar";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../components/ui/menu";
+import { useAdministers } from "./useAdministers";
 
 export type OrganisationShellProps = {
   organisation: { name: string };
@@ -18,6 +19,8 @@ export function OrganisationShell({
   viewer,
   children,
 }: OrganisationShellProps) {
+  const administers = useAdministers();
+
   return (
     <div data-testid="organisation-shell" className="min-h-dvh">
       <header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-3">
@@ -36,13 +39,27 @@ export function OrganisationShell({
             ) : (
               organisations.map((one) => <MenuItem key={one.slug}>{one.name}</MenuItem>)
             )}
-            <MenuSeparator />
-            <MenuItem>New organisation</MenuItem>
+            {administers && (
+              <>
+                <MenuSeparator />
+                <MenuItem asChild>
+                  <NavLink to="/administration">Start an organisation</NavLink>
+                </MenuItem>
+              </>
+            )}
           </MenuContent>
         </Menu>
 
         <span className="flex-1" />
 
+        {administers && (
+          <NavLink
+            to="/administration"
+            className="flex h-11 items-center px-3 text-sm text-muted-foreground"
+          >
+            Administration
+          </NavLink>
+        )}
         <NavLink to="/help" className="flex h-11 items-center px-3 text-sm text-muted-foreground">
           Help
         </NavLink>

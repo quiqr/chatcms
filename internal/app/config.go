@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/quiqr/chatcms/internal/mail"
 )
 
 type Config struct {
@@ -20,16 +22,29 @@ type Config struct {
 	HugoBin         string
 	SSHKeyPath      string
 	SecretKeyFile   string
-	SyncInterval    time.Duration
-	BwrapBin        string
-	PrlimitBin      string
-	BuildTimeout    time.Duration
-	BuildMemory     int64
-	WorkflowTools   []string
-	CheckTimeout    time.Duration
-	CheckMemory     int64
-	PreviewIdle     time.Duration
-	PreviewsAtOnce  int
+	// FirstAdministrator is the email address of the person the server makes
+	// an administrator when it starts. A new installation has nobody who
+	// could appoint anybody, so this is the way in.
+	FirstAdministrator string
+	// Mail is where messages are sent, and as whom. With no host there is
+	// nowhere to send, and links go to the log instead.
+	MailHost       string
+	MailPort       string
+	MailUsername   string
+	MailPassword   string
+	MailFrom       string
+	MailFromName   string
+	MailStartTLS   string
+	SyncInterval   time.Duration
+	BwrapBin       string
+	PrlimitBin     string
+	BuildTimeout   time.Duration
+	BuildMemory    int64
+	WorkflowTools  []string
+	CheckTimeout   time.Duration
+	CheckMemory    int64
+	PreviewIdle    time.Duration
+	PreviewsAtOnce int
 }
 
 // SitesDir is where every site's working copy lives.
@@ -75,6 +90,14 @@ func LoadConfig(lookup Lookup) (Config, error) {
 		{"CHATCMS_SECRET_KEY_FILE", &cfg.SecretKeyFile, "", true},
 		{"CHATCMS_BWRAP_BIN", &cfg.BwrapBin, "bwrap", false},
 		{"CHATCMS_PRLIMIT_BIN", &cfg.PrlimitBin, "prlimit", false},
+		{"CHATCMS_FIRST_ADMINISTRATOR", &cfg.FirstAdministrator, "", false},
+		{"CHATCMS_MAIL_HOST", &cfg.MailHost, "", false},
+		{"CHATCMS_MAIL_PORT", &cfg.MailPort, "587", false},
+		{"CHATCMS_MAIL_USERNAME", &cfg.MailUsername, "", false},
+		{"CHATCMS_MAIL_PASSWORD", &cfg.MailPassword, "", false},
+		{"CHATCMS_MAIL_FROM", &cfg.MailFrom, "", false},
+		{"CHATCMS_MAIL_FROM_NAME", &cfg.MailFromName, "Quiqr ChatCMS", false},
+		{"CHATCMS_MAIL_STARTTLS", &cfg.MailStartTLS, "yes", false},
 	}
 
 	for _, field := range fields {
@@ -234,4 +257,36 @@ func resolve(lookup Lookup, name string) (string, error) {
 
 func EnvLookup() Lookup {
 	return os.LookupEnv
+}
+
+// MailSettings is where messages go, read from the configuration. Sending is
+// off when no host is named, which is the default: an install has to be told
+// where to send before it sends anywhere.
+func (c Config) MailSettings() mail.Settings {
+	from := strings.TrimSpace(c.MailFrom)
+	if from == "" && c.MailHost != "" {
+		// A sensible default rather than a refusal to start: the host of the
+		// address people already visit is the one a receiving server is most
+		// likely to accept.
+		from = "chatcms@" + hostOf(c.BaseURL)
+	}
+
+	return mail.Settings{
+		Host:     c.MailHost,
+		Port:     c.MailPort,
+		Username: c.MailUsername,
+		Password: c.MailPassword,
+		From:     from,
+		FromName: c.MailFromName,
+		StartTLS: !isNo(c.MailStartTLS),
+	}
+}
+
+// isNo reads the words people write when they mean no.
+func isNo(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "no", "false", "off", "0":
+		return true
+	}
+	return false
 }

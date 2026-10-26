@@ -13,7 +13,10 @@ import { PeoplePage } from "./routes/PeoplePage";
 import { SyncPage } from "./routes/SyncPage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
+import { AdministrationPage } from "./routes/AdministrationPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
+import { ForgotPasswordPage } from "./routes/ForgotPasswordPage";
+import { SetPasswordPage } from "./routes/SetPasswordPage";
 import { SignInPage } from "./routes/SignInPage";
 
 export function App() {
@@ -22,9 +25,15 @@ export function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/set-password" element={<SetPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/o/:organisation/projects" element={<ProjectsPage />} />
         <Route path="/help" element={<OrganisationPage title="Help" />} />
+        <Route
+          path="/administration"
+          element={<OrganisationPage title="Administration" body={<AdministrationPage />} />}
+        />
 
         <Route
           path="/p/:project/setup"

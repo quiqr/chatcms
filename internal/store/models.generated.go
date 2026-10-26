@@ -8,6 +8,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AdministrationRecord struct {
+	ID          int64              `json:"id"`
+	PersonID    pgtype.UUID        `json:"person_id"`
+	PersonSaid  string             `json:"person_said"`
+	Did         string             `json:"did"`
+	Subject     string             `json:"subject"`
+	SubjectSaid string             `json:"subject_said"`
+	Detail      []byte             `json:"detail"`
+	At          pgtype.Timestamptz `json:"at"`
+}
+
 type Build struct {
 	ID         pgtype.UUID        `json:"id"`
 	ProjectID  pgtype.UUID        `json:"project_id"`
@@ -65,6 +76,7 @@ type Person struct {
 	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	Administers  bool               `json:"administers"`
 }
 
 type Project struct {

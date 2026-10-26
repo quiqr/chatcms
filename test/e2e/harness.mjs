@@ -18,6 +18,13 @@ export class Harness {
     this.pgsock = join(this.root, "sock");
     this.state = join(this.root, "state");
     this.server = null;
+    this.mailpit = null;
+    this.mailLog = "";
+  }
+
+  // theInbox is where mail this run sent can be read.
+  get theInbox() {
+    return `http://127.0.0.1:${this.inboxPort}`;
   }
 
   get url() {
@@ -54,6 +61,21 @@ export class Harness {
 
     this.port = 18080 + Math.floor(Math.random() * 2000);
 
+    // A Mailpit of this run's own, so that what was sent can be read back
+    // rather than fished out of a log, and so that two runs never read each
+    // other's mail.
+    this.smtpPort = this.port + 3000;
+    this.inboxPort = this.port + 6000;
+    this.mailpit = spawn(process.env.CHATCMS_MAILPIT_BIN ?? "mailpit", [
+      "--listen", `127.0.0.1:${this.inboxPort}`,
+      "--smtp", `127.0.0.1:${this.smtpPort}`,
+      "--database", join(this.root, "mailpit.db"),
+      "--quiet",
+    ], { stdio: ["ignore", "pipe", "pipe"] });
+    this.mailpit.stdout.on("data", () => {});
+    this.mailpit.stderr.on("data", (chunk) => (this.mailLog += chunk));
+    await this.waitUntilTheInboxAnswers();
+
     this.server = spawn(process.env.CHATCMS_BIN ?? "chatcmsd", [], {
       env: {
         ...process.env,
@@ -62,6 +84,12 @@ export class Harness {
         CHATCMS_STATE_DIR: this.state,
         CHATCMS_LISTEN: `127.0.0.1:${this.port}`,
         CHATCMS_BASE_URL: this.url,
+        CHATCMS_MAIL_HOST: "127.0.0.1",
+        CHATCMS_MAIL_PORT: String(this.smtpPort),
+        CHATCMS_MAIL_FROM: "chatcms@localhost",
+        // Mailpit has no certificate, and asking for one would mean nothing
+        // could be sent at all.
+        CHATCMS_MAIL_STARTTLS: "no",
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -71,6 +99,42 @@ export class Harness {
     this.server.stderr.on("data", (chunk) => (this.log += chunk));
 
     await this.waitUntilAnswering();
+  }
+
+  async waitUntilTheInboxAnswers() {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      if (this.mailpit.exitCode !== null) {
+        throw new Error(`Mailpit stopped before it listened:\n${this.mailLog}`);
+      }
+      try {
+        const answer = await fetch(`${this.theInbox}/api/v1/info`);
+        if (answer.ok) return;
+      } catch {
+        // Not up yet.
+      }
+      await new Promise((wake) => setTimeout(wake, 100));
+    }
+    throw new Error(`Mailpit did not answer in time:\n${this.mailLog}`);
+  }
+
+  // waitForAMessage asks the inbox until one addressed to this person
+  // arrives, which is how a test follows an invitation the way a person
+  // would rather than reading a token out of the database.
+  async waitForAMessage(to) {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const answer = await fetch(`${this.theInbox}/api/v1/search?query=${encodeURIComponent("to:" + to)}`);
+      if (answer.ok) {
+        const found = await answer.json();
+        if (found.messages && found.messages.length > 0) {
+          const full = await fetch(`${this.theInbox}/api/v1/message/${found.messages[0].ID}`);
+          return await full.json();
+        }
+      }
+      await new Promise((wake) => setTimeout(wake, 200));
+    }
+    throw new Error(`no message for ${to} arrived in time`);
   }
 
   // Waits by asking, with a deadline, rather than by sleeping for a guess.
@@ -128,6 +192,10 @@ export class Harness {
       this.server.kill("SIGTERM");
       await new Promise((done) => this.server.on("exit", done));
     }
+    if (this.mailpit && this.mailpit.exitCode === null) {
+      this.mailpit.kill("SIGTERM");
+      await new Promise((done) => this.mailpit.on("exit", done));
+    }
     try {
       sh("pg_ctl", ["-D", this.pgdata, "stop", "-m", "immediate"]);
     } catch {
@@ -138,3 +206,10 @@ export class Harness {
 }
 
 export const owner = { email: "owner@example.org", password: "a long enough passphrase" };
+
+// The person who runs the service: they administer the installation and
+// belong to no organisation, which is the whole point of the role.
+export const administrator = {
+  email: "admin@example.org",
+  password: "a long enough passphrase",
+};

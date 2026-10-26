@@ -45,7 +45,35 @@ const (
 	ActionManageBilling      Action = "manage-billing"
 	ActionDeleteProject      Action = "delete-project"
 	ActionCreateProject      Action = "create-project"
+
+	// These are held over the installation rather than over anything in it.
+	// They are answered from whether the actor administers it, and the
+	// resource says nothing about them.
+	ActionCreateOrganisation       Action = "create-organisation"
+	ActionRenameOrganisation       Action = "rename-organisation"
+	ActionRemoveOrganisation       Action = "remove-organisation"
+	ActionSeeEveryOrganisation     Action = "see-every-organisation"
+	ActionManageOrganisationPeople Action = "manage-organisation-people"
+	ActionAdministerInstallation   Action = "administer-installation"
 )
+
+// overTheInstallation is every action held over the installation itself. An
+// administrator may do these and nothing else follows from it: administering
+// is not editing, so none of these appears in the table of roles below.
+var overTheInstallation = map[Action]bool{
+	ActionCreateOrganisation:       true,
+	ActionRenameOrganisation:       true,
+	ActionRemoveOrganisation:       true,
+	ActionSeeEveryOrganisation:     true,
+	ActionManageOrganisationPeople: true,
+	ActionAdministerInstallation:   true,
+}
+
+// OverTheInstallation says whether an action is held over the installation
+// rather than over an organisation or a project.
+func OverTheInstallation(action Action) bool {
+	return overTheInstallation[action]
+}
 
 // Actions is every action, which the tests walk.
 var Actions = []Action{
@@ -61,6 +89,12 @@ var Actions = []Action{
 	ActionManageBilling,
 	ActionDeleteProject,
 	ActionCreateProject,
+	ActionCreateOrganisation,
+	ActionRenameOrganisation,
+	ActionRemoveOrganisation,
+	ActionSeeEveryOrganisation,
+	ActionManageOrganisationPeople,
+	ActionAdministerInstallation,
 }
 
 // allowed is the table from docs/design/DESIGN.md section 6. A role allows
@@ -114,6 +148,10 @@ type Membership struct {
 // no identifier is nobody, and nobody may do nothing.
 type Actor struct {
 	PersonID string
+	// Administers says this person administers the installation. It is a
+	// property of the account rather than a role on anything, because it is
+	// held over the whole installation and over no part of it.
+	Administers bool
 	// Organisations maps an organisation's identifier to the role held there.
 	Organisations map[string]OrganisationRole
 	// Projects maps a project's identifier to the role held there.
@@ -153,6 +191,14 @@ func Can(actor Actor, action Action, resource Resource) bool {
 		return false
 	}
 
+	// An action held over the installation is answered from that alone, and
+	// administering grants nothing on a resource: whoever runs the service
+	// manages who may reach a customer's site without thereby being able to
+	// read or change it.
+	if overTheInstallation[action] {
+		return actor.Administers
+	}
+
 	role, held := EffectiveRole(actor, resource)
 	if !held {
 		return false
@@ -190,6 +236,12 @@ func EffectiveRole(actor Actor, resource Resource) (Role, bool) {
 func Allowed(actor Actor, resource Resource) []Action {
 	var out []Action
 	for _, action := range Actions {
+		// What somebody may do over the installation is not something they
+		// may do to this resource, and a screen asking what it may offer on
+		// a project should not be told about either.
+		if overTheInstallation[action] {
+			continue
+		}
 		if Can(actor, action, resource) {
 			out = append(out, action)
 		}

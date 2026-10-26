@@ -65,6 +65,15 @@ var expected = map[Action]map[Role]bool{
 
 func TestEveryRoleAgainstEveryAction(t *testing.T) {
 	for _, action := range Actions {
+		// An action held over the installation is not in the table of roles:
+		// administering is not a role, and no role grants it.
+		if OverTheInstallation(action) {
+			if _, listed := expected[action]; listed {
+				t.Errorf("%s is held over the installation and should not be in the role table", action)
+			}
+			continue
+		}
+
 		answers, listed := expected[action]
 		if !listed {
 			t.Errorf("%s is an action with no expectation written for it", action)
@@ -148,6 +157,12 @@ func TestOrganisationOwnerOwnsItsProjects(t *testing.T) {
 	}
 
 	for _, action := range Actions {
+		if OverTheInstallation(action) {
+			if Can(owner, action, here()) {
+				t.Errorf("owning an organisation granted %s, which is the installation's", action)
+			}
+			continue
+		}
 		if !Can(owner, action, here()) {
 			t.Errorf("an organisation's owner may not %s on its project", action)
 		}
@@ -211,8 +226,14 @@ func TestAllowedListsWhatMayBeDone(t *testing.T) {
 	if cases[RoleViewer] != 1 {
 		t.Errorf("a viewer may do %d things, want only reading", cases[RoleViewer])
 	}
-	if cases[RoleOwner] != len(Actions) {
-		t.Errorf("an owner may do %d of %d things", cases[RoleOwner], len(Actions))
+	onAProject := 0
+	for _, action := range Actions {
+		if !OverTheInstallation(action) {
+			onAProject++
+		}
+	}
+	if cases[RoleOwner] != onAProject {
+		t.Errorf("an owner may do %d of %d things on a project", cases[RoleOwner], onAProject)
 	}
 	if cases[RoleEditor] >= cases[RoleImplementer] {
 		t.Error("an editor may do at least as much as an implementer")
@@ -240,5 +261,88 @@ func TestOrganisationLevelActions(t *testing.T) {
 	}
 	if Can(owner, ActionCreateProject, Organisation("another-organisation")) {
 		t.Error("an owner of one organisation may create a project in another")
+	}
+}
+
+// administrator is somebody who administers the installation and holds
+// nothing anywhere else, which is the case the whole design turns on.
+func administrator() Actor {
+	return Actor{PersonID: "person-admin", Administers: true}
+}
+
+func TestAnAdministratorMayShapeOrganisations(t *testing.T) {
+	for _, action := range Actions {
+		if !OverTheInstallation(action) {
+			continue
+		}
+		if !Can(administrator(), action, Resource{}) {
+			t.Errorf("an administrator may not %s", action)
+		}
+	}
+}
+
+func TestAdministeringIsNotEditing(t *testing.T) {
+	// The whole point: whoever runs the service decides who may reach a
+	// customer's site without being able to read or change it themselves.
+	for _, action := range Actions {
+		if OverTheInstallation(action) {
+			continue
+		}
+		if Can(administrator(), action, here()) {
+			t.Errorf("administering granted %s on a customer's project", action)
+		}
+	}
+
+	if _, held := EffectiveRole(administrator(), here()); held {
+		t.Error("an administrator holds a role on a project they are not in")
+	}
+	if len(Allowed(administrator(), here())) != 0 {
+		t.Error("an administrator is allowed something on a project they are not in")
+	}
+}
+
+func TestAnAdministratorWhoJoinsHoldsWhatTheJoiningGrants(t *testing.T) {
+	joined := administrator()
+	joined.Projects = map[string]Role{aProject: RoleEditor}
+
+	if !Can(joined, ActionEditContent, here()) {
+		t.Error("an administrator who joined as an editor may not edit")
+	}
+	if Can(joined, ActionDeleteProject, here()) {
+		t.Error("joining as an editor granted an owner's action")
+	}
+	if !Can(joined, ActionCreateOrganisation, Resource{}) {
+		t.Error("joining a project took away administering")
+	}
+}
+
+func TestWithoutAdministeringTheInstallationIsClosed(t *testing.T) {
+	for _, who := range []Actor{
+		Nobody(),
+		{PersonID: "person-1"},
+		holder(RoleOwner),
+		{PersonID: "person-2", Organisations: map[string]OrganisationRole{anOrganisation: OrganisationOwner}},
+	} {
+		for _, action := range Actions {
+			if !OverTheInstallation(action) {
+				continue
+			}
+			if Can(who, action, Resource{}) {
+				t.Errorf("%q was allowed %s without administering", who.PersonID, action)
+			}
+		}
+	}
+}
+
+func TestTheResourceSaysNothingAboutInstallationActions(t *testing.T) {
+	// Asking about an installation action while naming somebody else's
+	// project must not change the answer, in either direction.
+	for _, resource := range []Resource{{}, here(), Organisation("another-organisation")} {
+		if !Can(administrator(), ActionCreateOrganisation, resource) {
+			t.Error("an administrator was refused because of the resource named")
+		}
+		if Can(holder(RoleOwner), ActionCreateOrganisation, resource) {
+			t.Error("a project owner was allowed because of the resource named")
+		}
 	}
 }

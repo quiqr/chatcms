@@ -59,7 +59,7 @@ func (q *Queries) CreateCredentialToken(ctx context.Context, arg CreateCredentia
 const createPerson = `-- name: CreatePerson :one
 INSERT INTO people (email, display_name, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
 `
 
 type CreatePersonParams struct {
@@ -79,6 +79,7 @@ func (q *Queries) CreatePerson(ctx context.Context, arg CreatePersonParams) (Per
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Administers,
 	)
 	return i, err
 }
@@ -137,7 +138,7 @@ func (q *Queries) GetCredentialTokenByHash(ctx context.Context, tokenHash []byte
 }
 
 const getPerson = `-- name: GetPerson :one
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at FROM people WHERE id = $1
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers FROM people WHERE id = $1
 `
 
 func (q *Queries) GetPerson(ctx context.Context, id pgtype.UUID) (Person, error) {
@@ -151,12 +152,13 @@ func (q *Queries) GetPerson(ctx context.Context, id pgtype.UUID) (Person, error)
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Administers,
 	)
 	return i, err
 }
 
 const getPersonByEmail = `-- name: GetPersonByEmail :one
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at FROM people WHERE lower(email) = lower($1)
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers FROM people WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetPersonByEmail(ctx context.Context, lower string) (Person, error) {
@@ -170,12 +172,13 @@ func (q *Queries) GetPersonByEmail(ctx context.Context, lower string) (Person, e
 		&i.DisabledAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Administers,
 	)
 	return i, err
 }
 
 const getSessionByTokenHash = `-- name: GetSessionByTokenHash :one
-SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at
+SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at, people.administers
 FROM sessions
 JOIN people ON people.id = sessions.person_id
 WHERE sessions.token_hash = $1
@@ -205,6 +208,7 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 		&i.Person.DisabledAt,
 		&i.Person.CreatedAt,
 		&i.Person.UpdatedAt,
+		&i.Person.Administers,
 	)
 	return i, err
 }

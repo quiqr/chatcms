@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/quiqr/chatcms/internal/admin"
 	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
@@ -50,6 +51,16 @@ func main() {
 
 	owner, err := identity.People().Create(ctx, "owner@example.org", "Joris Bakker", "a long enough passphrase")
 	if err != nil {
+		fail(err)
+	}
+
+	// Somebody who administers the installation and belongs to no
+	// organisation, which is what whoever runs the service looks like.
+	boss, err := identity.People().Create(ctx, "admin@example.org", "Pim Snel", "a long enough passphrase")
+	if err != nil {
+		fail(err)
+	}
+	if err := admin.NewStore(db).MakeAdministrator(ctx, boss.ID); err != nil {
 		fail(err)
 	}
 
@@ -94,6 +105,7 @@ func main() {
 	}
 
 	fmt.Println("seeded: owner@example.org with a long enough passphrase")
+	fmt.Println("        admin@example.org administers the installation, same passphrase")
 	fmt.Println("korenaar has a site with a remote under " + stateDir() + "/dev-remotes")
 	fmt.Println("studio-noord has none, so the onboarding screen has something to do")
 }

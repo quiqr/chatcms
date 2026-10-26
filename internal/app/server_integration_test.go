@@ -758,7 +758,13 @@ func TestAcceptanceCreateOrganisationAndInviteAnEditor(t *testing.T) {
 	const adminAddress = "admin@technative.example"
 	const adminPassword = "a long enough passphrase"
 
-	if _, err := server.Auth().People().Create(t.Context(), adminAddress, "The Admin", adminPassword); err != nil {
+	// Bringing an organisation into being is held over the installation, so
+	// the person doing it here has to administer it.
+	boss, err := server.Auth().People().Create(t.Context(), adminAddress, "The Admin", adminPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := server.MakeAdministrator(t.Context(), boss.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -975,7 +981,13 @@ func TestAcceptanceImportWithADeployKey(t *testing.T) {
 	const address = "implementer@technative.example"
 	const password = "a long enough passphrase"
 
-	if _, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password); err != nil {
+	implementer, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// They make the organisation they then set a project up in, which only an
+	// administrator may do.
+	if err := server.MakeAdministrator(t.Context(), implementer.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1101,7 +1113,13 @@ func TestThePrivateKeyIsNeverReturned(t *testing.T) {
 
 	const address = "implementer@technative.example"
 	const password = "a long enough passphrase"
-	if _, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password); err != nil {
+	implementer, err := server.Auth().People().Create(t.Context(), address, "The Implementer", password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// They make the organisation they then set a project up in, which only an
+	// administrator may do.
+	if err := server.MakeAdministrator(t.Context(), implementer.ID); err != nil {
 		t.Fatal(err)
 	}
 

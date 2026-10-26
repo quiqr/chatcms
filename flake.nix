@@ -204,6 +204,10 @@
           bubblewrap
           util-linux
 
+          # Mailpit rather than MailHog, which has been unmaintained since
+          # 2020: the same idea, still receiving fixes.
+          mailpit
+
           playwright-driver.browsers
           prefetch-npm-deps
           jq

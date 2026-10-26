@@ -182,6 +182,14 @@ func (s *Store) ActorFor(ctx context.Context, personID uuid.UUID) (policy.Actor,
 		Projects:      map[string]policy.Role{},
 	}
 
+	// Administering is read from the account rather than from a membership,
+	// so it is loaded here with everything else the policy needs.
+	person, err := s.db.Queries.GetPerson(ctx, pgUUID(personID))
+	if err != nil {
+		return policy.Actor{}, fmt.Errorf("reading the person failed: %w", err)
+	}
+	actor.Administers = person.Administers
+
 	organisations, err := s.db.Queries.ListOrganisationMembershipsForPerson(ctx, pgUUID(personID))
 	if err != nil {
 		return policy.Actor{}, fmt.Errorf("reading the memberships failed: %w", err)

@@ -52,10 +52,14 @@ if [ -n "$instance" ]; then
     state="$root/.chatcms-state-$instance"
     database="chatcms_dev_$instance"
     port="${CHATCMS_PORT:-8081}"
+    smtp_port="${CHATCMS_SMTP_PORT:-1026}"
+    inbox_port="${CHATCMS_INBOX_PORT:-8026}"
 else
     state="$root/.chatcms-state"
     database="chatcms_dev"
     port="${CHATCMS_PORT:-8080}"
+    smtp_port="${CHATCMS_SMTP_PORT:-1025}"
+    inbox_port="${CHATCMS_INBOX_PORT:-8025}"
 fi
 
 host="${CHATCMS_HOST:-127.0.0.1}"
@@ -82,6 +86,11 @@ if [ "${1:-}" = "stop" ]; then
     else
         echo "==> no server of this instance was running"
     fi
+
+    if [ -f "$state/mailpit.pid" ] && kill "$(cat "$state/mailpit.pid")" 2>/dev/null; then
+        echo "==> stopped Mailpit"
+    fi
+    rm -f "$state/mailpit.pid"
 
     # The PostgreSQL is shared, so it is only put away when nothing else is
     # using it. Another instance's server still running is reason to leave it.
@@ -126,6 +135,29 @@ if [ ! -f "$key" ]; then
     chmod 600 "$key"
 fi
 
+# Mailpit catches everything this instance sends, so an invitation can be
+# read instead of fished out of the log. It is a development tool and holds
+# its mail in the state directory, which "fresh" throws away.
+if command -v mailpit >/dev/null; then
+    if ! curl -sf "http://127.0.0.1:$inbox_port/api/v1/info" >/dev/null 2>&1; then
+        echo "==> starting Mailpit"
+        mailpit \
+            --listen "$host:$inbox_port" \
+            --smtp "$host:$smtp_port" \
+            --database "$state/mailpit.db" \
+            --quiet &
+        mailpit_pid=$!
+        echo "$mailpit_pid" > "$state/mailpit.pid"
+    fi
+
+    export CHATCMS_MAIL_HOST="127.0.0.1"
+    export CHATCMS_MAIL_PORT="$smtp_port"
+    export CHATCMS_MAIL_FROM="chatcms@localhost"
+    # Mailpit has no certificate, and asking it for one would mean nothing
+    # could be sent at all.
+    export CHATCMS_MAIL_STARTTLS="no"
+fi
+
 export CHATCMS_DATABASE_URL="$url"
 export CHATCMS_SECRET_KEY_FILE="$key"
 export CHATCMS_STATE_DIR="$state"
@@ -154,9 +186,12 @@ cat <<NOTICE
 
 ==> ChatCMS on http://$reachable:$port${instance:+  (instance: $instance)}
     sign in as owner@example.org with: a long enough passphrase
+    admin@example.org administers the installation, same passphrase
 
     korenaar      has a site, unpublished work, and somewhere to publish to
     studio-noord  has no site, so the setup screen has something to do
+
+    Mail this instance sends: http://$reachable:$inbox_port
 
     The frontend in another terminal, with live reloading:
       cd web && ${frontendSettings}npm run dev$frontendFlag

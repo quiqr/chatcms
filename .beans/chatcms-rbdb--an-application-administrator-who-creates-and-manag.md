@@ -1,11 +1,11 @@
 ---
 # chatcms-rbdb
 title: An application administrator, who creates and manages organisations
-status: todo
+status: in-progress
 type: epic
 priority: critical
 created_at: 2026-10-26T21:01:46Z
-updated_at: 2026-10-26T21:01:46Z
+updated_at: 2026-10-26T21:12:15Z
 parent: chatcms-8vem
 ---
 

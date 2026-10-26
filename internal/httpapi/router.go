@@ -34,6 +34,9 @@ type Options struct {
 	Secure bool
 	// Tenancy serves organisations, projects and the people on them.
 	Tenancy TenancyService
+	// Administration serves what somebody who administers the installation
+	// may do: organisations, who is in them, and who administers.
+	Administration AdministrationService
 	// Onboarding serves setting a project up: its key, its site, and where
 	// it publishes.
 	Onboarding OnboardingService
@@ -108,6 +111,10 @@ func New(opts Options) http.Handler {
 		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}/people/{person}",
 			RequireActor(removePersonHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people/{person}", MethodNotAllowed)
+	}
+
+	if opts.Administration != nil {
+		administrationHandlers(mux, opts.Administration)
 	}
 
 	if opts.Onboarding != nil {

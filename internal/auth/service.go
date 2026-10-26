@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/quiqr/chatcms/internal/httpapi"
+	"github.com/quiqr/chatcms/internal/mail"
 	"github.com/quiqr/chatcms/internal/store"
 )
 
@@ -24,7 +25,15 @@ type Service struct {
 	limiter     *Limiter
 	logger      *slog.Logger
 	baseURL     string
+	// post is where a message is handed to be sent. It is nil on an install
+	// with no mail server, and the link goes to the log instead.
+	post mail.Posting
 }
+
+// SendsWith gives the service somewhere to post messages. It is set after
+// construction because the queue the post uses is built later than the
+// service that signs people in.
+func (s *Service) SendsWith(post mail.Posting) { s.post = post }
 
 func NewService(db *store.DB, logger *slog.Logger, baseURL string) *Service {
 	return &Service{
@@ -98,13 +107,27 @@ func (s *Service) Lookup(ctx context.Context, token string) (httpapi.Actor, erro
 	return actorOf(person), nil
 }
 
-// Invite issues the link that sets someone's first password.
+// Invite issues the link that sets someone's first password and sends it.
 func (s *Service) Invite(ctx context.Context, personID uuid.UUID) error {
+	return s.InviteTo(ctx, personID, "", "")
+}
+
+// InviteTo is Invite, with the site and the person doing the inviting, which
+// is what makes the message read as something a person wrote rather than as
+// a notification from a machine.
+func (s *Service) InviteTo(ctx context.Context, personID uuid.UUID, siteName, invitedBy string) error {
 	token, expires, err := s.credentials.Issue(ctx, KindInvitation, personID)
 	if err != nil {
 		return err
 	}
-	s.recordLink(ctx, "invitation", personID, token, expires)
+
+	person, err := s.people.ByID(ctx, personID)
+	if err != nil {
+		return err
+	}
+
+	s.send(ctx, "invitation", person, token, expires,
+		mail.Invitation(siteName, invitedBy, s.linkFor(token)))
 	return nil
 }
 
@@ -131,7 +154,8 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email, caller string
 	if err != nil {
 		return err
 	}
-	s.recordLink(ctx, "password reset", person.ID, token, expires)
+	s.send(ctx, "password reset", person, token, expires,
+		mail.PasswordReset(s.linkFor(token)))
 	return nil
 }
 
@@ -148,16 +172,40 @@ func (s *Service) SetPasswordWithToken(ctx context.Context, token, password stri
 	return err
 }
 
-// recordLink writes the link where an implementer can read it. There is no
-// way to send mail yet; the epic that adds one replaces this.
-func (s *Service) recordLink(ctx context.Context, kind string, personID uuid.UUID, token string, expires time.Time) {
-	link := s.baseURL + "/set-password?token=" + url.QueryEscape(token)
+func (s *Service) linkFor(token string) string {
+	return s.baseURL + "/set-password?token=" + url.QueryEscape(token)
+}
 
+// send puts the message on its way. When there is nowhere to send, the post
+// writes the link to the log instead, which is what an install run by the
+// person who owns it needs: being made to set up SMTP before anybody can
+// sign in would be a poor welcome.
+func (s *Service) send(ctx context.Context, kind string, person Person, token string, expires time.Time, message mail.Message) {
+	if s.post == nil {
+		s.recordLink(ctx, kind, person.ID, token, expires)
+		return
+	}
+
+	if err := s.post.Post(ctx, person.Email, message); err != nil {
+		// The link exists either way, so it is written down rather than
+		// lost, and the failure is said out loud.
+		s.logger.LogAttrs(ctx, slog.LevelError,
+			"a message could not be put on its way",
+			slog.String("kind", kind),
+			slog.String("error", err.Error()),
+		)
+		s.recordLink(ctx, kind, person.ID, token, expires)
+	}
+}
+
+// recordLink writes the link where an implementer can read it, which is what
+// happens when there is nowhere to send mail.
+func (s *Service) recordLink(ctx context.Context, kind string, personID uuid.UUID, token string, expires time.Time) {
 	s.logger.LogAttrs(ctx, slog.LevelWarn,
-		"a sign-in link was issued and could not be sent, because sending mail is not set up yet",
+		"a sign-in link was issued and could not be sent, because sending mail is not set up",
 		slog.String("kind", kind),
 		slog.String("person", personID.String()),
-		slog.String("link", link),
+		slog.String("link", s.linkFor(token)),
 		slog.Time("expires", expires),
 	)
 }

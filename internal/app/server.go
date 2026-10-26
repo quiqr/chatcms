@@ -16,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/quiqr/chatcms/internal/admin"
 	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/builds"
 	"github.com/quiqr/chatcms/internal/content"
@@ -23,6 +24,7 @@ import (
 	"github.com/quiqr/chatcms/internal/history"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
+	"github.com/quiqr/chatcms/internal/mail"
 	"github.com/quiqr/chatcms/internal/media"
 	"github.com/quiqr/chatcms/internal/onboarding"
 	"github.com/quiqr/chatcms/internal/preview"
@@ -54,6 +56,7 @@ type Server struct {
 	keys       *onboarding.Keys
 	auth       *auth.Service
 	tenancy    *tenancy.Service
+	admin      *admin.Web
 	onboarding *onboarding.Service
 	builds     *builds.Service
 	workflows  *workflows.Engine
@@ -112,6 +115,10 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	tenancyStore := tenancy.NewStore(db)
 	server.tenancy = tenancy.NewService(tenancyStore, server.auth)
 
+	adminStore := admin.NewStore(db)
+	server.admin = admin.NewWeb(admin.NewService(adminStore, tenancyStore))
+	appointTheFirstAdministrator(ctx, adminStore, cfg.FirstAdministrator, logger)
+
 	server.onboarding = onboarding.NewService(db, tenancyStore, server.keys,
 		onboarding.NewImporter(db, server.sites, server.keys,
 			gitsync.Identity{Name: "Quiqr ChatCMS", Email: "chatcms@" + hostOf(cfg.BaseURL)}))
@@ -129,6 +136,15 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.queue = jobs.NewQueue(db)
 	server.worker = jobs.NewWorker(server.queue, jobs.WorkerOptions{Logger: logger})
 	registerSyncJob(server.worker, server.sites, logger)
+	registerMailJob(server.worker, cfg.MailSettings(), logger)
+
+	// Sending goes through the queue, so that nobody waits on a mail server
+	// and a slow one cannot lose an invitation.
+	settings := cfg.MailSettings()
+	server.auth.SendsWith(mail.NewPost(server.queue, settings.Configured(), logger, nil))
+	if !settings.Configured() {
+		logger.InfoContext(ctx, "no mail server is configured, so sign-in links go to this log")
+	}
 
 	if err := server.startContent(tenancyStore); err != nil {
 		db.Close()
@@ -136,20 +152,21 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	}
 
 	handler := httpapi.New(httpapi.Options{
-		Logger:     logger,
-		Health:     server.health,
-		Assets:     webui.Handler(),
-		Auth:       server.auth,
-		Tenancy:    server.tenancy,
-		Onboarding: server.onboarding,
-		Publish:    server.publish,
-		History:    server.history,
-		Content:    server.content,
-		Browse:     server.content,
-		Media:      server.media,
-		Sync:       server.standing,
-		Preview:    server.preview,
-		Secure:     strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
+		Logger:         logger,
+		Health:         server.health,
+		Assets:         webui.Handler(),
+		Auth:           server.auth,
+		Tenancy:        server.tenancy,
+		Administration: server.admin,
+		Onboarding:     server.onboarding,
+		Publish:        server.publish,
+		History:        server.history,
+		Content:        server.content,
+		Browse:         server.content,
+		Media:          server.media,
+		Sync:           server.standing,
+		Preview:        server.preview,
+		Secure:         strings.HasPrefix(strings.ToLower(cfg.BaseURL), "https://"),
 	})
 
 	listener, err := net.Listen("tcp", cfg.Listen)
@@ -280,6 +297,16 @@ func Serve(ctx context.Context, cfg Config, logger *slog.Logger) error {
 // Auth exposes the identity service, which the integration tests use to
 // create a person without an endpoint for it.
 func (s *Server) Auth() *auth.Service { return s.auth }
+
+// Administration exposes what somebody who administers the installation may
+// do, which the acceptance test needs in order to be that person.
+func (s *Server) Administration() *admin.Web { return s.admin }
+
+// MakeAdministrator appoints somebody, which the integration tests use to
+// set a scene that would otherwise need a configured address and a restart.
+func (s *Server) MakeAdministrator(ctx context.Context, personID uuid.UUID) error {
+	return admin.NewStore(s.db).MakeAdministrator(ctx, personID)
+}
 
 // Tenancy exposes the organisations and projects, which the integration
 // tests use to set a scene without an endpoint for every step.
@@ -467,4 +494,30 @@ func hostOf(baseURL string) string {
 		return "chatcms.local"
 	}
 	return strings.ToLower(parsed.Hostname())
+}
+
+// appointTheFirstAdministrator makes the configured person an administrator
+// when the server starts. A new installation has nobody who could appoint
+// anybody, so this is the way in. It is safe to run on every start, because a
+// NixOS module does exactly that, and it says what it did rather than leaving
+// whoever is reading the log to guess.
+func appointTheFirstAdministrator(ctx context.Context, store *admin.Store, email string, logger *slog.Logger) {
+	if strings.TrimSpace(email) == "" {
+		return
+	}
+
+	changed, err := store.MakeAdministratorByEmail(ctx, email)
+	switch {
+	case errors.Is(err, admin.ErrNoSuchPerson):
+		// Not a failure to start on: the address is usually configured before
+		// the person has accepted their invitation, and the next start will
+		// find them.
+		logger.WarnContext(ctx,
+			"nobody with the configured address has an account yet, so no administrator was appointed",
+			"email", email)
+	case err != nil:
+		logger.ErrorContext(ctx, "appointing the first administrator failed", "error", err, "email", email)
+	case changed:
+		logger.InfoContext(ctx, "the configured person now administers this installation", "email", email)
+	}
 }

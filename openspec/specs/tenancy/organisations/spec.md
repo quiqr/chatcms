@@ -9,12 +9,19 @@ someone is brought in, so that work has an owner and a boundary.
 ### Requirement: An organisation holds projects and people
 
 An organisation SHALL have a name and an address of its own, SHALL hold
-projects, and SHALL have at least one owner at all times.
+projects, and SHALL have at least one owner at all times. Only an
+administrator of the installation SHALL create one.
 
 #### Scenario: Creating an organisation
 
-- **WHEN** someone creates an organisation
-- **THEN** it exists with them as its owner
+- **WHEN** an administrator creates an organisation and names its owner
+- **THEN** it exists with that person as its owner
+
+#### Scenario: Creating one without being an administrator
+
+- **WHEN** somebody who does not administer the installation asks to create an
+  organisation
+- **THEN** it is refused
 
 #### Scenario: The last owner cannot be removed
 

@@ -1,6 +1,6 @@
 import { test as base, expect } from "@playwright/test";
 
-import { Harness, owner } from "./harness.mjs";
+import { Harness, administrator, owner } from "./harness.mjs";
 
 // Each spec gets a ChatCMS of its own: its own database, its own remote and
 // its own seeded site. Nothing a test does can reach another, so the order
@@ -20,26 +20,37 @@ export const test = base.extend({
   },
 
   signedIn: async ({ page, chatcms }, use) => {
-    await page.goto(`${chatcms.url}/sign-in`);
-    await page.getByLabel("Email").fill(owner.email);
-    await page.getByLabel("Password").fill(owner.password);
-    await page.getByRole("button", { name: /Sign in/i }).click();
-    try {
-      await page.waitForURL(/projects/);
-    } catch (why) {
-      // Saying what the screen and the server said, rather than only that a
-      // navigation did not happen. A suite that cannot be read from its own
-      // output is a suite somebody has to reproduce by hand.
-      const said = await page.getByRole("alert").allInnerTexts().catch(() => []);
-      throw new Error(
-        `signing in did not reach the projects: ${why.message}\n` +
-          `the screen said: ${said.join(" | ") || "nothing"}\n` +
-          `the server said:\n${chatcms.log}`,
-      );
-    }
+    await signIn(page, chatcms, owner);
+    await use(page);
+  },
+
+  // Somebody who administers the installation, which is who acceptance test 1
+  // begins with.
+  administering: async ({ page, chatcms }, use) => {
+    await signIn(page, chatcms, administrator);
     await use(page);
   },
 });
+
+async function signIn(page, chatcms, who) {
+  await page.goto(`${chatcms.url}/sign-in`);
+  await page.getByLabel("Email").fill(who.email);
+  await page.getByLabel("Password").fill(who.password);
+  await page.getByRole("button", { name: /Sign in/i }).click();
+  try {
+    await page.waitForURL(/projects/);
+  } catch (why) {
+    // Saying what the screen and the server said, rather than only that a
+    // navigation did not happen. A suite that cannot be read from its own
+    // output is a suite somebody has to reproduce by hand.
+    const said = await page.getByRole("alert").allInnerTexts().catch(() => []);
+    throw new Error(
+      `signing in as ${who.email} did not reach the projects: ${why.message}\n` +
+        `the screen said: ${said.join(" | ") || "nothing"}\n` +
+        `the server said:\n${chatcms.log}`,
+    );
+  }
+}
 
 export { expect };
 

@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- An application administrator: the person who runs the installation. They
+  create organisations and say who owns them, appoint other administrators,
+  and see what has been done. Administering is deliberately not editing: it
+  grants nothing over any customer's content, so reaching a site means
+  joining its organisation, where its owner can see you. The first one is
+  named in the configuration and appointed when the server starts.
 - The nine acceptance tests run by themselves, in a real browser against the
   built binary, at a desk width and at a phone width, as part of
   `nix flake check`. `scripts/acceptance-against.sh` runs the same tests

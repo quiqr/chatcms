@@ -60,6 +60,17 @@ func (s *Service) CreateOrganisation(ctx context.Context, who httpapi.Actor, slu
 		return httpapi.OrganisationView{}, httpapi.ErrNotAllowed
 	}
 
+	// Bringing an organisation into being is held over the installation, not
+	// over anything in it, so the resource is empty and only an administrator
+	// is answered yes.
+	actor, err := s.actor(ctx, who)
+	if err != nil {
+		return httpapi.OrganisationView{}, err
+	}
+	if !policy.Can(actor, policy.ActionCreateOrganisation, policy.Resource{}) {
+		return httpapi.OrganisationView{}, httpapi.ErrNotAllowed
+	}
+
 	organisation, err := s.store.CreateOrganisation(ctx, slug, name, personID)
 	if err != nil {
 		return httpapi.OrganisationView{}, refusal(err)

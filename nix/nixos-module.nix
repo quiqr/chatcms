@@ -83,6 +83,78 @@ in
       '';
     };
 
+    firstAdministrator = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "pim@example.org";
+      description = ''
+        Email address of the person who administers this installation. They
+        are made an administrator every time the service starts, which is how
+        a new installation gets its first one: nobody is there to appoint
+        anybody. The account must already exist; until it does, the service
+        starts and says it could not appoint anybody.
+      '';
+    };
+
+    mail = {
+      host = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "smtp.example.org";
+        description = ''
+          Mail server invitations and password resets are sent through. With
+          none, those links go to the service log instead, which suits an
+          installation run by the person who owns it and nothing larger.
+        '';
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 587;
+        description = "Port on the mail server.";
+      };
+
+      from = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "chatcms@example.org";
+        description = ''
+          Address messages come from. Defaults to chatcms@ the host of
+          baseUrl, which is what a receiving server is most likely to accept.
+        '';
+      };
+
+      fromName = lib.mkOption {
+        type = lib.types.str;
+        default = "Quiqr ChatCMS";
+        description = "Name a reader sees instead of the address.";
+      };
+
+      username = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Username for the mail server, when it wants one.";
+      };
+
+      passwordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          File holding the mail server password. Never put in the Nix store;
+          systemd reads it and hands the service a copy only it can read.
+        '';
+      };
+
+      startTLS = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Ask for the connection to be encrypted. Leave it on for anything
+          reachable over a network.
+        '';
+      };
+    };
+
     hugoPackage = lib.mkOption {
       type = lib.types.package;
       default = pkgs.hugo;
@@ -220,6 +292,19 @@ in
           lib.concatStringsSep ":" (map (tool: "${tool}/bin") cfg.workflowTools);
         CHATCMS_CHECK_TIMEOUT = cfg.checkTimeout;
         CHATCMS_CHECK_MEMORY = cfg.checkMemory;
+      } // lib.optionalAttrs (cfg.firstAdministrator != null) {
+        CHATCMS_FIRST_ADMINISTRATOR = cfg.firstAdministrator;
+      } // lib.optionalAttrs (cfg.mail.host != null) {
+        CHATCMS_MAIL_HOST = cfg.mail.host;
+        CHATCMS_MAIL_PORT = toString cfg.mail.port;
+        CHATCMS_MAIL_FROM_NAME = cfg.mail.fromName;
+        CHATCMS_MAIL_STARTTLS = if cfg.mail.startTLS then "yes" else "no";
+      } // lib.optionalAttrs (cfg.mail.from != null) {
+        CHATCMS_MAIL_FROM = cfg.mail.from;
+      } // lib.optionalAttrs (cfg.mail.username != null) {
+        CHATCMS_MAIL_USERNAME = cfg.mail.username;
+      } // lib.optionalAttrs (cfg.mail.passwordFile != null) {
+        CHATCMS_MAIL_PASSWORD_FILE = "%d/mail-password";
       } // lib.optionalAttrs cfg.database.createLocally {
         CHATCMS_DATABASE_URL = "postgres:///${cfg.database.name}?host=/run/postgresql";
       } // lib.optionalAttrs (cfg.database.urlFile != null) {
@@ -228,7 +313,8 @@ in
 
       serviceConfig = {
         ExecStart = "${lib.getExe cfg.package}";
-        LoadCredential = [ "master-key:${cfg.secretKeyFile}" ];
+        LoadCredential = [ "master-key:${cfg.secretKeyFile}" ]
+          ++ lib.optional (cfg.mail.passwordFile != null) "mail-password:${cfg.mail.passwordFile}";
         User = cfg.user;
         Group = cfg.group;
         Restart = "on-failure";
