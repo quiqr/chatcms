@@ -5,10 +5,11 @@ status: todo
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:03Z
-updated_at: 2026-10-26T16:46:03Z
+updated_at: 2026-10-26T21:01:51Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-8n4m
+    - chatcms-rbdb
 ---
 
 ## Purpose
