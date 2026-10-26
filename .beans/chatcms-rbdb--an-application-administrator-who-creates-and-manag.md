@@ -1,11 +1,12 @@
 ---
 # chatcms-rbdb
 title: An application administrator, who creates and manages organisations
-status: in-progress
+status: completed
 type: epic
 priority: critical
 created_at: 2026-10-26T21:01:46Z
-updated_at: 2026-10-26T21:12:15Z
+openspec-link: openspec/changes/archive/2026-10-26-add-application-administrator
+updated_at: 2026-10-26T21:47:54Z
 parent: chatcms-8vem
 ---
 
@@ -71,3 +72,45 @@ Acceptance test 1 in the briefing begins "As admin". This epic is the admin.
 - `docs/BRIEFING-M01.md` section 6, acceptance test 1.
 - `internal/policy/policy.go`, `Can` and `EffectiveRole`.
 - `internal/tenancy/service.go:57`, which creates an organisation unchecked.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-26-add-application-administrator`.
+
+The installation now has somebody who holds it. Creating an organisation,
+renaming one, removing one, seeing every one, and putting people into them all
+need administering, and the refusal comes from `policy.Can` like every other.
+
+- **Administering is not editing.** The easy version is a flag that passes
+  every check; it is one line and it would silently give whoever runs
+  chatcms.eu edit rights on every customer's site. Instead the flag answers
+  only for actions held over the installation, and `Allowed` leaves them out
+  of what somebody may do to a project. An administrator who must reach
+  content joins that organisation, where its owner can see them. There is a
+  test for each half.
+- **The flag is on the account, not a membership.** Modelling it as ownership
+  of a pretend organisation would make `EffectiveRole` lie about what
+  somebody holds.
+- **The first one comes from configuration**, applied on start-up,
+  idempotently, saying in the log whether it changed anything. The account
+  must already exist: creating one without a password or an invitation would
+  be an account nobody can use. If it does not exist yet the server says so
+  and carries on, and the next start finds them.
+- **The last administrator cannot be removed**, in the service and in the SQL,
+  because an installation with none can only be repaired with a database
+  client.
+- **What an administrator does is written down** and readable only by one.
+
+### What this changed elsewhere
+
+Two existing integration tests created an organisation as an ordinary person.
+They encoded the rule this epic replaced, so they now appoint their person
+first. That they failed is the point: the gate noticed the behaviour change
+rather than letting it through.
+
+### A note on the commit
+
+Part of the next epic's work, sending mail, is in this commit. `ship-change.sh`
+stages the whole tree, and that tree was being worked in while the gate ran.
+The code is gated and correct; only the boundary between the two commits is
+wrong, and no history was rewritten to tidy it.
