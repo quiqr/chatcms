@@ -1,11 +1,11 @@
 ---
 # chatcms-8vem
 title: 01 MVP for the first customer
-status: completed
+status: in-progress
 type: milestone
 priority: critical
 created_at: 2026-10-21T15:32:09Z
-updated_at: 2026-10-23T21:30:00Z
+updated_at: 2026-10-26T16:45:04Z
 ---
 
 ## Goal
