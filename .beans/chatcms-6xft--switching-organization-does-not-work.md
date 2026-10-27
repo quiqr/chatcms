@@ -1,11 +1,11 @@
 ---
 # chatcms-6xft
 title: switching organization does not work
-status: todo
+status: in-progress
 type: bug
 priority: high
 created_at: 2026-10-27T20:46:06Z
-updated_at: 2026-10-27T20:47:00Z
+updated_at: 2026-10-27T21:53:42Z
 parent: chatcms-8vem
 ---
 

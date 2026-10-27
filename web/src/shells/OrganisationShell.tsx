@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
@@ -6,9 +6,10 @@ import { PersonMenu } from "./PersonMenu";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../components/ui/menu";
 import { useAdministers } from "./useAdministers";
 import { say } from "../lib/say";
+import { projectsPath } from "../lib/paths";
 
 export type OrganisationShellProps = {
-  organisation: { name: string };
+  organisation: { slug?: string; name: string };
   organisations?: { slug: string; name: string }[];
   viewer?: { name: string };
   children: ReactNode;
@@ -38,7 +39,25 @@ export function OrganisationShell({
             {organisations.length === 0 ? (
               <MenuItem>{organisation.name}</MenuItem>
             ) : (
-              organisations.map((one) => <MenuItem key={one.slug}>{one.name}</MenuItem>)
+              // Each one is a way to that organisation. They were drawn as
+              // text once, which listed everywhere somebody could go and
+              // took them nowhere.
+              organisations.map((one) => (
+                <MenuItem key={one.slug} asChild>
+                  <NavLink
+                    to={projectsPath(one.slug)}
+                    aria-current={one.slug === organisation.slug ? "true" : undefined}
+                  >
+                    {one.name}
+                    {one.slug === organisation.slug && (
+                      <Check
+                        aria-label={say("organisation-shell.you-are-looking-at-this-one")}
+                        className="ml-auto size-4"
+                      />
+                    )}
+                  </NavLink>
+                </MenuItem>
+              ))
             )}
             {administers && (
               <>

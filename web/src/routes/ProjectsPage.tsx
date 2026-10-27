@@ -160,7 +160,7 @@ export function ProjectsPage() {
 
   return (
     <OrganisationShell
-      organisation={{ name: organisationName }}
+      organisation={{ slug: current, name: organisationName }}
       organisations={who.organisations}
       viewer={{ name: who.person.displayName || who.person.email }}
     >

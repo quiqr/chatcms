@@ -291,6 +291,7 @@ export const en = {
   "organisation-shell.quiqr-chatcms": "Quiqr ChatCMS",
   "organisation-shell.quiqr-chatcms-go-to-your-projects": "Quiqr ChatCMS, go to your projects",
   "organisation-shell.start-an-organisation": "Start an organisation",
+  "organisation-shell.you-are-looking-at-this-one": "You are looking at this one",
 
   // page-editor
   "page-editor.back-to-the-page": "Back to the page",

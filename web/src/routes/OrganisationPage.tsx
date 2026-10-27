@@ -17,7 +17,7 @@ export function OrganisationPage({ title, body }: { title: Key; body?: ReactNode
 
   return (
     <OrganisationShell
-      organisation={{ name: named?.name ?? organisation ?? "Your work" }}
+      organisation={{ slug: organisation, name: named?.name ?? organisation ?? "Your work" }}
       organisations={who.organisations}
       viewer={{ name: who.person.displayName || who.person.email }}
     >

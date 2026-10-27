@@ -136,6 +136,48 @@ describe("OrganisationShell", () => {
     expect(screen.getByRole("button", { name: /TechNative/ })).toBeInTheDocument();
     expect(screen.queryByRole("complementary", { name: "Project navigation" })).toBeNull();
   });
+
+  it("gives every organisation in the switcher somewhere to go", async () => {
+    // It listed them as text once, so the switcher said where somebody
+    // could go and took them nowhere.
+    const user = userEvent.setup();
+    at(
+      "/o/technative/projects",
+      <OrganisationShell
+        organisation={{ slug: "technative", name: "TechNative" }}
+        organisations={[
+          { slug: "technative", name: "TechNative" },
+          { slug: "bakkerij-zuid", name: "Bakkerij Zuid" },
+        ]}
+        viewer={theViewer}
+      >
+        body
+      </OrganisationShell>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /TechNative/ }));
+
+    const elsewhere = await screen.findByRole("menuitem", { name: /Bakkerij Zuid/ });
+    expect(elsewhere).toHaveAttribute("href", "/o/bakkerij-zuid/projects");
+
+    const here = screen.getByRole("menuitem", { name: /TechNative/ });
+    expect(here).toHaveAttribute("href", "/o/technative/projects");
+    expect(here).toHaveAttribute("aria-current", "true");
+  });
+
+  it("says which organisation it is when there is only the one", async () => {
+    const user = userEvent.setup();
+    at(
+      "/projects",
+      <OrganisationShell organisation={{ slug: "technative", name: "TechNative" }} viewer={theViewer}>
+        body
+      </OrganisationShell>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /TechNative/ }));
+
+    expect(await screen.findByRole("menuitem", { name: "TechNative" })).toBeInTheDocument();
+  });
 });
 
 describe("EditorShell", () => {

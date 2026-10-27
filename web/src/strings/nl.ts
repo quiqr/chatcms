@@ -294,6 +294,7 @@ export const nl: Strings = {
   "organisation-shell.quiqr-chatcms": "Quiqr ChatCMS",
   "organisation-shell.quiqr-chatcms-go-to-your-projects": "Quiqr ChatCMS, naar je projecten",
   "organisation-shell.start-an-organisation": "Een organisatie beginnen",
+  "organisation-shell.you-are-looking-at-this-one": "Hier kijk je nu naar",
 
   // page-editor
   "page-editor.back-to-the-page": "Terug naar de pagina",

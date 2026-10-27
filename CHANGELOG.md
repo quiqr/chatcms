@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Switching organisation. The switcher in the header listed every
+  organisation somebody belongs to and did nothing when one was chosen; the
+  only way across was to type the address. Each one is now a way to that
+  organisation's projects, and the one being looked at is marked.
+
 ### Added
 
 - Dutch, and one place for every string. Every string the interface says now
