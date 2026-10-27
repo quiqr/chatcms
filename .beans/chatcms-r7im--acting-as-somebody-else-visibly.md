@@ -1,12 +1,13 @@
 ---
 # chatcms-r7im
 title: Acting as somebody else, visibly
-status: in-progress
+status: completed
 type: epic
 priority: normal
 created_at: 2026-10-27T16:32:01Z
-updated_at: 2026-10-27T21:30:00Z
+updated_at: 2026-10-27T22:30:00Z
 parent: chatcms-8vem
+openspec-link: openspec/changes/archive/2026-10-27-add-acting-as-somebody-else
 blocked_by:
     - chatcms-294f
 ---
@@ -77,3 +78,36 @@ Settled rather than left open, because each of these shapes the work:
 - `internal/policy/policy.go`, which decides, and the test that administering
   grants nothing on a project.
 - `internal/gitsync/runner.go`, `Identity`, which is what a version carries.
+
+## Summary of Changes
+
+Whoever runs the installation can now be a customer for a while, and it
+announces itself the whole time.
+
+- A session carries who is being acted as. The session stays the
+  administrator's: issuing one as the customer would lose who is really
+  there, which is the whole trail. `auth.Service.Lookup` then answers as the
+  person being acted as, with who is really there riding alongside, so every
+  screen, listing and permission is theirs without a single call site
+  learning about this feature.
+- Permissions are the acted-as person's, decided by `policy.Can` as usual.
+  Administration is refused while acting, so the band is the way back rather
+  than a second door.
+- A version saved while acting is attributed to both, in ChatCMS and in git:
+  the name reads "Pim Snel as Marieke de Vries" and the address is the
+  administrator's. The author is found through the request context, so no
+  caller gained an argument for a feature it has nothing to do with.
+- `POST /api/administration/people/{email}/act-as` begins it, asking
+  `policy.Can` for the new `act-as-somebody-else` action.
+  `DELETE /api/acting-as` ends it and is deliberately outside
+  `/administration`, because whoever is acting is not an administrator as
+  far as every other answer is concerned.
+- Refused on an administrator (decided by `policy.MayBeActedAs`, so the one
+  decision from that flag stays in the policy), on an account that is off,
+  on yourself, and while already acting. Signing out ends it, so does the
+  session expiring, and so does the acted-as account being turned off.
+- Both the beginning and the ending are in the administration record.
+- Proved by three handler tests, six integration tests, four attribution
+  tests, and `test/e2e/20-acting-as-somebody.spec.mjs` at 1440 px and at
+  390 px, which edits as the customer, publishes, and reads the author back
+  out of the git remote.
