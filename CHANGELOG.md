@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- There is a way out. Every screen now has a person menu with your account
+  and signing out, rather than a link on one screen and a picture that did
+  nothing on the others; from inside a site there was no way out at all.
+  Signing out everywhere ends every session the account has, including the
+  one asking.
 - An account can be turned off when somebody leaves. They can no longer sign
   in, and whatever they had open stops working at once rather than at its own
   expiry. What they wrote stays attributed to them: history that renames its

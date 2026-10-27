@@ -34,6 +34,7 @@ export function EditorPage() {
       <div>
         <EditorShell
           project={project}
+          viewer={{ name: who.person.displayName || who.person.email }}
           breadcrumb={opened ? `${opened.section} · ${opened.title}` : page}
           layout={layout}
           onLayoutChange={setLayout}

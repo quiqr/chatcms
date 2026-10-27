@@ -173,4 +173,18 @@ describe("the sign-in screen", () => {
 
     expect(await screen.findByText("the projects")).toBeInTheDocument();
   });
+
+  it("says so when somebody has signed out", () => {
+    renderPage("/sign-in?signed-out=1");
+
+    expect(screen.getByRole("status")).toHaveTextContent("You have signed out.");
+  });
+
+  it("does not say it when a session merely ran out", () => {
+    // Both end on this screen; only one of them is something somebody did.
+    renderPage();
+
+    expect(screen.queryByText("You have signed out.")).toBeNull();
+    expect(screen.getByText(/No technical knowledge needed/)).toBeInTheDocument();
+  });
 });

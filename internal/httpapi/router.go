@@ -79,6 +79,10 @@ func New(opts Options) http.Handler {
 		mux.Handle("POST /api/sign-out", signOutHandler(opts.Auth, opts.Secure))
 		mux.HandleFunc("/api/sign-out", MethodNotAllowed)
 
+		mux.Handle("POST /api/sign-out/everywhere",
+			RequireActor(signOutEverywhereHandler(opts.Auth, opts.Secure)))
+		mux.HandleFunc("/api/sign-out/everywhere", MethodNotAllowed)
+
 		mux.Handle("GET /api/me", RequireActor(currentPersonHandler()))
 		mux.HandleFunc("/api/me", MethodNotAllowed)
 

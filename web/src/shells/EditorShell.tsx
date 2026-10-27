@@ -4,6 +4,7 @@ import { NavLink } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { Segmented } from "../components/ui/segmented";
+import { PersonMenu } from "./PersonMenu";
 import { AssistantSlot } from "./ProjectShell";
 import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
@@ -13,6 +14,7 @@ export type EditorLayout = "form" | "split" | "preview";
 
 export type EditorShellProps = {
   project: Project;
+  viewer: { name: string };
   breadcrumb: string;
   layout: EditorLayout;
   onLayoutChange: (layout: EditorLayout) => void;
@@ -29,6 +31,7 @@ const railEntries = [
 
 export function EditorShell({
   project,
+  viewer,
   breadcrumb,
   layout,
   onLayoutChange,
@@ -76,6 +79,7 @@ export function EditorShell({
             className="hidden md:inline-flex"
           />
           <AssistantSlot />
+          <PersonMenu name={viewer.name} />
           <Button asChild count={project.unpublished}>
             <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>Publish</NavLink>
           </Button>

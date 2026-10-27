@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
@@ -143,6 +144,7 @@ describe("EditorShell", () => {
       "/o/technative/p/korenaar/content/about",
       <EditorShell
         project={project}
+        viewer={theViewer}
         breadcrumb="News / About us"
         layout={layout}
         onLayoutChange={() => {}}
@@ -252,4 +254,47 @@ describe("the phone frame and sideways scrolling", () => {
     const main = shell.querySelector("main")!;
     expect(main.className).toContain("overflow-x-clip");
   });
+});
+
+describe("the way out", () => {
+  // This defect was one shell having the link and three having a picture
+  // that did nothing, so the test walks all four rather than the one that
+  // happened to be wrong.
+  const everyShell: [string, ReactNode][] = [
+    ["ProjectShell", <ProjectShell project={project} viewer={theViewer} title="Content">{null}</ProjectShell>],
+    ["PhoneShell", <PhoneShell project={project} viewer={theViewer}>{null}</PhoneShell>],
+    [
+      "EditorShell",
+      <EditorShell
+        project={project}
+        viewer={theViewer}
+        breadcrumb="News"
+        layout="split"
+        onLayoutChange={() => {}}
+        form={null}
+        preview={null}
+      />,
+    ],
+    [
+      "OrganisationShell",
+      <OrganisationShell organisation={{ name: "TechNative" }} viewer={theViewer}>{null}</OrganisationShell>,
+    ],
+  ];
+
+  for (const [name, shell] of everyShell) {
+    it(`${name} offers the way to yourself and the way out`, async () => {
+      const { unmount } = at("/o/technative/p/korenaar/content", shell);
+
+      const person = screen.getByTestId("person-menu");
+      expect(person, `${name} has no person menu`).toBeInTheDocument();
+
+      await userEvent.click(person);
+
+      expect(await screen.findByText("Your account"), `${name} has no way to your account`).toBeInTheDocument();
+      expect(screen.getByText("Sign out"), `${name} has no way out`).toBeInTheDocument();
+      expect(screen.getByText("Sign out everywhere")).toBeInTheDocument();
+
+      unmount();
+    });
+  }
 });

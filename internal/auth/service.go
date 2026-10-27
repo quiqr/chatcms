@@ -94,6 +94,17 @@ func (s *Service) SignOut(ctx context.Context, token string) error {
 	return s.sessions.Revoke(ctx, token)
 }
 
+// SignOutEverywhere ends every session this account holds, including the one
+// asking. Somebody who thinks their account is not theirs any more wants
+// every door shut, including the one they are standing in.
+func (s *Service) SignOutEverywhere(ctx context.Context, who httpapi.Actor) error {
+	personID, err := uuid.Parse(who.ID)
+	if err != nil {
+		return httpapi.ErrNotAllowed
+	}
+	return s.sessions.RevokeAll(ctx, personID)
+}
+
 // Lookup turns a session value into the person it identifies. A value that
 // identifies nobody is not an error.
 func (s *Service) Lookup(ctx context.Context, token string) (httpapi.Actor, error) {

@@ -155,6 +155,7 @@ export function ProjectsPage() {
     <OrganisationShell
       organisation={{ name: organisationName }}
       organisations={who.organisations}
+      viewer={{ name: who.person.displayName || who.person.email }}
     >
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-[28px] font-semibold tracking-tight">Projects</h1>

@@ -462,3 +462,50 @@ func TestSignInIsRateLimited(t *testing.T) {
 // failureOf keeps only what a table of refusals is about, now that setting a
 // password also hands back a session.
 func failureOf(_ httpapi.Actor, _ string, _ time.Time, err error) error { return err }
+
+func TestSigningOutEverywhereEndsEveryoneOfYours(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+
+	// Three screens open, which is what somebody who has left a session
+	// somewhere has.
+	for range 3 {
+		if _, _, _, err := h.service.SignIn(t.Context(), "joris@example.org", password, "a-caller", false); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	somebodyElse := h.person(t, "marieke@example.org")
+	if _, _, _, err := h.service.SignIn(t.Context(), "marieke@example.org", password, "a-caller", false); err != nil {
+		t.Fatal(err)
+	}
+
+	live, err := h.service.Sessions().LiveCount(t.Context(), person.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if live != 3 {
+		t.Fatalf("%d sessions before, want 3", live)
+	}
+
+	if err := h.service.SignOutEverywhere(t.Context(), httpapi.Actor{ID: person.ID.String()}); err != nil {
+		t.Fatalf("SignOutEverywhere() error = %v, want nil", err)
+	}
+
+	left, err := h.service.Sessions().LiveCount(t.Context(), person.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if left != 0 {
+		t.Errorf("%d sessions left, want none", left)
+	}
+
+	// Nobody else's doors were shut.
+	theirs, err := h.service.Sessions().LiveCount(t.Context(), somebodyElse.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if theirs != 1 {
+		t.Errorf("somebody else has %d sessions, want 1 untouched", theirs)
+	}
+}

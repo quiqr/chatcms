@@ -2,13 +2,14 @@ import { ChevronsUpDown, MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
-import { Avatar, Tile } from "../components/ui/avatar";
+import { Tile } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/cn";
 import { useHere } from "../lib/whoami";
 import { setupNavigation, siteNavigation, type NavEntry } from "./navigation";
 import { canSeeSetup } from "./roles";
+import { PersonMenu } from "./PersonMenu";
 import { SyncIndicator, type SyncState } from "./SyncIndicator";
 import type { Project } from "../lib/tenancy";
 
@@ -94,7 +95,7 @@ export function ProjectShell({
         )}
 
         <div className="mt-auto flex items-center gap-2 border-t border-border-subtle px-2 pt-3">
-          <Avatar name={viewer.name} />
+          <PersonMenu name={viewer.name} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-sm">{viewer.name}</span>
             <span className="text-xs capitalize text-subtle-foreground">{viewer.role}</span>

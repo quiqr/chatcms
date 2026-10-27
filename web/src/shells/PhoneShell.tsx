@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
-import { Avatar, Tile } from "../components/ui/avatar";
+import { Tile } from "../components/ui/avatar";
 import { cn } from "../lib/cn";
 import { siteNavigation } from "./navigation";
 import { useHere } from "../lib/whoami";
+import { PersonMenu } from "./PersonMenu";
 import { SyncIndicator } from "./SyncIndicator";
 import type { Project } from "../lib/tenancy";
 
@@ -37,7 +38,7 @@ export function PhoneShell({
           <span className="truncate text-sm font-semibold">{project.name}</span>
           <SyncIndicator />
         </span>
-        <Avatar name={viewer.name} />
+        <PersonMenu name={viewer.name} />
       </header>
 
       {chips && (

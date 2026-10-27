@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
-import { Avatar } from "../components/ui/avatar";
+import { PersonMenu } from "./PersonMenu";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../components/ui/menu";
 import { useAdministers } from "./useAdministers";
 
@@ -63,13 +63,7 @@ export function OrganisationShell({
         <NavLink to="/help" className="flex h-11 items-center px-3 text-sm text-muted-foreground">
           Help
         </NavLink>
-        <NavLink
-          to="/account"
-          aria-label="Your account"
-          className="flex min-h-11 items-center"
-        >
-          {viewer && <Avatar name={viewer.name} />}
-        </NavLink>
+        {viewer && <PersonMenu name={viewer.name} />}
       </header>
 
       <main className="mx-auto w-full max-w-[1200px] p-6">{children}</main>

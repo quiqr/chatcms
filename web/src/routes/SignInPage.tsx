@@ -48,9 +48,18 @@ export function SignInPage() {
           </span>
 
           <h1 className="mt-8 text-[28px] font-semibold tracking-tight">Sign in</h1>
-          <p className="mt-2 text-[15px] text-muted-foreground">
-            Edit and publish your website. No technical knowledge needed.
-          </p>
+
+          {address.get("signed-out") ? (
+            // Said out loud, because a session that merely ran out ends on
+            // this same screen and the two should not look alike.
+            <p role="status" className="mt-2 text-[15px] text-muted-foreground">
+              You have signed out.
+            </p>
+          ) : (
+            <p className="mt-2 text-[15px] text-muted-foreground">
+              Edit and publish your website. No technical knowledge needed.
+            </p>
+          )}
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-[22px]">
             <Field
