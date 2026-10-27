@@ -1,10 +1,11 @@
 ---
 # chatcms-1r7q
 title: 'Project settings: change after setup what setup decided once'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:24Z
+openspec-link: openspec/changes/archive/2026-10-27-add-project-settings
 updated_at: 2026-10-27T00:07:56Z
 parent: chatcms-8vem
 ---
@@ -56,3 +57,36 @@ customer who moved host, has no way to change it.
 - `docs/design/reference/screenshots/desktop/onboarding.png`, the panels.
 - `docs/design/COMPARISON.md`, "Still to do".
 - `internal/publish`, which reads the publishing choice today.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-27-add-project-settings`.
+
+What setting a project up decided once can be changed afterwards: what it is
+called, where its site lives, and how it is published.
+
+- **The panels are shared, not copied.** `KeyPanel` and `PublishingPanel`
+  live in one place and both the setup screen and the settings screen compose
+  them, which is what the bean asked for and what keeps the two from
+  drifting.
+- **The address a project is reached at does not change.** Renaming is safe;
+  moving the address would break every link already sent, and the screen says
+  so rather than offering a change that quietly breaks things.
+- **Removing a project leaves the site alone**, and the confirmation says so
+  in as many words.
+
+### The count was worse than recorded
+
+`docs/design/COMPARISON.md` said the count on the Publish button came from
+the scaffold. It was worse: the server never filled the field at all, so it
+had always been zero, and the screens hid that by showing a fixed four from
+`demo/content.ts`. Reading the real answer made the two disagree out loud.
+
+Both now read one answer, and it counts the same things the publish review
+lists rather than versions ahead of the remote: somebody reading "Publish 2"
+beside "Ready to publish 2 changes" expects one number.
+
+### The scaffold is gone
+
+`web/src/demo/content.ts` is deleted. Nothing in the interface invents a
+project, an organisation or a person any more.
