@@ -1,10 +1,11 @@
 ---
 # chatcms-9lu6
 title: 'Organisation people: the owner invites, changes and removes'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-27T01:05:55Z
+openspec-link: openspec/changes/archive/2026-10-27-add-organisation-people
 updated_at: 2026-10-27T13:32:13Z
 parent: chatcms-8vem
 ---
@@ -44,3 +45,21 @@ as the owner doing it.
 - `.beans/chatcms-c8em--people-organisation-membership-turning-accounts-of.md`
 - `openspec/changes/archive/2026-10-27-add-people`
 - `docs/design/reference/screenshots/desktop/people.png`
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-27-add-organisation-people`.
+
+- **One inviter, two places.** Inviting to an organisation and to a project
+  differ only in what the person is given; making an account that does not
+  exist and sending the way in are shared, so there is one place for that to
+  go wrong rather than two.
+- **Sending an invitation again stops the previous link**, because two live
+  ways into one account is one more than anybody needs.
+- **Withdrawing is removing**, said in the words of somebody who has not
+  accepted: the account exists only because it was invited.
+- **The people screen shows both levels**, with the switch the design draws
+  and when each person was last here. Both were listed as missing in
+  `docs/design/COMPARISON.md`; that row is gone.
+
+This closes the organisation half of `chatcms-c8em`.

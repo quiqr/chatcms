@@ -1,7 +1,7 @@
 ---
 # chatcms-c8em
 title: 'People: organisation membership, turning accounts off, and your own account'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:03Z
@@ -86,3 +86,9 @@ writes it.
 - Last active. The server can answer it; no screen asks yet.
 
 Those four are `chatcms-9lu6`.
+
+## Closed
+
+The organisation half shipped as `chatcms-9lu6`:
+`openspec/changes/archive/2026-10-27-add-organisation-people`. Everything
+this bean asks for is now built.
