@@ -1,11 +1,11 @@
 ---
 # chatcms-8vem
 title: 01 MVP for the first customer
-status: in-progress
+status: completed
 type: milestone
 priority: critical
 created_at: 2026-10-21T15:32:09Z
-updated_at: 2026-10-26T16:45:04Z
+updated_at: 2026-10-28T03:10:00Z
 ---
 
 ## Goal
@@ -82,3 +82,24 @@ them.
 drawings they came from, and which of those differences were decided on
 purpose. The ones still to do are small and none of them is an acceptance
 test.
+
+### Finished after that summary was written
+
+The milestone was reopened for the work a first real customer turned out to
+need, and that work is now closed too.
+
+| Epic | What it added |
+| ---- | -------------- |
+| Mail | Invitations and resets actually sent, with Mailpit in development |
+| Organisations | Making, renaming and switching, instead of one hardcoded address |
+| An application administrator | Who creates and manages organisations, and holds nothing over content |
+| Organisation people | The owner invites, changes roles and removes |
+| Project settings | Changing after setup what setup decided once |
+| Signing out | And a way to yourself from every screen |
+| Account settings | A picture, an email address, and your sessions |
+| Account preferences | A dark appearance, and dates in one place |
+| Administration: an organisation | Opened, changed, and removed when it is empty |
+| Administration: every person | Who they are and what they can reach, in one query |
+| Acting as somebody else | Visibly, attributed to both, in ChatCMS and in git |
+| Dutch | And one place for every string, with a check that keeps it that way |
+| Switching organisation | A bug: the switcher listed them and took nobody anywhere |
