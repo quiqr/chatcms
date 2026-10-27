@@ -14,6 +14,9 @@ export type WhoAmI = {
   organisations: { slug: string; name: string }[];
   /** appearance is what they chose, or empty to follow the machine. */
   appearance?: string;
+  /** actingAs is set while somebody is being acted as, and says who is
+   * really here. */
+  actingAs?: { reallyEmail: string; reallyName: string };
 };
 
 export type OrganisationMember = {
@@ -75,4 +78,8 @@ export function removeFromOrganisation(organisation: string, personId: string) {
 
 export function sendTheInvitationAgain(organisation: string, personId: string) {
   return post<void>(`/api/organisations/${organisation}/people/${personId}/invitation`);
+}
+
+export function stopActingAs() {
+  return remove<void>("/api/acting-as");
 }

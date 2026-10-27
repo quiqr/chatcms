@@ -190,3 +190,11 @@ func personView(person PersonWithReach) httpapi.PersonWholeView {
 	}
 	return view
 }
+
+func (w *Web) ActAs(ctx context.Context, who httpapi.Actor, token, email string) error {
+	return w.service.ActAs(ctx, who, token, email)
+}
+
+func (w *Web) StopActingAs(ctx context.Context, who httpapi.Actor, token string) error {
+	return w.service.StopActingAs(ctx, who, token)
+}

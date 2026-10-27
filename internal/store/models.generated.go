@@ -132,4 +132,5 @@ type Session struct {
 	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
 	RevokedAt  pgtype.Timestamptz `json:"revoked_at"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	ActingAs   pgtype.UUID        `json:"acting_as"`
 }

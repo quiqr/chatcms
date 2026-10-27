@@ -43,6 +43,8 @@ type Accounts interface {
 	TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error
 	TurnAccountOn(ctx context.Context, personID uuid.UUID) error
 	MakeSomebody(ctx context.Context, email, displayName string) (auth.Person, error)
+	ActAs(ctx context.Context, token string, personID uuid.UUID) error
+	StopActingAs(ctx context.Context, token string) error
 }
 
 func NewService(store *Store, tenancy Tenancy, accounts Accounts) *Service {
@@ -399,4 +401,75 @@ func (s *Service) MakePerson(ctx context.Context, who httpapi.Actor, email, disp
 
 	s.record(ctx, who, MadeAPerson, made.ID.String(), made.Email, nil)
 	return s.store.Person(ctx, made.ID)
+}
+
+// ActAs begins acting as somebody else on this session, so that whoever
+// runs the installation sees and can do what that person sees and can do.
+// It is the one deliberate exception to administering not being editing,
+// and it is allowed to be one because it announces itself everywhere.
+func (s *Service) ActAs(ctx context.Context, who httpapi.Actor, token, email string) error {
+	if who.ActingAs() {
+		return &httpapi.RefusedError{
+			Reason: "you are already acting as somebody; stop that first",
+		}
+	}
+	if _, err := s.mayAdminister(ctx, who, policy.ActionActAsSomebodyElse); err != nil {
+		return err
+	}
+
+	them, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if them.id.String() == who.ID {
+		return &httpapi.RefusedError{Reason: "you are already yourself"}
+	}
+
+	theirs, err := s.tenancy.ActorFor(ctx, them.id)
+	if err != nil {
+		return err
+	}
+	if !policy.MayBeActedAs(theirs) {
+		return &httpapi.RefusedError{
+			Reason: "somebody who administers this installation cannot be acted as",
+		}
+	}
+
+	whole, err := s.store.Person(ctx, them.id)
+	if err != nil {
+		return err
+	}
+	if !whole.AccountOn {
+		return &httpapi.RefusedError{
+			Reason: "that account is off, so nobody can use it, including you",
+		}
+	}
+
+	if err := s.accounts.ActAs(ctx, token, them.id); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, BeganActingAs, them.id.String(), whole.Email, nil)
+	return nil
+}
+
+// StopActingAs ends it. It is never refused: a way out that can be refused
+// is a trap, and the session is the administrator's throughout.
+func (s *Service) StopActingAs(ctx context.Context, who httpapi.Actor, token string) error {
+	if !who.ActingAs() {
+		return nil
+	}
+
+	if err := s.accounts.StopActingAs(ctx, token); err != nil {
+		return err
+	}
+
+	// The record is written as the administrator, who is who was really
+	// here, with the person they were acting as the subject.
+	s.record(ctx, httpapi.Actor{
+		ID:          who.Really.ID,
+		Email:       who.Really.Email,
+		DisplayName: who.Really.DisplayName,
+	}, StoppedActingAs, who.ID, who.Email, nil)
+	return nil
 }

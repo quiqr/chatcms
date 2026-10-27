@@ -346,3 +346,14 @@ func TestTheResourceSaysNothingAboutInstallationActions(t *testing.T) {
 		}
 	}
 }
+
+func TestSomebodyWhoAdministersCannotBeActedAs(t *testing.T) {
+	// Acting as an administrator would be a way of becoming one, which is
+	// the whole reason this is decided here rather than beside the act.
+	if MayBeActedAs(Actor{PersonID: "a-person", Administers: true}) {
+		t.Error("an administrator may be acted as")
+	}
+	if !MayBeActedAs(Actor{PersonID: "a-person"}) {
+		t.Error("an ordinary person may not be acted as")
+	}
+}

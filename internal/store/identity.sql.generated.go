@@ -11,6 +11,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const actAs = `-- name: ActAs :exec
+UPDATE sessions SET acting_as = $2 WHERE token_hash = $1
+`
+
+type ActAsParams struct {
+	TokenHash []byte      `json:"token_hash"`
+	ActingAs  pgtype.UUID `json:"acting_as"`
+}
+
+func (q *Queries) ActAs(ctx context.Context, arg ActAsParams) error {
+	_, err := q.db.Exec(ctx, actAs, arg.TokenHash, arg.ActingAs)
+	return err
+}
+
 const confirmEmailWaiting = `-- name: ConfirmEmailWaiting :one
 UPDATE people
 SET email = email_waiting, email_waiting = NULL, updated_at = now()
@@ -118,7 +132,7 @@ func (q *Queries) CreatePerson(ctx context.Context, arg CreatePersonParams) (Per
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (token_hash, person_id, remembered, expires_at)
 VALUES ($1, $2, $3, $4)
-RETURNING id, token_hash, person_id, remembered, expires_at, last_seen_at, revoked_at, created_at
+RETURNING id, token_hash, person_id, remembered, expires_at, last_seen_at, revoked_at, created_at, acting_as
 `
 
 type CreateSessionParams struct {
@@ -145,6 +159,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		&i.LastSeenAt,
 		&i.RevokedAt,
 		&i.CreatedAt,
+		&i.ActingAs,
 	)
 	return i, err
 }
@@ -217,7 +232,7 @@ func (q *Queries) GetPersonByEmail(ctx context.Context, lower string) (Person, e
 }
 
 const getSessionByTokenHash = `-- name: GetSessionByTokenHash :one
-SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at, people.administers, people.picture, people.picture_kind, people.email_waiting, people.appearance
+SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, sessions.acting_as, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at, people.administers, people.picture, people.picture_kind, people.email_waiting, people.appearance
 FROM sessions
 JOIN people ON people.id = sessions.person_id
 WHERE sessions.token_hash = $1
@@ -240,6 +255,7 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 		&i.Session.LastSeenAt,
 		&i.Session.RevokedAt,
 		&i.Session.CreatedAt,
+		&i.Session.ActingAs,
 		&i.Person.ID,
 		&i.Person.Email,
 		&i.Person.DisplayName,
@@ -485,6 +501,15 @@ type SpendEveryTokenForParams struct {
 // one account is one more than anybody needs.
 func (q *Queries) SpendEveryTokenFor(ctx context.Context, arg SpendEveryTokenForParams) error {
 	_, err := q.db.Exec(ctx, spendEveryTokenFor, arg.PersonID, arg.Kind)
+	return err
+}
+
+const stopActingAs = `-- name: StopActingAs :exec
+UPDATE sessions SET acting_as = NULL WHERE token_hash = $1
+`
+
+func (q *Queries) StopActingAs(ctx context.Context, tokenHash []byte) error {
+	_, err := q.db.Exec(ctx, stopActingAs, tokenHash)
 	return err
 }
 

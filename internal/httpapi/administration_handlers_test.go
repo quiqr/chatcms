@@ -109,6 +109,16 @@ func (s *stubAdministration) MakePerson(_ context.Context, _ Actor, email, displ
 	return PersonWholeView{Email: email, DisplayName: displayName, StillToAccept: true}, s.err
 }
 
+func (s *stubAdministration) ActAs(_ context.Context, _ Actor, token, email string) error {
+	s.note("act as " + email + " on " + token)
+	return s.err
+}
+
+func (s *stubAdministration) StopActingAs(_ context.Context, _ Actor, token string) error {
+	s.note("stop acting on " + token)
+	return s.err
+}
+
 func (s *stubAdministration) MayAdminister(context.Context, Actor) bool {
 	s.note("may administer")
 	return s.administers
@@ -152,6 +162,8 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodGet, "/api/administration/people", nil},
 		{http.MethodPost, "/api/administration/people", map[string]any{"email": "a@b.c"}},
 		{http.MethodGet, "/api/administration/people/a@b.c", nil},
+		{http.MethodPost, "/api/administration/people/a@b.c/act-as", nil},
+		{http.MethodDelete, "/api/acting-as", nil},
 	} {
 		recorder := call(t, handler, each.method, each.path, each.body)
 		if recorder.Code != http.StatusUnauthorized {
@@ -452,6 +464,53 @@ func TestMakingAPersonReportsARefusalWithItsReason(t *testing.T) {
 		t.Fatalf("status = %d, want a refusal: %s", recorder.Code, recorder.Body)
 	}
 	if !strings.Contains(recorder.Body.String(), "already has an account") {
+		t.Errorf("the reason did not reach the screen: %s", recorder.Body)
+	}
+}
+
+func TestActingAsCarriesTheSessionItIsOn(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost,
+		"/api/administration/people/marieke@example.org/act-as", nil)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204: %s", recorder.Code, recorder.Body)
+	}
+	// Acting as somebody is put on this session rather than on every session
+	// the administrator has, so the handler has to pass the one it is on.
+	if len(service.asked) == 0 || service.asked[0] != "act as marieke@example.org on a-session-value" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestStoppingIsReachableWithoutAdministering(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodDelete, "/api/acting-as", nil)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "stop acting on a-session-value" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestActingAsReportsARefusalWithItsReason(t *testing.T) {
+	handler := withAdministration(&stubAdministration{
+		err: &RefusedError{Reason: "somebody who administers this installation cannot be acted as"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost,
+		"/api/administration/people/boss@example.org/act-as", nil)
+
+	if recorder.Code == http.StatusNoContent {
+		t.Fatal("acting as an administrator was allowed")
+	}
+	if !strings.Contains(recorder.Body.String(), "cannot be acted as") {
 		t.Errorf("the reason did not reach the screen: %s", recorder.Body)
 	}
 }

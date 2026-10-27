@@ -17,6 +17,16 @@ type WhoAmIView struct {
 	// nothing and the machine decides. It rides along here because the
 	// interface needs it before it draws anything.
 	Appearance string `json:"appearance"`
+	// ActingAs says somebody is being acted as, and who is really here. It
+	// is what the band across every screen is drawn from, so it travels with
+	// the answer every screen already asks for.
+	ActingAs *ActingAsView `json:"actingAs,omitempty"`
+}
+
+// ActingAsView is who is really here while somebody else is being acted as.
+type ActingAsView struct {
+	ReallyEmail string `json:"reallyEmail"`
+	ReallyName  string `json:"reallyName"`
 }
 
 // PersonView is somebody as a screen shows them.

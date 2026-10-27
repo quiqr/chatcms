@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Acting as somebody else, visibly. Whoever runs the installation can be a
+  customer for a while: their screens, and what they may do, so that "I
+  cannot see the publish button" can be answered by looking. It announces
+  itself the whole time. A band across every screen says who is being acted
+  as and offers the way out, the session stays the administrator's and says
+  who is really there, and everything saved is attributed to both: the
+  site's own history and its git repository read "Pim Snel as Marieke de
+  Vries". Beginning and ending are both written down. Somebody who
+  administers the installation cannot be acted as, and neither can an
+  account that is off.
+
 - Every person on the installation. Whoever runs it now sees who is here:
   each person's name, address, whether their account is on, when they were
   last here, and every organisation and site they can reach, read in one

@@ -6,8 +6,6 @@ RETURNING *;
 -- name: GetPersonByEmail :one
 SELECT * FROM people WHERE lower(email) = lower($1);
 
--- name: GetPerson :one
-SELECT * FROM people WHERE id = $1;
 
 -- name: SetPersonPassword :exec
 UPDATE people
@@ -109,3 +107,12 @@ WHERE id = $1 AND person_id = $2 AND revoked_at IS NULL;
 -- name: SetAppearance :exec
 UPDATE people SET appearance = $2, updated_at = now()
 WHERE id = $1;
+
+-- name: ActAs :exec
+UPDATE sessions SET acting_as = $2 WHERE token_hash = $1;
+
+-- name: StopActingAs :exec
+UPDATE sessions SET acting_as = NULL WHERE token_hash = $1;
+
+-- name: GetPerson :one
+SELECT * FROM people WHERE id = $1;

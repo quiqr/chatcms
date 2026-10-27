@@ -3,7 +3,39 @@ import { useParams } from "react-router";
 
 import { useAsync } from "./useAsync";
 import { applyAppearance } from "./appearance";
-import { HereContext, whoAmI, type WhoAmI } from "./whoami";
+import { HereContext, stopActingAs, whoAmI, type WhoAmI } from "./whoami";
+
+/**
+ * ActingAs is the band across every screen while somebody is being acted
+ * as. It is what makes this allowed to be the one exception to administering
+ * not being editing: nobody can be acting without seeing that they are.
+ */
+function ActingAs({ as, really }: { as: string; really: string }) {
+  return (
+    <div
+      role="status"
+      className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-3 bg-warning-soft px-4 py-2 text-center text-[15px] text-warning-foreground"
+    >
+      <span>
+        You are {really}, acting as <strong>{as}</strong>. Everything you do is
+        saved as both of you.
+      </span>
+      <button
+        type="button"
+        className="inline-flex h-11 items-center rounded-md border border-warning-foreground/30 px-3 font-semibold hover:bg-warning-soft"
+        onClick={() => {
+          void stopActingAs().finally(() => {
+            // A whole reload rather than a refetch: every screen below was
+            // drawn as somebody else, down to what it asked the server for.
+            window.location.assign("/administration");
+          });
+        }}
+      >
+        Be myself again
+      </button>
+    </div>
+  );
+}
 
 /**
  * Knowing is what asks the server who is looking and where, once, and gives
@@ -50,6 +82,9 @@ export function Knowing({ children }: { children: ReactNode }) {
 
   return (
     <HereContext.Provider value={{ who: known!, organisation: named, again }}>
+      {known!.actingAs && (
+        <ActingAs as={known!.person.displayName || known!.person.email} really={known!.actingAs.reallyName} />
+      )}
       {children}
     </HereContext.Provider>
   );

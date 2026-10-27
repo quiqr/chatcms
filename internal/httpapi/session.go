@@ -25,6 +25,41 @@ type Actor struct {
 	Email       string
 	DisplayName string
 	Anonymous   bool
+	// Really is whoever is at the keyboard when somebody is being acted as.
+	// The fields above are then the person being acted as, which is what
+	// makes every screen, every listing and every permission theirs without
+	// a single call site having to know about it. Three places read this:
+	// the band on the screen, the administration record, and the author of a
+	// version.
+	Really *Who
+}
+
+// Who is a person named in passing: who is really there while somebody else
+// is being acted as.
+type Who struct {
+	ID          string
+	Email       string
+	DisplayName string
+}
+
+// ActingAs says somebody else is being acted as.
+func (a Actor) ActingAs() bool { return a.Really != nil }
+
+// Said is what to call somebody: their name when they have one, and their
+// address when they have not.
+func (a Actor) Said() string {
+	if a.DisplayName != "" {
+		return a.DisplayName
+	}
+	return a.Email
+}
+
+// Said is the same for whoever is really there.
+func (w Who) Said() string {
+	if w.DisplayName != "" {
+		return w.DisplayName
+	}
+	return w.Email
 }
 
 func Anonymous() Actor {

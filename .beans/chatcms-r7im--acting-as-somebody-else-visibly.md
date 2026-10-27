@@ -1,11 +1,11 @@
 ---
 # chatcms-r7im
 title: Acting as somebody else, visibly
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-27T16:32:01Z
-updated_at: 2026-10-27T16:32:01Z
+updated_at: 2026-10-27T21:30:00Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-294f

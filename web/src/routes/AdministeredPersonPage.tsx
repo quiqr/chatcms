@@ -4,6 +4,7 @@ import { useParams } from "react-router";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import {
+  actAs,
   readPerson,
   turnAccountOff,
   turnAccountOn,
@@ -105,6 +106,36 @@ export function AdministeredPersonPage() {
       />
 
       <Places heading="Sites" places={here.projects} nothing="A role on none." />
+
+      {!here.administers && here.accountOn && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold">See what they see</h2>
+
+          <p className="text-[15px] text-muted-foreground">
+            You will be this person until you stop: their screens, and what they
+            may do. A band says so the whole time, and everything saved is
+            recorded as you acting as them.
+          </p>
+
+          <div>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                void actAs(here.email)
+                  .then(() => window.location.assign("/projects"))
+                  .catch((error: unknown) => {
+                    setTrouble(error instanceof Error ? error.message : "That did not work.");
+                    setBusy(false);
+                  });
+              }}
+            >
+              Act as {here.displayName || here.email}
+            </Button>
+          </div>
+        </section>
+      )}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-[15px] font-semibold">Their account</h2>

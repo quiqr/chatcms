@@ -10,6 +10,7 @@ import (
 	"github.com/quiqr/chatcms/internal/content"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/history"
+	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/jobs"
 	"github.com/quiqr/chatcms/internal/media"
 	"github.com/quiqr/chatcms/internal/model"
@@ -166,7 +167,7 @@ func (h historySources) Who(ctx context.Context, personID uuid.UUID) (gitsync.Id
 	if err != nil {
 		return gitsync.Identity{}, err
 	}
-	return gitsync.Identity{Name: person.DisplayName, Email: person.Email}, nil
+	return whoWrote(ctx, person), nil
 }
 
 var _ history.Sources = historySources{}
@@ -191,7 +192,32 @@ func (c contentSources) Who(ctx context.Context, personID uuid.UUID) (gitsync.Id
 	if err != nil {
 		return gitsync.Identity{}, err
 	}
-	return gitsync.Identity{Name: person.DisplayName, Email: person.Email}, nil
+	return whoWrote(ctx, person), nil
+}
+
+// whoWrote is the author of a version. It is the person themselves, except
+// while somebody is being acted as: then the name reads "Pim Snel as Marieke
+// de Vries" and the address is the administrator's, because that is who was
+// really at the keyboard. The trail then survives ChatCMS, because it is in
+// the customer's own repository.
+//
+// Who is acting is read from the request rather than taken as an argument,
+// because every caller of this already carries the request and none of them
+// has anything else to do with acting as somebody.
+func whoWrote(ctx context.Context, person auth.Person) gitsync.Identity {
+	said := person.DisplayName
+	if said == "" {
+		said = person.Email
+	}
+
+	who := httpapi.ActorFrom(ctx)
+	if who.ActingAs() && who.ID == person.ID.String() {
+		return gitsync.Identity{
+			Name:  who.Really.Said() + " as " + said,
+			Email: who.Really.Email,
+		}
+	}
+	return gitsync.Identity{Name: person.DisplayName, Email: person.Email}
 }
 
 // queueSync asks for the site to be brought level with its remote soon, so

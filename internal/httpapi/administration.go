@@ -29,6 +29,8 @@ type AdministrationService interface {
 	People(ctx context.Context, who Actor, search string, most int32) (PeopleView, error)
 	Person(ctx context.Context, who Actor, email string) (PersonWholeView, error)
 	MakePerson(ctx context.Context, who Actor, email, displayName string) (PersonWholeView, error)
+	ActAs(ctx context.Context, who Actor, token, email string) error
+	StopActingAs(ctx context.Context, who Actor, token string) error
 	MayAdminister(ctx context.Context, who Actor) bool
 }
 
@@ -84,8 +86,8 @@ type PersonWholeView struct {
 // the screen can say what it is not showing.
 type PeopleView struct {
 	People     []PersonWholeView `json:"people"`
-	Shown      int64        `json:"shown"`
-	Altogether int64        `json:"altogether"`
+	Shown      int64             `json:"shown"`
+	Altogether int64             `json:"altogether"`
 }
 
 // OrganisationSummaryView is one organisation as an administrator sees it,
@@ -294,6 +296,29 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 
 	mux.HandleFunc("/api/administration/people/{email}", MethodNotAllowed)
 
+	mux.Handle("POST /api/administration/people/{email}/act-as", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.ActAs(r.Context(), ActorFrom(r.Context()),
+				sessionValue(r), r.PathValue("email")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	// Ending is not under /administration, because whoever is acting is not
+	// an administrator as far as every other answer is concerned: the way
+	// out has to be reachable by the person they are acting as.
+	mux.Handle("DELETE /api/acting-as", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.StopActingAs(r.Context(), ActorFrom(r.Context()),
+				sessionValue(r)); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
 	mux.Handle("GET /api/administration/records", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			records, err := service.Records(r.Context(), ActorFrom(r.Context()), 100)
@@ -316,4 +341,15 @@ func howMany(asked string) int32 {
 		return 0
 	}
 	return int32(most)
+}
+
+// sessionValue is the value the session cookie carries, which is how acting
+// as somebody is put on this session rather than on every session the
+// administrator has.
+func sessionValue(r *http.Request) string {
+	cookie, err := r.Cookie(SessionCookie)
+	if err != nil {
+		return ""
+	}
+	return cookie.Value
 }

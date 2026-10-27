@@ -429,7 +429,7 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 		views = append(views, httpapi.OrganisationView{Slug: organisation.Slug, Name: organisation.Name})
 	}
 
-	return httpapi.WhoAmIView{
+	answer := httpapi.WhoAmIView{
 		Person: httpapi.PersonView{
 			ID:          who.ID,
 			Email:       who.Email,
@@ -438,7 +438,14 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 		Administers:   policy.Can(actor, policy.ActionAdministerInstallation, policy.Resource{}),
 		Organisations: views,
 		Appearance:    s.appearanceFor(ctx, personID),
-	}, nil
+	}
+	if who.ActingAs() {
+		answer.ActingAs = &httpapi.ActingAsView{
+			ReallyEmail: who.Really.Email,
+			ReallyName:  who.Really.Said(),
+		}
+	}
+	return answer, nil
 }
 
 // appearanceFor is what this person chose. A preference that cannot be read

@@ -108,14 +108,48 @@ func (s *Service) SignOutEverywhere(ctx context.Context, who httpapi.Actor) erro
 // Lookup turns a session value into the person it identifies. A value that
 // identifies nobody is not an error.
 func (s *Service) Lookup(ctx context.Context, token string) (httpapi.Actor, error) {
-	person, _, err := s.sessions.Lookup(ctx, token)
+	person, session, err := s.sessions.Lookup(ctx, token)
 	if errors.Is(err, ErrNoSession) {
 		return httpapi.Anonymous(), nil
 	}
 	if err != nil {
 		return httpapi.Anonymous(), err
 	}
-	return actorOf(person), nil
+
+	if session.ActingAs == nil {
+		return actorOf(person), nil
+	}
+
+	// While somebody is being acted as, they are who the request is from.
+	// Who is really here rides along, and is what the record and the author
+	// of a version are written from.
+	acted, err := s.people.ByID(ctx, *session.ActingAs)
+	if err != nil || acted.Off {
+		// Whoever was being acted as is gone, or their account was turned
+		// off while this went on. Being themselves again is the safe answer;
+		// the alternative is a session that answers nothing.
+		return actorOf(person), nil
+	}
+
+	actor := actorOf(acted)
+	actor.Really = &httpapi.Who{
+		ID:          person.ID.String(),
+		Email:       person.Email,
+		DisplayName: person.DisplayName,
+	}
+	return actor, nil
+}
+
+// ActAs begins acting as somebody else on this session. It says nothing
+// about whether that is allowed: admin asks the policy first.
+func (s *Service) ActAs(ctx context.Context, token string, personID uuid.UUID) error {
+	return s.sessions.ActAs(ctx, token, personID)
+}
+
+// StopActingAs ends it. It is never refused: a way out that can be refused
+// is a trap.
+func (s *Service) StopActingAs(ctx context.Context, token string) error {
+	return s.sessions.StopActingAs(ctx, token)
 }
 
 // Invite issues the link that sets someone's first password and sends it.

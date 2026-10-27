@@ -43,6 +43,8 @@ const (
 	TurnedAnAccountOff    What = "turned an account off"
 	TurnedAnAccountOn     What = "turned an account on again"
 	MadeAPerson           What = "made a person"
+	BeganActingAs         What = "began acting as somebody"
+	StoppedActingAs       What = "stopped acting as somebody"
 )
 
 // Record is one act, with who did it and what it was done to. The names are

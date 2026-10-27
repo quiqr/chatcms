@@ -779,3 +779,185 @@ func TestAnAddressThatIsAlreadySomebodyIsRefused(t *testing.T) {
 		t.Error("the account that was already there was renamed")
 	}
 }
+
+// acting signs somebody in and returns the value their session carries, so
+// that a test can act as somebody on that session rather than on all of
+// them.
+func (h *harness) signIn(t *testing.T, email string) string {
+	t.Helper()
+	_, token, _, err := h.identity.SignIn(t.Context(), email, "a long enough passphrase", "a-caller", false)
+	if err != nil {
+		t.Fatalf("signing %s in failed: %v", email, err)
+	}
+	return token
+}
+
+func TestActingAsSomebodyIsTheirPermissionsAndBothNames(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	token := h.signIn(t, "boss@example.org")
+
+	if err := h.web.ActAs(t.Context(), boss, token, owner.Email); err != nil {
+		t.Fatalf("ActAs() error = %v, want nil", err)
+	}
+
+	acting, err := h.identity.Lookup(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acting.Email != owner.Email {
+		t.Errorf("the session answers as %q, want %q", acting.Email, owner.Email)
+	}
+	if !acting.ActingAs() || acting.Really.Email != boss.Email {
+		t.Errorf("the session does not say who is really there: %+v", acting.Really)
+	}
+
+	// What may be done is what the person being acted as may do, which is
+	// decided by the policy and not by a second set of rules.
+	as, err := h.tenancy.ActorFor(t.Context(), mustParse(t, acting.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if as.Administers {
+		t.Error("acting as somebody carries administering with it")
+	}
+	if policy.Can(as, policy.ActionSeeEveryOrganisation, policy.Resource{}) {
+		t.Error("acting as a customer still sees every organisation")
+	}
+
+	// The administration screen is refused while acting, so the band is the
+	// way back rather than a second door.
+	if _, err := h.web.Organisations(t.Context(), acting); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("Organisations() while acting error = %v, want ErrNotAllowed", err)
+	}
+
+	if err := h.web.StopActingAs(t.Context(), acting, token); err != nil {
+		t.Fatalf("StopActingAs() error = %v, want nil", err)
+	}
+
+	back, err := h.identity.Lookup(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if back.Email != boss.Email || back.ActingAs() {
+		t.Errorf("after stopping, the session answers as %+v", back)
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	began, stopped := false, false
+	for _, record := range records {
+		if record.Did == string(admin.BeganActingAs) && record.To == owner.Email {
+			began = true
+		}
+		if record.Did == string(admin.StoppedActingAs) && record.To == owner.Email {
+			stopped = true
+		}
+	}
+	if !began || !stopped {
+		t.Errorf("beginning and ending are not both recorded: %+v", records)
+	}
+}
+
+func TestAnAdministratorCannotBeActedAs(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	second := h.administrator(t, "second@example.org")
+	token := h.signIn(t, "boss@example.org")
+
+	err := h.web.ActAs(t.Context(), boss, token, second.Email)
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("ActAs() an administrator error = %v, want a refusal", err)
+	}
+
+	still, err := h.identity.Lookup(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if still.ActingAs() {
+		t.Error("the refusal left the session acting as somebody anyway")
+	}
+}
+
+func TestAnAccountThatIsOffCannotBeActedAs(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	gone := h.person(t, "gone@example.org")
+	token := h.signIn(t, "boss@example.org")
+
+	if err := h.web.TurnAccountOff(t.Context(), boss, gone.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	err := h.web.ActAs(t.Context(), boss, token, gone.Email)
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("ActAs() somebody turned off error = %v, want a refusal", err)
+	}
+}
+
+func TestOnlyAnAdministratorActsAsSomebody(t *testing.T) {
+	h := newHarness(t)
+	h.administrator(t, "boss@example.org")
+	ordinary := h.person(t, "ordinary@example.org")
+	other := h.person(t, "other@example.org")
+	token := h.signIn(t, "ordinary@example.org")
+
+	if err := h.web.ActAs(t.Context(), ordinary, token, other.Email); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("ActAs() as an ordinary person error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestSigningOutEndsActingAs(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+	token := h.signIn(t, "boss@example.org")
+
+	if err := h.web.ActAs(t.Context(), boss, token, owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.identity.SignOut(t.Context(), token); err != nil {
+		t.Fatal(err)
+	}
+
+	after, err := h.identity.Lookup(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !after.Anonymous {
+		t.Errorf("the session still answers as %+v after signing out", after)
+	}
+}
+
+func TestTurningTheActedAsAccountOffEndsIt(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+	token := h.signIn(t, "boss@example.org")
+
+	if err := h.web.ActAs(t.Context(), boss, token, owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.web.TurnAccountOff(t.Context(), boss, owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	// An account that is off may not be used by the person it belongs to, so
+	// it must not be usable by anybody acting as them either.
+	after, err := h.identity.Lookup(t.Context(), token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.ActingAs() || after.Email != boss.Email {
+		t.Errorf("the session is still acting as somebody turned off: %+v", after)
+	}
+}

@@ -56,6 +56,7 @@ const (
 	ActionManageOrganisationPeople Action = "manage-organisation-people"
 	ActionSeeEveryPerson           Action = "see-every-person"
 	ActionMakeAPerson              Action = "make-a-person"
+	ActionActAsSomebodyElse        Action = "act-as-somebody-else"
 	ActionAdministerInstallation   Action = "administer-installation"
 )
 
@@ -70,7 +71,16 @@ var overTheInstallation = map[Action]bool{
 	ActionManageOrganisationPeople: true,
 	ActionSeeEveryPerson:           true,
 	ActionMakeAPerson:              true,
+	ActionActAsSomebodyElse:        true,
 	ActionAdministerInstallation:   true,
+}
+
+// MayBeActedAs says whether somebody may be acted as. Acting as an
+// administrator would be a way of becoming one, so administering is the one
+// thing that makes somebody out of reach. It lives here because it is the
+// one place that decides anything from that flag.
+func MayBeActedAs(them Actor) bool {
+	return !them.Administers
 }
 
 // OverTheInstallation says whether an action is held over the installation
@@ -100,6 +110,7 @@ var Actions = []Action{
 	ActionManageOrganisationPeople,
 	ActionSeeEveryPerson,
 	ActionMakeAPerson,
+	ActionActAsSomebodyElse,
 	ActionAdministerInstallation,
 }
 

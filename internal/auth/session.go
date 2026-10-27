@@ -46,6 +46,9 @@ type Person struct {
 	Email       string
 	DisplayName string
 	HasPassword bool
+	// Off says the account has been turned off, so it may not be signed in
+	// to and may not be acted as.
+	Off bool
 }
 
 // Session is a remembered sign-in.
@@ -54,6 +57,10 @@ type Session struct {
 	PersonID   uuid.UUID
 	Remembered bool
 	ExpiresAt  time.Time
+	// ActingAs is who the person signed in is acting as, and is nil the rest
+	// of the time. The session stays theirs while it is set: issuing one as
+	// the other person would lose who is really there.
+	ActingAs *uuid.UUID
 }
 
 // Sessions issues, finds and revokes sessions.
@@ -158,12 +165,17 @@ func hashToken(token string) []byte {
 }
 
 func sessionFrom(row store.Session) Session {
-	return Session{
+	session := Session{
 		ID:         uuid.UUID(row.ID.Bytes),
 		PersonID:   uuid.UUID(row.PersonID.Bytes),
 		Remembered: row.Remembered,
 		ExpiresAt:  row.ExpiresAt.Time,
 	}
+	if row.ActingAs.Valid {
+		acting := uuid.UUID(row.ActingAs.Bytes)
+		session.ActingAs = &acting
+	}
+	return session
 }
 
 func personFrom(row store.Person) Person {
@@ -172,9 +184,30 @@ func personFrom(row store.Person) Person {
 		Email:       row.Email,
 		DisplayName: row.DisplayName,
 		HasPassword: row.PasswordHash != nil && *row.PasswordHash != "",
+		Off:         row.DisabledAt.Valid,
 	}
 }
 
 func pgUUID(id uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: id, Valid: true}
+}
+
+// ActAs says that this session is being used to act as somebody else. The
+// session is not reissued: it stays the session of whoever signed in.
+func (s *Sessions) ActAs(ctx context.Context, token string, personID uuid.UUID) error {
+	if token == "" {
+		return ErrNoSession
+	}
+	return s.db.Queries.ActAs(ctx, store.ActAsParams{
+		TokenHash: hashToken(token),
+		ActingAs:  pgUUID(personID),
+	})
+}
+
+// StopActingAs ends it, leaving the session as it was.
+func (s *Sessions) StopActingAs(ctx context.Context, token string) error {
+	if token == "" {
+		return ErrNoSession
+	}
+	return s.db.Queries.StopActingAs(ctx, hashToken(token))
 }

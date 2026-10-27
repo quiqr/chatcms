@@ -115,3 +115,7 @@ export function readPerson(email: string) {
 export function makePerson(body: { email: string; displayName: string }) {
   return post<PersonWhole>("/api/administration/people", body);
 }
+
+export function actAs(email: string) {
+  return post<void>(`/api/administration/people/${encodeURIComponent(email)}/act-as`);
+}
