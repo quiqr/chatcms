@@ -81,6 +81,7 @@ type Person struct {
 	PictureKind  string             `json:"picture_kind"`
 	EmailWaiting *string            `json:"email_waiting"`
 	Appearance   string             `json:"appearance"`
+	Language     string             `json:"language"`
 }
 
 type Project struct {

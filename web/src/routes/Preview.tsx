@@ -2,6 +2,7 @@ import { Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
 
 import { Segmented } from "../components/ui/segmented";
+import { say } from "../lib/say";
 
 /**
  * Preview shows the site as a reader will see it. It is served through the
@@ -34,11 +35,11 @@ export function Preview({
     <div className="flex h-full flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="truncate rounded-full bg-muted px-3 py-1 text-[13px] text-subtle-foreground">
-          Preview · {at}
+          {say("preview.preview")} {at}
         </span>
         <div className="flex items-center gap-2">
           <Segmented
-            label="How wide to show the site"
+            label={say("preview.how-wide-to-show-the-site")}
             value={device}
             options={[
               { value: "desktop", label: "Desktop" },
@@ -51,7 +52,7 @@ export function Preview({
             onClick={() => setReloads(reloads + 1)}
             className="flex min-h-11 items-center px-2 text-sm font-medium text-primary"
           >
-            Refresh
+            {say("preview.refresh")}
           </button>
         </div>
       </div>
@@ -59,7 +60,7 @@ export function Preview({
       <div className="flex flex-1 justify-center overflow-hidden rounded-lg border border-border bg-card">
         <iframe
           key={`${reloads}-${showAgain}`}
-          title="Your site"
+          title={say("preview.your-site")}
           src={at}
           className={
             "h-full border-0 bg-card " + (device === "phone" ? "w-[390px]" : "w-full")
@@ -73,7 +74,7 @@ export function Preview({
         ) : (
           <Monitor aria-hidden="true" className="size-4" />
         )}
-        This is your site as a visitor will see it. Changes show within a few seconds.
+        {say("preview.this-is-your-site-as-a")}
       </p>
     </div>
   );

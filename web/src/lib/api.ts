@@ -1,18 +1,44 @@
+import { maybe, say, type Key } from "./say";
+
 const REQUEST_TOKEN_COOKIE = "chatcms_request_token";
 const REQUEST_TOKEN_HEADER = "X-Chatcms-Request-Token";
 
 export type ApiError = {
   code: string;
   message: string;
+  /** key names the refusal, so that the screen can say it in the language
+   * whoever is reading chose. */
+  key?: string;
+  detail?: Record<string, string | number>;
 };
 
 export class RequestFailed extends Error {
   readonly code: string;
+  readonly key: string;
+  readonly detail?: Record<string, string | number>;
 
   constructor(error: ApiError) {
     super(error.message);
     this.code = error.code;
+    this.key = error.key ?? "";
+    this.detail = error.detail;
   }
+}
+
+/**
+ * whatWentWrong is what a screen says when something failed. A refusal the server
+ * named is said in the catalogue, in whatever language is in force; one it
+ * did not name is said in the server's own words, which is better than a
+ * screen that says nothing happened when something did.
+ */
+export function whatWentWrong(error: unknown, instead: Key = "common.that-did-not-work"): string {
+  if (error instanceof RequestFailed) {
+    return (error.key && maybe(error.key, error.detail)) || error.message;
+  }
+  // Anything else is the browser's own words: a failed connection, a parse
+  // error. Those are in no language anybody chose, so the screen says its
+  // own sentence instead.
+  return say(instead);
 }
 
 function requestToken() {

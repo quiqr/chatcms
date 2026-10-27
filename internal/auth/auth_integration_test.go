@@ -714,3 +714,54 @@ func TestAnAppearanceThatIsNotOneIsRefused(t *testing.T) {
 		t.Fatalf("SetAppearance() with something that is not one error = %v, want a refusal", err)
 	}
 }
+
+func TestALanguageIsKeptWithTheAccount(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "marieke@example.org")
+	who := httpapi.Actor{ID: person.ID.String(), Email: person.Email}
+
+	// Nothing chosen is not a third language: it means the browser decides,
+	// which is what a Dutch customer gets before they have found the screen.
+	chosen, err := h.service.LanguageFor(t.Context(), person.ID)
+	if err != nil || chosen != "" {
+		t.Fatalf("a new account has %q, %v; want nothing chosen", chosen, err)
+	}
+
+	if err := h.service.SetLanguage(t.Context(), who, "nl"); err != nil {
+		t.Fatalf("SetLanguage() error = %v, want nil", err)
+	}
+
+	chosen, err = h.service.LanguageFor(t.Context(), person.ID)
+	if err != nil || chosen != "nl" {
+		t.Errorf("after choosing Dutch it is %q, %v", chosen, err)
+	}
+
+	// And it can be given back to the browser.
+	if err := h.service.SetLanguage(t.Context(), who, ""); err != nil {
+		t.Fatal(err)
+	}
+	if chosen, _ := h.service.LanguageFor(t.Context(), person.ID); chosen != "" {
+		t.Errorf("after following the browser again it is %q", chosen)
+	}
+}
+
+func TestALanguageTheInterfaceHasNotGotIsRefused(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "marieke@example.org")
+	who := httpapi.Actor{ID: person.ID.String(), Email: person.Email}
+
+	err := h.service.SetLanguage(t.Context(), who, "fr")
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("SetLanguage(\"fr\") error = %v, want a refusal", err)
+	}
+	// The screen says a refusal in whatever language it is in, which it can
+	// only do if the refusal is named.
+	if refused.Key == "" {
+		t.Error("the refusal has no key, so no screen can say it in Dutch")
+	}
+
+	if chosen, _ := h.service.LanguageFor(t.Context(), person.ID); chosen != "" {
+		t.Errorf("the refusal set %q anyway", chosen)
+	}
+}

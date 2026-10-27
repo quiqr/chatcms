@@ -9,12 +9,15 @@ import { useIsPhone } from "../shells/useIsPhone";
 import { Placeholder } from "./Placeholder";
 
 import type { ReactNode } from "react";
+import { say, type Key } from "../lib/say";
 
 export function ProjectPage({
   title,
   body,
 }: {
-  title: string;
+  // A key rather than a sentence: a route is declared once, and the
+  // language can change after that.
+  title: Key;
   body?: ReactNode;
 }) {
   const { organisation, who } = useHere();
@@ -27,7 +30,7 @@ export function ProjectPage({
   const [loaded] = useAsync(() => readProject(organisation, slug), [organisation, slug]);
 
   if (loaded.state === "loading") {
-    return <p className="p-6 text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="p-6 text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
 
   if (loaded.state === "failed") {
@@ -40,7 +43,8 @@ export function ProjectPage({
 
   const project = loaded.value;
   const viewer = { name: who.person.displayName || who.person.email, role: project.yourRole };
-  const content = body ?? <Placeholder screen={title} />;
+  const said = say(title);
+  const content = body ?? <Placeholder screen={said} />;
 
   if (onAPhone) {
     return (
@@ -51,7 +55,7 @@ export function ProjectPage({
   }
 
   return (
-    <ProjectShell project={project} viewer={viewer} title={title}>
+    <ProjectShell project={project} viewer={viewer} title={said}>
       {content}
     </ProjectShell>
   );

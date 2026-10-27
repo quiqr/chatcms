@@ -119,6 +119,7 @@ func (i *Inviter) SendAgain(ctx context.Context, personID uuid.UUID) error {
 	}
 	if person.HasPassword {
 		return &httpapi.RefusedError{
+			Key:    "refused.person-has-already-accepted-so",
 			Reason: "that person has already accepted, so there is nothing to send again",
 		}
 	}

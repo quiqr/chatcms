@@ -9,6 +9,7 @@ import { AssistantSlot } from "./ProjectShell";
 import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
 import type { Project } from "../lib/tenancy";
+import { say } from "../lib/say";
 
 export type EditorLayout = "form" | "split" | "preview";
 
@@ -42,7 +43,7 @@ export function EditorShell({
   return (
     <div data-testid="editor-shell" className="flex min-h-dvh flex-wrap">
       <nav
-        aria-label="Project sections"
+        aria-label={say("editor-shell.project-sections")}
         data-testid="editor-rail"
         className="hidden w-16 shrink-0 flex-col items-center gap-2 border-r border-border bg-card py-3 sm:flex"
       >
@@ -60,7 +61,7 @@ export function EditorShell({
 
       <div className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col">
         <header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-3">
-          <Button variant="ghost" size="iconCompact" asChild aria-label="Back to content">
+          <Button variant="ghost" size="iconCompact" asChild aria-label={say("editor-shell.back-to-content")}>
             <NavLink to={`/o/${organisation}/p/${project.slug}/content`}>
               <ArrowLeft aria-hidden="true" className="size-4" />
             </NavLink>
@@ -68,12 +69,12 @@ export function EditorShell({
           <h1 className="flex-1 truncate text-lg font-semibold">{breadcrumb}</h1>
           <SyncIndicator />
           <Segmented
-            label="How to show this page"
+            label={say("editor-shell.how-to-show-this-page")}
             value={layout}
             onValueChange={(next) => onLayoutChange(next as EditorLayout)}
             options={[
               { value: "form", label: "Form" },
-              { value: "split", label: "Side by side" },
+              { value: "split", label: say("editor-shell.side-by-side") },
               { value: "preview", label: "Preview" },
             ]}
             className="hidden md:inline-flex"
@@ -81,7 +82,7 @@ export function EditorShell({
           <AssistantSlot />
           <PersonMenu name={viewer.name} />
           <Button asChild count={project.unpublished}>
-            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>Publish</NavLink>
+            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>{say("common.publish")}</NavLink>
           </Button>
         </header>
 
@@ -89,7 +90,7 @@ export function EditorShell({
           {layout !== "preview" && (
             <section
               data-testid="editor-slot-form"
-              aria-label="Page fields"
+              aria-label={say("editor-shell.page-fields")}
               className="min-w-0 shrink grow basis-[420px] p-6"
             >
               <div className="mx-auto w-full max-w-[760px]">{form}</div>
@@ -99,7 +100,7 @@ export function EditorShell({
           {layout !== "form" && (
             <section
               data-testid="editor-slot-preview"
-              aria-label="Preview"
+              aria-label={say("editor-shell.preview")}
               className="min-w-0 shrink grow basis-[420px] border-l border-border bg-background p-6"
             >
               {preview}
@@ -108,7 +109,7 @@ export function EditorShell({
 
           <aside
             data-testid="editor-slot-assistant"
-            aria-label="Assistant"
+            aria-label={say("editor-shell.assistant")}
             hidden
             className="w-[340px] shrink-0 border-l border-border bg-card"
           />

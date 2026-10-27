@@ -9,6 +9,11 @@ import (
 type Error struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+	// Key names this refusal, so that the screen can say it in the language
+	// whoever is reading chose. Message stays the English, which is what a
+	// screen says when it does not know the key.
+	Key    string         `json:"key,omitempty"`
+	Detail map[string]any `json:"detail,omitempty"`
 }
 
 type errorEnvelope struct {

@@ -73,6 +73,7 @@ func (w *Web) Publish(ctx context.Context, who httpapi.Actor, organisation, proj
 	record, err := w.service.Run(ctx, actor, id, note)
 	if errors.Is(err, ErrAlreadyPublishing) {
 		return httpapi.PublishView{}, &httpapi.RefusedError{
+			Key:    "refused.site-already-being-published-wait",
 			Reason: "this site is already being published; wait for that to finish",
 		}
 	}

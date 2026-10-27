@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { RadioCards } from "../../components/ui/radio-cards";
 import { useAsync } from "../../lib/useAsync";
+import { say } from "../../lib/say";
 import {
   defaultPublishBranch,
   makeKey,
@@ -14,6 +15,7 @@ import {
   type Connection,
   type Publishing,
 } from "../../lib/tenancy";
+import { whatWentWrong } from "../../lib/api";
 
 /**
  * These are the panels a project is set up with. The settings screen shows
@@ -44,7 +46,7 @@ export function KeyPanel({
     try {
       await what();
     } catch (error) {
-      onTrouble(error instanceof Error ? error.message : "That did not work. Please try again.");
+      onTrouble(whatWentWrong(error, "common.that-did-not-work-try-again"));
     } finally {
       setBusy(false);
     }
@@ -53,7 +55,7 @@ export function KeyPanel({
   return (
     <>
           <p className="text-[15px] text-muted-foreground">
-            {key.state === "ready" ? key.value.advice : "Looking..."}
+            {key.state === "ready" ? key.value.advice : say("common.looking")}
           </p>
 
           {hasKey && key.state === "ready" && (
@@ -70,7 +72,7 @@ export function KeyPanel({
                 }}
               >
                 <Copy aria-hidden="true" className="size-4" />
-                {copied ? "Copied" : "Copy"}
+                {copied ? say("panels.copied") : say("panels.copy")}
               </Button>
             </div>
           )}
@@ -85,7 +87,7 @@ export function KeyPanel({
                 reloadKey();
               })}
             >
-              {hasKey ? "Make a new key" : "Make a key"}
+              {hasKey ? say("panels.make-a-new-key") : say("panels.make-a-key")}
             </Button>
 
             <Button
@@ -96,7 +98,7 @@ export function KeyPanel({
                 setConnection(await testConnection(organisation, project));
               })}
             >
-              Test the connection
+              {say("panels.test-the-connection")}
             </Button>
           </div>
 
@@ -141,7 +143,7 @@ export function PublishingPanel({
     try {
       await what();
     } catch (error) {
-      onTrouble(error instanceof Error ? error.message : "That did not work. Please try again.");
+      onTrouble(whatWentWrong(error, "common.that-did-not-work-try-again"));
     } finally {
       setBusy(false);
     }
@@ -152,7 +154,7 @@ export function PublishingPanel({
   return (
     <>
           <RadioCards
-            label="Where to publish"
+            label={say("panels.where-to-publish")}
             value={settings.to}
             onValueChange={(to) =>
               void run(async () => {
@@ -165,10 +167,10 @@ export function PublishingPanel({
               })
             }
             options={[
-              { value: "main-line", title: "The site's main line", description: "Work goes straight to where the site lives." },
+              { value: "main-line", title: say("panels.the-site-s-main-line"), description: say("panels.work-goes-straight-to-where-the-site-lives") },
               {
                 value: "its-own-line",
-                title: "A line of its own",
+                title: say("panels.a-line-of-its-own"),
                 description: `Work goes to ${settings.branch ?? defaultPublishBranch}, for review before it goes live.`,
               },
             ]}
@@ -176,7 +178,7 @@ export function PublishingPanel({
 
           <div className="mt-4">
             <RadioCards
-              label="What to publish"
+              label={say("panels.what-to-publish")}
               value={settings.form}
               onValueChange={(form) =>
                 void run(async () => {
@@ -188,14 +190,14 @@ export function PublishingPanel({
                 })
               }
               options={[
-                { value: "source", title: "The site's files", description: "Your own pipeline builds and puts it live." },
-                { value: "built", title: "The built site", description: "ChatCMS builds it with Hugo and publishes the result." },
+                { value: "source", title: say("panels.the-site-s-files"), description: say("panels.your-own-pipeline-builds-and-puts-it-live") },
+                { value: "built", title: say("panels.the-built-site"), description: say("panels.chatcms-builds-it-with-hugo-and-publishes-the-re") },
               ]}
             />
           </div>
 
           <p className="mt-3 text-[13px] text-subtle-foreground">
-            Steps of your own will live in quiqr/workflows. An editor for them comes later.
+            {say("panels.steps-of-your-own-will-live")}
           </p>
     </>
   );

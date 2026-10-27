@@ -73,6 +73,10 @@ export function proveTheNewAddress(token: string) {
   return post<Person>("/api/confirm-address", { token });
 }
 
+export function chooseLanguage(language: string) {
+  return put<void>("/api/account/language", { language });
+}
+
 export function chooseAppearance(appearance: string) {
   return put<void>("/api/account/appearance", { appearance });
 }

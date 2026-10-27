@@ -17,6 +17,9 @@ type WhoAmIView struct {
 	// nothing and the machine decides. It rides along here because the
 	// interface needs it before it draws anything.
 	Appearance string `json:"appearance"`
+	// Language is what this person chose, or empty when they have chosen
+	// nothing and the browser decides.
+	Language string `json:"language"`
 	// ActingAs says somebody is being acted as, and who is really here. It
 	// is what the band across every screen is drawn from, so it travels with
 	// the answer every screen already asks for.

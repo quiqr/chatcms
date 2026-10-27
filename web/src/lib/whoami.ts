@@ -14,6 +14,8 @@ export type WhoAmI = {
   organisations: { slug: string; name: string }[];
   /** appearance is what they chose, or empty to follow the machine. */
   appearance?: string;
+  /** language is what they chose, or empty to follow the browser. */
+  language?: string;
   /** actingAs is set while somebody is being acted as, and says who is
    * really here. */
   actingAs?: { reallyEmail: string; reallyName: string };

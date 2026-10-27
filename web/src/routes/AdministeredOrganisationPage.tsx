@@ -13,6 +13,9 @@ import {
 } from "../lib/administration";
 import { useAsync } from "../lib/useAsync";
 import { renameOrganisation } from "../lib/whoami";
+import { plural, say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
+import { named } from "../shells/roles";
 
 /**
  * One organisation as whoever runs the installation sees it: everything
@@ -39,14 +42,14 @@ export function AdministeredOrganisationPage() {
       await what();
       again();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
   }
 
   if (whole.state === "loading") {
-    return <p className="text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
   if (whole.state === "failed") {
     return (
@@ -77,7 +80,7 @@ export function AdministeredOrganisationPage() {
         }}
       >
         <Field
-          label="Name"
+          label={say("common.name")}
           value={shownName}
           onChange={(event) => setName(event.target.value)}
           required
@@ -85,27 +88,27 @@ export function AdministeredOrganisationPage() {
         />
         <div>
           <Button type="submit" disabled={busy || shownName.trim() === "" || shownName === here.name}>
-            Save the name
+            {say("common.save-the-name")}
           </Button>
         </div>
       </form>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Who is in it</h2>
+        <h2 className="text-[15px] font-semibold">{say("administered-organisation.who-is-in-it")}</h2>
 
         {people.length === 0 ? (
           <p className="text-[15px] text-subtle-foreground">
-            Nobody. Give it an owner so that somebody can run it.
+            {say("administered-organisation.nobody-give-it-an-owner-so")}
           </p>
         ) : (
           <TableWrapper>
             <Table>
               <thead>
                 <tr>
-                  <TableHeaderCell>Person</TableHeaderCell>
-                  <TableHeaderCell>Role</TableHeaderCell>
+                  <TableHeaderCell>{say("common.person")}</TableHeaderCell>
+                  <TableHeaderCell>{say("administered-organisation.role")}</TableHeaderCell>
                   <TableHeaderCell>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{say("administered-organisation.actions")}</span>
                   </TableHeaderCell>
                 </tr>
               </thead>
@@ -115,11 +118,11 @@ export function AdministeredOrganisationPage() {
                     <TableCell>
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-[15px]">{person.displayName || person.email}</span>
-                        {person.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+                        {person.stillToAccept && <Badge tone="changed">{say("common.still-to-accept")}</Badge>}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-[15px] capitalize">{person.role}</span>
+                      <span className="text-[15px]">{named(person.role)}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -128,7 +131,7 @@ export function AdministeredOrganisationPage() {
                         onClick={() => void run(() => takeSomebodyOut(organisation, person.email))}
                         aria-label={`Take ${person.email} out`}
                       >
-                        Take out
+                        {say("administered-organisation.take-out")}
                       </Button>
                     </TableCell>
                   </tr>
@@ -149,40 +152,41 @@ export function AdministeredOrganisationPage() {
         >
           <div className="min-w-[220px] flex-1">
             <Field
-              label="Put somebody in"
+              label={say("administered-organisation.put-somebody-in")}
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="their email address"
+              placeholder={say("common.their-email-address")}
             />
           </div>
 
           <select
-            aria-label="Role for the person you put in"
+            aria-label={say("administered-organisation.role-for-the-person-you-put")}
             value={role}
             onChange={(event) => setRole(event.target.value)}
             className="h-11 rounded-md border border-input bg-card px-2 text-[15px] capitalize"
           >
-            <option value="member">member</option>
-            <option value="owner">owner</option>
+            <option value="member">{say("common.role-member")}</option>
+            <option value="owner">{say("common.role-owner")}</option>
           </select>
 
           <Button type="submit" variant="outline" disabled={busy || email.trim() === ""}>
-            Put them in
+            {say("administered-organisation.put-them-in")}
           </Button>
         </form>
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Its sites</h2>
+        <h2 className="text-[15px] font-semibold">{say("administered-organisation.its-sites")}</h2>
 
         {projects.length === 0 ? (
-          <p className="text-[15px] text-subtle-foreground">None.</p>
+          <p className="text-[15px] text-subtle-foreground">{say("administered-organisation.none")}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {projects.map((project) => (
               <li key={project.slug} className="text-[15px]">
                 {project.name}
+                {/* chatcms-not-a-string: an address */}
                 <span className="block text-[13px] text-subtle-foreground">
                   /o/{here.slug}/p/{project.slug}
                 </span>
@@ -193,22 +197,21 @@ export function AdministeredOrganisationPage() {
       </section>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Remove this organisation</h2>
+        <h2 className="text-[15px] font-semibold">{say("administered-organisation.remove-this-organisation")}</h2>
 
         {projects.length > 0 ? (
           <p className="text-[15px] text-muted-foreground">
-            It still holds {projects.length}{" "}
-            {projects.length === 1 ? "site" : "sites"}. Remove them first, so that this is a
-            decision taken once per site rather than once for all of them.
+            {say("administered-organisation.it-still-holds-sites", {
+              sites: plural(projects.length, "common.site-one", "common.site-many"),
+            })}
           </p>
         ) : removing ? (
           <div className="flex flex-col gap-3">
             <p className="text-[15px]">
-              This removes <strong>{here.name}</strong> from ChatCMS: who was in it, and its
-              settings here.
+              {say("administered-organisation.this-removes-it", { name: here.name })}
             </p>
             <p className="text-[15px]">
-              Nothing in git is touched. Every site that was ever in it stays exactly where it is.
+              {say("administered-organisation.nothing-in-git-is-touched-every")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -219,21 +222,21 @@ export function AdministeredOrganisationPage() {
                   void removeOrganisation(organisation)
                     .then(() => goTo("/administration"))
                     .catch((error: unknown) => {
-                      setTrouble(error instanceof Error ? error.message : "That did not work.");
+                      setTrouble(whatWentWrong(error));
                       setBusy(false);
                     });
                 }}
               >
-                Yes, remove it
+                {say("common.yes-remove-it")}
               </Button>
               <Button variant="outline" onClick={() => setRemoving(false)}>
-                Keep it
+                {say("common.keep-it")}
               </Button>
             </div>
           </div>
         ) : (
           <Button variant="outline" onClick={() => setRemoving(true)}>
-            Remove this organisation...
+            {say("administered-organisation.remove-this-organisation-2")}
           </Button>
         )}
       </section>

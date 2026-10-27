@@ -427,7 +427,6 @@ func TestCapitalise(t *testing.T) {
 	}
 }
 
-
 func TestSigningOutEverywhereEndsTheSessionAsking(t *testing.T) {
 	// Somebody who thinks their account is not theirs any more wants every
 	// door shut, including the one they are standing in.

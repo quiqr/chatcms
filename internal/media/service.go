@@ -109,18 +109,24 @@ func (l *Library) Add(ctx context.Context, actor policy.Actor, projectID uuid.UU
 		return Image{}, err
 	}
 	if len(content) == 0 {
-		return Image{}, &httpapi.RefusedError{Reason: "that file is empty"}
+		return Image{}, &httpapi.RefusedError{Key: "refused.file-empty", Reason: "that file is empty"}
 	}
 	if len(content) > MaxBytes {
 		return Image{}, &httpapi.RefusedError{
+			Key: "refused.picture-too-large",
 			Reason: fmt.Sprintf("that picture is %s, and the most a site will take is %s",
 				inWords(int64(len(content))), inWords(MaxBytes)),
+			Detail: map[string]any{
+				"size": inWords(int64(len(content))),
+				"most": inWords(MaxBytes),
+			},
 		}
 	}
 
 	_, extension, err := KindOf(content)
 	if err != nil {
 		return Image{}, &httpapi.RefusedError{
+			Key:    "refused.not-picture-chatcms-takes-png",
 			Reason: "that is not a picture. ChatCMS takes PNG, JPEG, GIF, WebP and SVG.",
 		}
 	}
@@ -128,6 +134,7 @@ func (l *Library) Add(ctx context.Context, actor policy.Actor, projectID uuid.UU
 	name, err := Name(called, extension)
 	if err != nil {
 		return Image{}, &httpapi.RefusedError{
+			Key:    "refused.file-needs-name-with-some",
 			Reason: "that file needs a name with some letters or numbers in it",
 		}
 	}
@@ -263,7 +270,9 @@ func (l *Library) Remove(ctx context.Context, actor policy.Actor, projectID uuid
 	m, _ := site.Model()
 	if used := UsedOn(site.FS(), m, folder, name); len(used) > 0 && !evenIfUsed {
 		return &httpapi.RefusedError{
+			Key:    "refused.picture-is-used",
 			Reason: fmt.Sprintf("that picture is on %s", pagesInWords(len(used))),
+			Detail: map[string]any{"pages": len(used)},
 		}
 	}
 

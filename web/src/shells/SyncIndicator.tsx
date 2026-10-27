@@ -1,13 +1,14 @@
 import { CloudCheck, CloudOff, RefreshCw } from "lucide-react";
 
 import { cn } from "../lib/cn";
+import { say } from "../lib/say";
 
 export type SyncState = "saved" | "saving" | "offline";
 
 const states: Record<SyncState, { label: string; icon: typeof CloudCheck; tone: string }> = {
-  saved: { label: "All changes saved", icon: CloudCheck, tone: "text-success" },
+  saved: { label: say("sync-indicator.all-changes-saved"), icon: CloudCheck, tone: "text-success" },
   saving: { label: "Saving...", icon: RefreshCw, tone: "text-info" },
-  offline: { label: "Offline, saved on this device", icon: CloudOff, tone: "text-warning" },
+  offline: { label: say("sync-indicator.offline-saved-on-this-device"), icon: CloudOff, tone: "text-warning" },
 };
 
 export function SyncIndicator({ state = "saved" }: { state?: SyncState }) {

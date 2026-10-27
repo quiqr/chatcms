@@ -8,6 +8,7 @@ import { useHere } from "../lib/whoami";
 import { PersonMenu } from "./PersonMenu";
 import { SyncIndicator } from "./SyncIndicator";
 import type { Project } from "../lib/tenancy";
+import { say } from "../lib/say";
 
 export type PhoneShellProps = {
   project: Project;
@@ -58,7 +59,7 @@ export function PhoneShell({
         </div>
       ) : (
         <nav
-          aria-label="Site sections"
+          aria-label={say("phone-shell.site-sections")}
           data-testid="phone-tab-bar"
           className="pb-safe fixed inset-x-0 bottom-0 flex border-t border-border bg-card"
         >
@@ -83,7 +84,7 @@ export function PhoneShell({
               </span>
               {tab.label}
               {tab.key === "publish" && project.unpublished > 0 && (
-                <span className="sr-only">unpublished changes</span>
+                <span className="sr-only">{say("phone-shell.unpublished-changes")}</span>
               )}
             </NavLink>
           ))}

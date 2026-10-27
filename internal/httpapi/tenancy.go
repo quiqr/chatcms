@@ -112,11 +112,28 @@ func writeTenancyError(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrNotAllowed):
 		WriteError(w, http.StatusForbidden, CodeForbidden, "You are not allowed to do that.")
 	case errors.Is(err, ErrRefused):
-		WriteError(w, http.StatusConflict, CodeRefused, capitalise(unwrapReason(err))+".")
+		writeRefusal(w, err)
 	default:
 		WriteError(w, http.StatusInternalServerError, CodeInternal,
 			"Something went wrong. Nothing was lost; please try again.")
 	}
+}
+
+// writeRefusal says why, in English and by key, so that the screen can say
+// it in the language whoever is reading chose.
+func writeRefusal(w http.ResponseWriter, err error) {
+	said := Error{
+		Code:    CodeRefused,
+		Message: capitalise(unwrapReason(err)) + ".",
+	}
+
+	var refused *RefusedError
+	if errors.As(err, &refused) {
+		said.Key = refused.Key
+		said.Detail = refused.Detail
+	}
+
+	WriteJSON(w, http.StatusConflict, errorEnvelope{Error: said})
 }
 
 func unwrapReason(err error) string {
@@ -128,8 +145,16 @@ func unwrapReason(err error) string {
 }
 
 // RefusedError carries why something understood could not be done.
+//
+// Reason is English, which is what a log and whoever reads one want. Key is
+// what the screen says it with, in whatever language the person reading is
+// in; a refusal with no key, or one nobody has translated yet, is shown in
+// the Reason's own words rather than not at all. Detail is what the sentence
+// has to put in: a name, a size, a list.
 type RefusedError struct {
+	Key    string
 	Reason string
+	Detail map[string]any
 }
 
 func (e *RefusedError) Error() string { return e.Reason }

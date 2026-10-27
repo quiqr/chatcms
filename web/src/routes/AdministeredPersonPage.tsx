@@ -12,6 +12,9 @@ import {
 } from "../lib/administration";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
+import { named } from "../shells/roles";
 
 function Places({ heading, places, nothing }: { heading: string; places: Belonging[]; nothing: string }) {
   return (
@@ -28,7 +31,7 @@ function Places({ heading, places, nothing }: { heading: string; places: Belongi
               <span className="block text-[13px] text-subtle-foreground">
                 {place.organisation ? `/o/${place.organisation}/p/${place.slug}` : `/o/${place.slug}`}
                 {" · "}
-                {place.role}
+                {named(place.role)}
               </span>
             </li>
           ))}
@@ -57,14 +60,14 @@ export function AdministeredPersonPage() {
       await what();
       again();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
   }
 
   if (person.state === "loading") {
-    return <p className="text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
   if (person.state === "failed") {
     return (
@@ -89,32 +92,30 @@ export function AdministeredPersonPage() {
         <p className="text-[15px] text-muted-foreground">{here.email}</p>
 
         <p className="flex flex-wrap items-center gap-2">
-          {here.administers && <Badge tone="published">Administers this installation</Badge>}
-          {!here.accountOn && <Badge tone="changed">Account off</Badge>}
-          {here.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+          {here.administers && <Badge tone="published">{say("administered-person.administers-this-installation")}</Badge>}
+          {!here.accountOn && <Badge tone="changed">{say("administered-person.account-off")}</Badge>}
+          {here.stillToAccept && <Badge tone="changed">{say("common.still-to-accept")}</Badge>}
         </p>
 
         <p className="text-[13px] text-subtle-foreground">
-          {here.lastSeen ? `Last here ${when(here.lastSeen)}` : "Has never been here"}
+          {here.lastSeen ? `Last here ${when(here.lastSeen)}` : say("administered-person.has-never-been-here")}
         </p>
       </section>
 
       <Places
-        heading="Organisations"
+        heading={say("administered-person.organisations")}
         places={here.organisations}
-        nothing="In none."
+        nothing={say("administered-person.in-none")}
       />
 
-      <Places heading="Sites" places={here.projects} nothing="A role on none." />
+      <Places heading={say("administered-person.sites")} places={here.projects} nothing={say("administered-person.a-role-on-none")} />
 
       {!here.administers && here.accountOn && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-[15px] font-semibold">See what they see</h2>
+          <h2 className="text-[15px] font-semibold">{say("administered-person.see-what-they-see")}</h2>
 
           <p className="text-[15px] text-muted-foreground">
-            You will be this person until you stop: their screens, and what they
-            may do. A band says so the whole time, and everything saved is
-            recorded as you acting as them.
+            {say("administered-person.you-will-be-this-person-until")}
           </p>
 
           <div>
@@ -126,33 +127,32 @@ export function AdministeredPersonPage() {
                 void actAs(here.email)
                   .then(() => window.location.assign("/projects"))
                   .catch((error: unknown) => {
-                    setTrouble(error instanceof Error ? error.message : "That did not work.");
+                    setTrouble(whatWentWrong(error));
                     setBusy(false);
                   });
               }}
             >
-              Act as {here.displayName || here.email}
+              {say("administered-person.act-as")} {here.displayName || here.email}
             </Button>
           </div>
         </section>
       )}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-[15px] font-semibold">Their account</h2>
+        <h2 className="text-[15px] font-semibold">{say("administered-person.their-account")}</h2>
 
         <p className="text-[15px] text-muted-foreground">
-          Turning an account off stops it being used anywhere here, and ends whatever it has open.
-          What that person wrote stays theirs.
+          {say("administered-person.turning-an-account-off-stops-it")}
         </p>
 
         <div className="flex flex-wrap gap-2">
           {here.accountOn ? (
             <Button variant="outline" disabled={busy} onClick={() => void run(() => turnAccountOff(here.email))}>
-              Turn it off
+              {say("administered-person.turn-it-off")}
             </Button>
           ) : (
             <Button variant="outline" disabled={busy} onClick={() => void run(() => turnAccountOn(here.email))}>
-              Turn it on again
+              {say("administered-person.turn-it-on-again")}
             </Button>
           )}
         </div>

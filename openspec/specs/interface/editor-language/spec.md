@@ -12,11 +12,18 @@ nobody reviewed.
 Text a content creator can read SHALL NOT use the words the design hand-off
 bans: commit, branch, push, pull, merge, repository, deploy, build log, HEAD,
 SHA, and conflict. The plain-language replacements SHALL be used instead.
+The rule SHALL hold wherever the strings live, and in every language the
+interface has.
 
 #### Scenario: A banned word in a screen
 
 - **WHEN** a string a content creator can read contains a banned word
 - **THEN** the frontend check fails, naming the file and the word
+
+#### Scenario: A banned word in the catalogue
+
+- **WHEN** a string in the catalogue contains a banned word, in any language
+- **THEN** the frontend check fails, naming the key and the word
 
 #### Scenario: The replacements are used
 

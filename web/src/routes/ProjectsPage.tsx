@@ -10,12 +10,18 @@ import { useAsync } from "../lib/useAsync";
 import { createProject, listProjects, type Project } from "../lib/tenancy";
 import { useHere } from "../lib/whoami";
 import { OrganisationShell } from "../shells/OrganisationShell";
+import { plural, say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
 
 function status(project: Project) {
   if (project.unpublished > 0) {
-    return <Badge tone="changed">{project.unpublished} unpublished changes</Badge>;
+    return (
+      <Badge tone="changed">
+        {plural(project.unpublished, "projects.unpublished-one", "projects.unpublished-many")}
+      </Badge>
+    );
   }
-  return <Badge tone="published">Published</Badge>;
+  return <Badge tone="published">{say("projects.published")}</Badge>;
 }
 
 function ProjectCard({ organisation, project }: { organisation: string; project: Project }) {
@@ -29,6 +35,7 @@ function ProjectCard({ organisation, project }: { organisation: string; project:
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-[15px] font-semibold">{project.name}</span>
           <span className="truncate text-[13px] text-subtle-foreground">
+            {/* chatcms-not-a-string: an address, and the name of what builds the site */}
             {project.domain || organisation} · Hugo
           </span>
         </span>
@@ -70,7 +77,7 @@ function NewProject({
       const made = await createProject(organisation, { slug, name: name.trim(), domain });
       onMade(made.slug);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
       setBusy(false);
     }
   }
@@ -83,7 +90,7 @@ function NewProject({
       className="mt-6 flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
     >
       <h2 id="new-project-title" className="text-base font-semibold">
-        New project
+        {say("projects.new-project")}
       </h2>
       {trouble && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
@@ -91,11 +98,11 @@ function NewProject({
         </p>
       )}
       <Field
-        label="Name"
+        label={say("common.name")}
         hint={
           slug
             ? `Its address here will be /o/${organisation}/p/${slug}`
-            : "What the customer calls their site"
+            : say("projects.what-the-customer-calls-their-site")
         }
         type="text"
         value={name}
@@ -103,18 +110,18 @@ function NewProject({
         onChange={(event) => setName(event.target.value)}
       />
       <Field
-        label="Website address"
-        hint="Optional. Where the site is published, such as korenaar.example."
+        label={say("projects.website-address")}
+        hint={say("projects.optional-where-the-site-is-published")}
         type="text"
         value={domain}
         onChange={(event) => setDomain(event.target.value)}
       />
       <div className="flex flex-wrap gap-2">
         <Button onClick={make} disabled={busy || slug === ""}>
-          {busy ? "Making it…" : "Make it and set it up"}
+          {busy ? say("projects.making-it") : say("projects.make-it-and-set-it-up")}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          {say("projects.cancel")}
         </Button>
       </div>
     </div>
@@ -158,23 +165,23 @@ export function ProjectsPage() {
       viewer={{ name: who.person.displayName || who.person.email }}
     >
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="flex-1 text-[28px] font-semibold tracking-tight">Projects</h1>
+        <h1 className="flex-1 text-[28px] font-semibold tracking-tight">{say("projects.projects")}</h1>
 
         <label className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-md border border-input bg-card px-3 sm:max-w-[320px] sm:flex-none">
           <Search aria-hidden="true" className="size-4 text-subtle-foreground" />
-          <span className="sr-only">Search projects</span>
+          <span className="sr-only">{say("projects.search-projects")}</span>
           <input
             // chatcms-target: the label around this one carries the hit area
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search projects"
+            placeholder={say("projects.search-projects")}
             className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-hidden"
           />
         </label>
 
         <Button variant="ink" onClick={() => setMaking(true)}>
           <Plus aria-hidden="true" className="size-4" />
-          New project
+          {say("projects.new-project")}
         </Button>
       </div>
 
@@ -190,7 +197,7 @@ export function ProjectsPage() {
       )}
 
       {projects.state === "loading" && (
-        <p className="mt-6 text-[15px] text-muted-foreground">Looking for your projects...</p>
+        <p className="mt-6 text-[15px] text-muted-foreground">{say("projects.looking-for-your-projects")}</p>
       )}
 
       {projects.state === "failed" && (
@@ -206,7 +213,7 @@ export function ProjectsPage() {
           ))}
 
           <div className="flex min-h-[132px] items-center justify-center rounded-xl border border-dashed border-input p-4 text-center text-[15px] text-subtle-foreground">
-            Import a site or start from a template
+            {say("projects.import-a-site-or-start-from")}
           </div>
         </div>
       )}

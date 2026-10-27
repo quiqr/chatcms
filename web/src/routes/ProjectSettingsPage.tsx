@@ -8,6 +8,8 @@ import { changeProject, readProject, removeProject } from "../lib/tenancy";
 import { useHere } from "../lib/whoami";
 import { canSeeTechnicalDetail } from "../shells/roles";
 import { KeyPanel, PublishingPanel } from "./setup/Panels";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -33,7 +35,7 @@ export function ProjectSettingsPage() {
   const [removing, setRemoving] = useState(false);
 
   if (loaded.state === "loading") {
-    return <p className="text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
   if (loaded.state === "failed") {
     return (
@@ -52,7 +54,7 @@ export function ProjectSettingsPage() {
   if (!mayChange) {
     return (
       <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
-        You are not allowed to change this project's settings.
+        {say("project-settings.you-are-not-allowed-to-change")}
       </p>
     );
   }
@@ -70,7 +72,7 @@ export function ProjectSettingsPage() {
       again();
       setSaved(true);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -84,35 +86,37 @@ export function ProjectSettingsPage() {
         </p>
       )}
 
-      <Panel title="What it is called">
+      <Panel title={say("project-settings.what-it-is-called")}>
         <form onSubmit={save} className="flex flex-col gap-4">
           <Field
-            label="Name"
+            label={say("common.name")}
             value={shownName}
             onChange={(event) => setName(event.target.value)}
             required
           />
           <Field
-            label="Address shown to customers"
+            label={say("project-settings.address-shown-to-customers")}
             value={shownDomain}
             onChange={(event) => setDomain(event.target.value)}
-            hint="Where the site can be visited, for your own reference."
+            hint={say("project-settings.where-the-site-can-be-visited")}
           />
 
           <p className="text-[13px] text-subtle-foreground">
-            Its address here stays /o/{organisation}/p/{here.slug}, so links already sent keep
-            working.
+            {say("project-settings.its-address-stays", {
+              organisation,
+              project: here.slug,
+            })}
           </p>
 
           {saved && (
             <p role="status" className="text-[15px] text-muted-foreground">
-              Saved.
+              {say("common.saved")}
             </p>
           )}
 
           <div>
             <Button type="submit" disabled={busy || shownName.trim() === ""}>
-              {busy ? "Saving..." : "Save"}
+              {busy ? say("common.saving") : say("project-settings.save")}
             </Button>
           </div>
         </form>
@@ -120,27 +124,25 @@ export function ProjectSettingsPage() {
 
       {canSeeTechnicalDetail(here.yourRole) && (
         <>
-          <Panel title="Where the site lives">
+          <Panel title={say("project-settings.where-the-site-lives")}>
             <KeyPanel organisation={organisation} project={project} onTrouble={setTrouble} />
           </Panel>
 
-          <Panel title="How it is published">
+          <Panel title={say("project-settings.how-it-is-published")}>
             <PublishingPanel organisation={organisation} project={project} onTrouble={setTrouble} />
           </Panel>
         </>
       )}
 
       {mayRemove && (
-        <Panel title="Remove this project">
+        <Panel title={say("project-settings.remove-this-project")}>
           {removing ? (
             <div className="flex flex-col gap-3">
               <p className="text-[15px]">
-                This removes <strong>{here.name}</strong> from ChatCMS: its settings, who may use it,
-                and its history here.
+                {say("project-settings.this-removes-it", { name: here.name })}
               </p>
               <p className="text-[15px]">
-                The site itself is not touched. Everything published stays exactly where it is, and
-                nothing is deleted from where the site lives.
+                {say("project-settings.the-site-itself-is-not-touched")}
               </p>
 
               <div className="flex flex-wrap gap-2">
@@ -152,21 +154,21 @@ export function ProjectSettingsPage() {
                     void removeProject(organisation, project)
                       .then(() => goTo(`/o/${organisation}/projects`))
                       .catch((error: unknown) => {
-                        setTrouble(error instanceof Error ? error.message : "That did not work.");
+                        setTrouble(whatWentWrong(error));
                         setBusy(false);
                       });
                   }}
                 >
-                  Yes, remove it
+                  {say("common.yes-remove-it")}
                 </Button>
                 <Button variant="outline" onClick={() => setRemoving(false)}>
-                  Keep it
+                  {say("common.keep-it")}
                 </Button>
               </div>
             </div>
           ) : (
             <Button variant="outline" onClick={() => setRemoving(true)}>
-              Remove this project...
+              {say("project-settings.remove-this-project-2")}
             </Button>
           )}
         </Panel>

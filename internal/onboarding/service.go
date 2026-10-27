@@ -212,7 +212,11 @@ func importRefusal(err error) error {
 
 	// Anything git said is worth showing: it is usually the address.
 	if err != nil {
-		return &httpapi.RefusedError{Reason: fmt.Sprintf("the site could not be imported: %v", err)}
+		return &httpapi.RefusedError{
+			Key:    "refused.import-failed",
+			Reason: fmt.Sprintf("the site could not be imported: %v", err),
+			Detail: map[string]any{"why": err.Error()},
+		}
 	}
 	return nil
 }

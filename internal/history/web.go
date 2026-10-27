@@ -124,6 +124,7 @@ func (w *Web) GoBackTo(ctx context.Context, who httpapi.Actor, organisation, pro
 	result, err := w.service.GoBackTo(ctx, actor, id, version, publishRightAway)
 	if errors.Is(err, ErrNothingToUndo) {
 		return httpapi.WentBackView{}, &httpapi.RefusedError{
+			Key:    "refused.site-already-exactly-as-version",
 			Reason: "your site is already exactly as that version left it",
 		}
 	}

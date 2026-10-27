@@ -6,6 +6,9 @@ import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { useAsync } from "../lib/useAsync";
 import { listOrganisationPeople, renameOrganisation, useHere } from "../lib/whoami";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
+import { named as roleNamed } from "../shells/roles";
 
 export function OrganisationSettingsPage() {
   const { who, organisation, again } = useHere();
@@ -28,7 +31,7 @@ export function OrganisationSettingsPage() {
       again();
       setSaved(true);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -38,7 +41,7 @@ export function OrganisationSettingsPage() {
     <div className="flex flex-col gap-8">
       <form onSubmit={rename} className="flex max-w-[520px] flex-col gap-4">
         <Field
-          label="Name"
+          label={say("common.name")}
           value={name}
           onChange={(event) => setName(event.target.value)}
           required
@@ -52,22 +55,22 @@ export function OrganisationSettingsPage() {
         )}
         {saved && (
           <p role="status" className="text-[15px] text-muted-foreground">
-            Saved.
+            {say("common.saved")}
           </p>
         )}
 
         <div>
           <Button type="submit" disabled={busy || name.trim() === "" || name.trim() === named?.name}>
-            {busy ? "Saving..." : "Save the name"}
+            {busy ? say("common.saving") : say("common.save-the-name")}
           </Button>
         </div>
       </form>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Who is in it</h2>
+        <h2 className="text-[15px] font-semibold">{say("organisation-settings.who-is-in-it")}</h2>
 
         {people.state === "loading" && (
-          <p className="text-[15px] text-muted-foreground">Looking...</p>
+          <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>
         )}
 
         {people.state === "failed" && (
@@ -77,7 +80,7 @@ export function OrganisationSettingsPage() {
         )}
 
         {people.state === "ready" && people.value.people.length === 0 && (
-          <p className="text-[15px] text-subtle-foreground">Nobody yet.</p>
+          <p className="text-[15px] text-subtle-foreground">{say("organisation-settings.nobody-yet")}</p>
         )}
 
         {people.state === "ready" && people.value.people.length > 0 && (
@@ -85,8 +88,8 @@ export function OrganisationSettingsPage() {
             <Table>
               <thead>
                 <tr>
-                  <TableHeaderCell>Person</TableHeaderCell>
-                  <TableHeaderCell>In this organisation</TableHeaderCell>
+                  <TableHeaderCell>{say("common.person")}</TableHeaderCell>
+                  <TableHeaderCell>{say("organisation-settings.in-this-organisation")}</TableHeaderCell>
                 </tr>
               </thead>
               <tbody>
@@ -95,14 +98,14 @@ export function OrganisationSettingsPage() {
                     <TableCell>
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-[15px]">{person.displayName || person.email}</span>
-                        {person.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+                        {person.stillToAccept && <Badge tone="changed">{say("common.still-to-accept")}</Badge>}
                       </span>
                       {person.displayName && (
                         <span className="block text-[13px] text-subtle-foreground">{person.email}</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-[15px] capitalize">{person.role}</span>
+                      <span className="text-[15px]">{roleNamed(person.role)}</span>
                     </TableCell>
                   </tr>
                 ))}
@@ -112,7 +115,7 @@ export function OrganisationSettingsPage() {
         )}
 
         <p className="text-[13px] text-subtle-foreground">
-          Who may edit which site is set on each site, under People and roles.
+          {say("organisation-settings.who-may-edit-which-site-is")}
         </p>
       </section>
     </div>

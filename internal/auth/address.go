@@ -37,14 +37,17 @@ func (s *Service) AskForANewAddress(ctx context.Context, who httpapi.Actor, addr
 
 	wanted := strings.ToLower(strings.TrimSpace(address))
 	if wanted == "" {
-		return &httpapi.RefusedError{Reason: "an address cannot be empty"}
+		return &httpapi.RefusedError{Key: "refused.address-cannot-empty", Reason: "an address cannot be empty"}
 	}
 	if wanted == strings.ToLower(who.Email) {
-		return &httpapi.RefusedError{Reason: "that is already your address"}
+		return &httpapi.RefusedError{Key: "refused.already-address", Reason: "that is already your address"}
 	}
 
 	if _, err := s.people.ByEmail(ctx, wanted); err == nil {
-		return &httpapi.RefusedError{Reason: ErrAddressTaken.Error()}
+		return &httpapi.RefusedError{
+			Key:    "refused.address-taken",
+			Reason: ErrAddressTaken.Error(),
+		}
 	} else if !errors.Is(err, ErrNoSuchPerson) {
 		return err
 	}
@@ -79,7 +82,10 @@ func (s *Service) ProveTheNewAddress(ctx context.Context, token string) (httpapi
 	row, err := s.people.db.Queries.ConfirmEmailWaiting(ctx, pgUUID(personID))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return httpapi.Anonymous(), &httpapi.RefusedError{Reason: ErrNoAddressWaiting.Error()}
+			return httpapi.Anonymous(), &httpapi.RefusedError{
+				Key:    "refused.no-address-waiting",
+				Reason: ErrNoAddressWaiting.Error(),
+			}
 		}
 		return httpapi.Anonymous(), fmt.Errorf("changing the address failed: %w", err)
 	}

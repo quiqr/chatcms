@@ -7,6 +7,7 @@ import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
+import { plural, say } from "../lib/say";
 import {
   appoint,
   listAdministrators,
@@ -17,6 +18,8 @@ import {
   makePerson,
   standDown,
 } from "../lib/administration";
+import { whatWentWrong } from "../lib/api";
+import { named } from "../shells/roles";
 
 function slugFrom(name: string) {
   return name
@@ -43,7 +46,7 @@ function NewOrganisation({ onMade }: { onMade: () => void }) {
       setOwnerEmail("");
       onMade();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -51,10 +54,10 @@ function NewOrganisation({ onMade }: { onMade: () => void }) {
 
   return (
     <form onSubmit={make} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4">
-      <h2 className="text-[15px] font-semibold">Start an organisation</h2>
+      <h2 className="text-[15px] font-semibold">{say("administration.start-an-organisation")}</h2>
 
       <Field
-        label="Name"
+        label={say("common.name")}
         value={name}
         onChange={(event) => setName(event.target.value)}
         required
@@ -62,12 +65,12 @@ function NewOrganisation({ onMade }: { onMade: () => void }) {
       />
 
       <Field
-        label="Who owns it"
+        label={say("administration.who-owns-it")}
         type="email"
         value={ownerEmail}
         onChange={(event) => setOwnerEmail(event.target.value)}
         required
-        hint="Their email address. They must already have an account."
+        hint={say("administration.their-email-address-they-must-already")}
       />
 
       {trouble && (
@@ -77,11 +80,11 @@ function NewOrganisation({ onMade }: { onMade: () => void }) {
       )}
 
       <Button type="submit" disabled={busy || !name.trim() || !ownerEmail.trim()}>
-        {busy ? "Starting..." : "Start it"}
+        {busy ? say("administration.starting") : say("administration.start-it")}
       </Button>
 
       <p className="text-[13px] text-subtle-foreground">
-        You will not be in it. To work inside an organisation, somebody there has to invite you.
+        {say("administration.you-will-not-be-in-it")}
       </p>
     </form>
   );
@@ -99,13 +102,13 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
       again();
       onChanged();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     }
   }
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">Who administers this installation</h2>
+      <h2 className="text-[15px] font-semibold">{say("administration.who-administers-this-installation")}</h2>
 
       {trouble && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
@@ -113,14 +116,14 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
         </p>
       )}
 
-      {people.state === "loading" && <p className="text-[15px] text-muted-foreground">Looking...</p>}
+      {people.state === "loading" && <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>}
 
       {people.state === "ready" && (
         <TableWrapper>
           <Table>
             <thead>
               <tr>
-                <TableHeaderCell>Person</TableHeaderCell>
+                <TableHeaderCell>{say("common.person")}</TableHeaderCell>
                 <TableHeaderCell> </TableHeaderCell>
               </tr>
             </thead>
@@ -130,7 +133,7 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
                   <TableCell>
                     <span className="flex flex-wrap items-center gap-2">
                       <span className="text-[15px]">{person.displayName || person.email}</span>
-                      {person.yourself && <Badge tone="published">You</Badge>}
+                      {person.yourself && <Badge tone="published">{say("administration.you")}</Badge>}
                     </span>
                     {person.displayName && (
                       <span className="block text-[13px] text-subtle-foreground">{person.email}</span>
@@ -142,7 +145,7 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
                       onClick={() => run(() => standDown(person.email))}
                       aria-label={`Stop ${person.email} administering`}
                     >
-                      Stop
+                      {say("administration.stop")}
                     </Button>
                   </TableCell>
                 </tr>
@@ -163,15 +166,15 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
       >
         <div className="min-w-[240px] flex-1">
           <Field
-            label="Appoint somebody"
+            label={say("administration.appoint-somebody")}
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="their email address"
+            placeholder={say("common.their-email-address")}
           />
         </div>
         <Button type="submit" variant="outline" disabled={!email.trim()}>
-          Appoint
+          {say("administration.appoint")}
         </Button>
       </form>
     </section>
@@ -190,7 +193,7 @@ function People() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">People</h2>
+      <h2 className="text-[15px] font-semibold">{say("administration.people")}</h2>
 
       <form
         className="flex flex-wrap items-end gap-3"
@@ -201,14 +204,14 @@ function People() {
       >
         <div className="min-w-[240px] flex-1">
           <Field
-            label="Find somebody"
+            label={say("administration.find-somebody")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="part of a name or an address"
+            placeholder={say("administration.part-of-a-name-or-an")}
           />
         </div>
         <Button type="submit" variant="outline">
-          Find
+          {say("administration.find")}
         </Button>
         {asked !== "" && (
           <Button
@@ -218,12 +221,12 @@ function People() {
               setAsked("");
             }}
           >
-            Everybody
+            {say("administration.everybody")}
           </Button>
         )}
       </form>
 
-      {people.state === "loading" && <p className="text-[15px] text-muted-foreground">Looking...</p>}
+      {people.state === "loading" && <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>}
 
       {people.state === "failed" && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
@@ -232,7 +235,7 @@ function People() {
       )}
 
       {people.state === "ready" && people.value.people.length === 0 && (
-        <p className="text-[15px] text-subtle-foreground">Nobody here matches that.</p>
+        <p className="text-[15px] text-subtle-foreground">{say("administration.nobody-here-matches-that")}</p>
       )}
 
       {people.state === "ready" && people.value.people.length > 0 && (
@@ -241,9 +244,9 @@ function People() {
             <Table>
               <thead>
                 <tr>
-                  <TableHeaderCell>Person</TableHeaderCell>
-                  <TableHeaderCell>Where they belong</TableHeaderCell>
-                  <TableHeaderCell>Last here</TableHeaderCell>
+                  <TableHeaderCell>{say("common.person")}</TableHeaderCell>
+                  <TableHeaderCell>{say("administration.where-they-belong")}</TableHeaderCell>
+                  <TableHeaderCell>{say("administration.last-here")}</TableHeaderCell>
                 </tr>
               </thead>
               <tbody>
@@ -258,25 +261,25 @@ function People() {
                       </NavLink>
                       <span className="block text-[13px] text-subtle-foreground">{person.email}</span>
                       <span className="mt-1 flex flex-wrap items-center gap-2">
-                        {person.administers && <Badge tone="published">Administers</Badge>}
-                        {!person.accountOn && <Badge tone="changed">Account off</Badge>}
-                        {person.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+                        {person.administers && <Badge tone="published">{say("administration.administers")}</Badge>}
+                        {!person.accountOn && <Badge tone="changed">{say("administration.account-off")}</Badge>}
+                        {person.stillToAccept && <Badge tone="changed">{say("common.still-to-accept")}</Badge>}
                       </span>
                     </TableCell>
                     <TableCell>
                       {person.organisations.length === 0 && person.projects.length === 0 ? (
-                        <span className="text-[13px] text-subtle-foreground">Nowhere yet</span>
+                        <span className="text-[13px] text-subtle-foreground">{say("administration.nowhere-yet")}</span>
                       ) : (
                         <span className="text-[13px] text-subtle-foreground">
-                          {person.organisations.map((where) => `${where.name} (${where.role})`).join(", ")}
+                          {person.organisations.map((where) => `${where.name} (${named(where.role)})`).join(", ")}
                           {person.organisations.length > 0 && person.projects.length > 0 && " · "}
-                          {person.projects.map((site) => `${site.name} (${site.role})`).join(", ")}
+                          {person.projects.map((site) => `${site.name} (${named(site.role)})`).join(", ")}
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
                       <span className="text-[13px] text-subtle-foreground">
-                        {person.lastSeen ? when(person.lastSeen) : "Never"}
+                        {person.lastSeen ? when(person.lastSeen) : say("administration.never")}
                       </span>
                     </TableCell>
                   </tr>
@@ -287,7 +290,10 @@ function People() {
 
           {people.value.shown < people.value.altogether && (
             <p className="text-[13px] text-subtle-foreground">
-              Showing {people.value.shown} of {people.value.altogether}. Search to find the rest.
+              {say("administration.showing-of", {
+                shown: people.value.shown,
+                altogether: people.value.altogether,
+              })}
             </p>
           )}
         </>
@@ -320,15 +326,15 @@ function NewPerson({ onMade }: { onMade: () => void }) {
             onMade();
           })
           .catch((error: unknown) => {
-            setTrouble(error instanceof Error ? error.message : "That did not work.");
+            setTrouble(whatWentWrong(error));
           })
           .finally(() => setBusy(false));
       }}
     >
-      <h2 className="text-[15px] font-semibold">Make a person</h2>
+      <h2 className="text-[15px] font-semibold">{say("administration.make-a-person")}</h2>
 
       <Field
-        label="Email"
+        label={say("common.email")}
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
@@ -336,10 +342,10 @@ function NewPerson({ onMade }: { onMade: () => void }) {
       />
 
       <Field
-        label="Their name"
+        label={say("administration.their-name")}
         value={name}
         onChange={(event) => setName(event.target.value)}
-        hint="They can change it themselves afterwards."
+        hint={say("administration.they-can-change-it-themselves-afterwards")}
       />
 
       {trouble && (
@@ -354,11 +360,11 @@ function NewPerson({ onMade }: { onMade: () => void }) {
       )}
 
       <Button type="submit" disabled={busy || email.trim() === ""}>
-        {busy ? "Making..." : "Make them"}
+        {busy ? say("administration.making") : say("administration.make-them")}
       </Button>
 
       <p className="text-[13px] text-subtle-foreground">
-        They choose their own password from the link they are sent. Nobody else ever sets it.
+        {say("administration.they-choose-their-own-password-from")}
       </p>
     </form>
   );
@@ -370,7 +376,7 @@ function What({ since }: { since: number }) {
   const [records] = useAsync(listRecords, [since]);
 
   if (records.state === "loading") {
-    return <p className="text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
   if (records.state === "failed") {
     return (
@@ -380,7 +386,7 @@ function What({ since }: { since: number }) {
     );
   }
   if (records.value.records.length === 0) {
-    return <p className="text-[15px] text-subtle-foreground">Nothing has been done yet.</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("administration.nothing-has-been-done-yet")}</p>;
   }
 
   return (
@@ -410,10 +416,10 @@ export function AdministrationPage() {
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Organisations</h2>
+        <h2 className="text-[15px] font-semibold">{say("administration.organisations")}</h2>
 
         {organisations.state === "loading" && (
-          <p className="text-[15px] text-muted-foreground">Looking...</p>
+          <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>
         )}
 
         {organisations.state === "failed" && (
@@ -431,16 +437,17 @@ export function AdministrationPage() {
                 className="rounded-xl border border-border bg-card p-4 hover:border-input"
               >
                 <p className="text-[15px] font-semibold">{organisation.name}</p>
+                {/* chatcms-not-a-string: an address */}
                 <p className="text-[13px] text-subtle-foreground">/o/{organisation.slug}</p>
                 <p className="mt-2 text-[13px] text-subtle-foreground">
-                  {organisation.projects} {organisation.projects === 1 ? "site" : "sites"} ·{" "}
-                  {organisation.people} {organisation.people === 1 ? "person" : "people"}
+                  {plural(organisation.projects, "common.site-one", "common.site-many")} ·{" "}
+                  {plural(organisation.people, "common.person-one", "common.person-many")}
                 </p>
               </NavLink>
             ))}
 
             {organisations.value.organisations.length === 0 && (
-              <p className="text-[15px] text-subtle-foreground">There are none yet.</p>
+              <p className="text-[15px] text-subtle-foreground">{say("administration.there-are-none-yet")}</p>
             )}
           </div>
         )}
@@ -460,7 +467,7 @@ export function AdministrationPage() {
       <NewPerson onMade={somethingWasDone} />
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">What has been done</h2>
+        <h2 className="text-[15px] font-semibold">{say("administration.what-has-been-done")}</h2>
         <What since={done} />
       </section>
     </div>

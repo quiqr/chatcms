@@ -35,7 +35,7 @@ func (s *stubAccount) ChangeOwnPassword(context.Context, Actor, string, string) 
 }
 
 func (s *stubAccount) TurnAccountOff(context.Context, Actor, uuid.UUID) error { return s.err }
-func (s *stubAccount) TurnAccountOn(context.Context, uuid.UUID) error        { return s.err }
+func (s *stubAccount) TurnAccountOn(context.Context, uuid.UUID) error         { return s.err }
 
 func (s *stubAccount) SetPicture(_ context.Context, _ Actor, content []byte) error {
 	s.note("picture of " + string(rune('0'+len(content)%10)))
@@ -67,6 +67,11 @@ func (s *stubAccount) SessionViews(context.Context, Actor, string) ([]SessionVie
 
 func (s *stubAccount) SetAppearance(_ context.Context, _ Actor, chosen string) error {
 	s.note("appearance " + chosen)
+	return s.err
+}
+
+func (s *stubAccount) SetLanguage(_ context.Context, _ Actor, chosen string) error {
+	s.note("language " + chosen)
 	return s.err
 }
 
@@ -294,5 +299,57 @@ func TestAccountEndpointsRefuseTheWrongMethod(t *testing.T) {
 		if recorder.Code != http.StatusMethodNotAllowed {
 			t.Errorf("PATCH %s = %d, want 405", path, recorder.Code)
 		}
+	}
+}
+
+func TestChoosingALanguagePassesItOn(t *testing.T) {
+	service := &stubAccount{}
+	handler := withAccount(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodPut, "/api/account/language",
+		map[string]any{"language": "nl"})
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "language nl" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestChoosingALanguageNeedsSomebody(t *testing.T) {
+	handler := withAccount(&stubAccount{}, false)
+
+	recorder := call(t, handler, http.MethodPut, "/api/account/language",
+		map[string]any{"language": "nl"})
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", recorder.Code)
+	}
+}
+
+func TestARefusalCarriesItsKeySoTheScreenCanSayIt(t *testing.T) {
+	// The screen says a refusal in whatever language whoever is reading
+	// chose, which it can only do if the refusal is named.
+	handler := withAccount(&stubAccount{
+		err: &RefusedError{
+			Key:    "refused.not-language-interface-has",
+			Reason: "that is not a language this interface has",
+			Detail: map[string]any{"asked": "fr"},
+		},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPut, "/api/account/language",
+		map[string]any{"language": "fr"})
+
+	body := recorder.Body.String()
+	if !strings.Contains(body, `"key":"refused.not-language-interface-has"`) {
+		t.Errorf("the refusal is not named: %s", body)
+	}
+	if !strings.Contains(body, `"asked":"fr"`) {
+		t.Errorf("what the sentence needs did not come with it: %s", body)
+	}
+	if !strings.Contains(body, "That is not a language this interface has.") {
+		t.Errorf("the English is not there for a screen that does not know the key: %s", body)
 	}
 }

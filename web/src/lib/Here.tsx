@@ -1,9 +1,11 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, type ReactNode } from "react";
 import { useParams } from "react-router";
 
 import { useAsync } from "./useAsync";
 import { applyAppearance } from "./appearance";
 import { HereContext, stopActingAs, whoAmI, type WhoAmI } from "./whoami";
+import { speak, spokenNow } from "./say";
+import { say } from "./say";
 
 /**
  * ActingAs is the band across every screen while somebody is being acted
@@ -16,10 +18,7 @@ function ActingAs({ as, really }: { as: string; really: string }) {
       role="status"
       className="sticky top-0 z-50 flex flex-wrap items-center justify-center gap-3 bg-warning-soft px-4 py-2 text-center text-[15px] text-warning-foreground"
     >
-      <span>
-        You are {really}, acting as <strong>{as}</strong>. Everything you do is
-        saved as both of you.
-      </span>
+      <span>{say("here.you-are-acting-as", { really, as })}</span>
       <button
         type="button"
         className="inline-flex h-11 items-center rounded-md border border-warning-foreground/30 px-3 font-semibold hover:bg-warning-soft"
@@ -31,7 +30,7 @@ function ActingAs({ as, really }: { as: string; really: string }) {
           });
         }}
       >
-        Be myself again
+        {say("here.be-myself-again")}
       </button>
     </div>
   );
@@ -63,8 +62,13 @@ export function Knowing({ children }: { children: ReactNode }) {
     if (who.state === "ready") applyAppearance(who.value.appearance ?? "");
   }, [who]);
 
+  // The language is put in force during the render rather than after it, so
+  // that the screens below are drawn in it the first time rather than in
+  // English and then again.
+  if (known) speak(known.language ?? "");
+
   if (!known && who.state === "loading") {
-    return <p className="p-6 text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="p-6 text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
 
   if (!known && who.state === "failed") {
@@ -82,10 +86,14 @@ export function Knowing({ children }: { children: ReactNode }) {
 
   return (
     <HereContext.Provider value={{ who: known!, organisation: named, again }}>
+      {/* The language keys the subtree: choosing another one redraws every
+          screen below, which is a moment somebody has just asked for. */}
+      <Fragment key={spokenNow()}>
       {known!.actingAs && (
         <ActingAs as={known!.person.displayName || known!.person.email} really={known!.actingAs.reallyName} />
       )}
       {children}
+      </Fragment>
     </HereContext.Provider>
   );
 }

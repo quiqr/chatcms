@@ -292,6 +292,7 @@ func actorOf(person Person) httpapi.Actor {
 func (s *Service) TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error {
 	if who.ID == personID.String() {
 		return &httpapi.RefusedError{
+			Key:    "refused.cannot-turn-off-own-account",
 			Reason: "you cannot turn off your own account; ask somebody else to",
 		}
 	}
@@ -308,12 +309,14 @@ func (s *Service) TurnAccountOff(ctx context.Context, who httpapi.Actor, personI
 func (s *Service) MakeSomebody(ctx context.Context, email, displayName string) (Person, error) {
 	address := strings.ToLower(strings.TrimSpace(email))
 	if address == "" {
-		return Person{}, &httpapi.RefusedError{Reason: "an email address is needed"}
+		return Person{}, &httpapi.RefusedError{Key: "refused.email-address-needed", Reason: "an email address is needed"}
 	}
 
 	if _, err := s.people.ByEmail(ctx, address); err == nil {
 		return Person{}, &httpapi.RefusedError{
+			Key:    "refused.address-has-an-account",
 			Reason: address + " already has an account",
+			Detail: map[string]any{"address": address},
 		}
 	} else if !errors.Is(err, ErrNoSuchPerson) {
 		return Person{}, err
@@ -341,7 +344,7 @@ func (s *Service) ChangeOwnName(ctx context.Context, who httpapi.Actor, displayN
 		return httpapi.Anonymous(), httpapi.ErrNotAllowed
 	}
 	if strings.TrimSpace(displayName) == "" {
-		return httpapi.Anonymous(), &httpapi.RefusedError{Reason: "a name cannot be empty"}
+		return httpapi.Anonymous(), &httpapi.RefusedError{Key: "refused.name-cannot-empty", Reason: "a name cannot be empty"}
 	}
 
 	person, err := s.people.Rename(ctx, personID, displayName)
@@ -361,7 +364,7 @@ func (s *Service) ChangeOwnPassword(ctx context.Context, who httpapi.Actor, curr
 	}
 
 	if _, err := s.identity.Authenticate(ctx, Claim{Email: who.Email, Password: current}); err != nil {
-		return &httpapi.RefusedError{Reason: "that is not your current password"}
+		return &httpapi.RefusedError{Key: "refused.not-current-password", Reason: "that is not your current password"}
 	}
 
 	if err := s.people.SetPassword(ctx, personID, next); err != nil {

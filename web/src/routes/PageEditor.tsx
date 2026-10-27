@@ -6,6 +6,8 @@ import { BodyEditor } from "../fields/BodyEditor";
 import { Draw, withPicking } from "../fields/Fields";
 import { MediaPage } from "./MediaPage";
 import { readPage, savePage, type Control, type Page } from "../lib/tenancy";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
 
 type Saving = "saved" | "saving" | "trouble";
 
@@ -29,9 +31,9 @@ function withValue(controls: Control[], path: string, value: unknown): Control[]
 
 function Status({ state }: { state: Saving }) {
   const said = {
-    saved: "All changes saved",
+    saved: say("sync-indicator.all-changes-saved"),
     saving: "Saving…",
-    trouble: "Not saved yet. We will keep trying.",
+    trouble: say("page-editor.not-saved-yet-we-will-keep-trying"),
   }[state];
 
   // Named, because the top bar carries a status too and two live regions
@@ -39,7 +41,7 @@ function Status({ state }: { state: Saving }) {
   return (
     <p
       aria-live="polite"
-      aria-label="Whether this page is saved"
+      aria-label={say("page-editor.whether-this-page-is-saved")}
       className="text-sm text-subtle-foreground"
     >
       {said}
@@ -83,7 +85,7 @@ export function PageEditor({
         onOpened?.({ title: answer.title, section: answer.section });
       })
       .catch((error: unknown) => {
-        if (!cancelled) setTrouble(error instanceof Error ? error.message : "We could not open this page.");
+        if (!cancelled) setTrouble(whatWentWrong(error, "page-editor.we-could-not-open-this-page"));
       });
     return () => {
       cancelled = true;
@@ -107,7 +109,7 @@ export function PageEditor({
       onSaved?.();
     } catch (error: unknown) {
       setState("trouble");
-      setTrouble(error instanceof Error ? error.message : "We could not save that.");
+      setTrouble(whatWentWrong(error, "page-editor.we-could-not-save-that"));
     }
   }, [organisation, project, page, onSaved]);
 
@@ -141,7 +143,7 @@ export function PageEditor({
     return <p className="text-[15px]">{trouble}</p>;
   }
   if (!loaded) {
-    return <p className="text-[15px] text-subtle-foreground">Opening this page…</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("page-editor.opening-this-page")}</p>;
   }
 
   withPicking((choose) => setChoosing(() => choose));
@@ -150,9 +152,9 @@ export function PageEditor({
     return (
       <section className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Choose a picture</h2>
+          <h2 className="text-lg font-semibold">{say("common.choose-a-picture")}</h2>
           <Button variant="ghost" onClick={() => setChoosing(null)}>
-            Back to the page
+            {say("page-editor.back-to-the-page")}
           </Button>
         </div>
         <MediaPage
@@ -189,12 +191,12 @@ export function PageEditor({
       ) : (
         loaded.body.trim() !== "" && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Page text</span>
+            <span className="text-sm font-medium">{say("page-editor.page-text")}</span>
             <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-[15px] text-subtle-foreground">
               {loaded.body}
             </p>
             <p className="text-[13px] text-subtle-foreground">
-              This page&rsquo;s text is not set up to be edited here.
+              {say("page-editor.this-page-s-text-is-not")}
             </p>
           </div>
         )

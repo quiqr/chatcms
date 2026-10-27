@@ -55,7 +55,7 @@ test("an address changes only once the link is followed", async ({
     await page.getByLabel("New address").fill("joris@korenaar.example");
     await page.getByRole("button", { name: "Send me the link" }).click();
 
-    await expect(page.getByRole("status")).toContainText("owner@example.org until you follow");
+    await expect(page.getByRole("status")).toContainText("Check owner@example.org for a message");
   });
 
   let link;

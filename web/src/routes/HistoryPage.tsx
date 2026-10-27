@@ -8,6 +8,7 @@ import { Checkbox } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
 import { useHere } from "../lib/whoami";
+import { plural, say } from "../lib/say";
 import {
   beforeGoingBack,
   goBackTo,
@@ -21,13 +22,13 @@ import {
 } from "../lib/tenancy";
 
 function changeCount(count: number) {
-  if (count === 0) return "no changes";
-  return `${count} ${count === 1 ? "change" : "changes"}`;
+  if (count === 0) return say("common.no-changes");
+  return plural(count, "common.change-one", "common.change-many");
 }
 
 function Contents({ contents }: { contents: Review }) {
   if (contents.changes.length === 0) {
-    return <p className="text-sm text-subtle-foreground">Nothing was changed in this version.</p>;
+    return <p className="text-sm text-subtle-foreground">{say("history.nothing-was-changed-in-this-version")}</p>;
   }
 
   return (
@@ -69,10 +70,12 @@ function Confirm({
       className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
     >
       <h3 id="go-back-title" className="text-base font-semibold">
-        Go back to &ldquo;{warning.title}&rdquo;?
+        {say("history.go-back-to-version", { title: warning.title })}
       </h3>
       <p className="text-[15px]">
-        Your site will look exactly as it did on {when(warning.when) || "that day"}.
+        {say("history.your-site-will-look-as-it-did", {
+          when: when(warning.when) || say("history.that-day"),
+        })}
       </p>
       {warning.setAside > 0 && (
         <p className="rounded-md bg-warning-soft p-3 text-[15px] text-warning-foreground">
@@ -83,16 +86,16 @@ function Confirm({
         <p className="text-[15px] text-subtle-foreground">{warning.reassurance}</p>
       )}
       <Checkbox
-        label="Publish right away"
+        label={say("history.publish-right-away")}
         checked={publishRightAway}
         onChange={(event) => setPublishRightAway(event.target.checked)}
       />
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => onGoBack(publishRightAway)} disabled={busy}>
-          {busy ? "Going back…" : "Yes, go back"}
+          {busy ? say("history.going-back") : say("history.yes-go-back")}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
-          Keep things as they are
+          {say("history.keep-things-as-they-are")}
         </Button>
       </div>
     </div>
@@ -120,7 +123,7 @@ function Entry({
     <li className="flex flex-col gap-2 border-b border-border py-3 last:border-b-0">
       <div className="flex flex-wrap items-center gap-2.5">
         <span className="text-[15px] font-medium">{entry.title}</span>
-        {entry.live && <Badge tone="live">Live now</Badge>}
+        {entry.live && <Badge tone="live">{say("history.live-now")}</Badge>}
       </div>
       <p className="text-sm text-subtle-foreground">
         {when(entry.at)}
@@ -133,7 +136,7 @@ function Entry({
           onClick={() => setOpen(!open)}
           className="flex min-h-11 items-center text-sm font-medium text-primary"
         >
-          {open ? "Hide what is in it" : "See what is in it"}
+          {open ? say("history.hide-what-is-in-it") : say("history.see-what-is-in-it")}
         </button>
         {!entry.live && (
           <button
@@ -142,13 +145,13 @@ function Entry({
             className="flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary"
           >
             <RotateCcw aria-hidden="true" className="size-4" />
-            Go back to this version…
+            {say("history.go-back-to-this-version")}
           </button>
         )}
       </div>
       {open && contents.state === "ready" && contents.value && <Contents contents={contents.value} />}
       {open && contents.state === "loading" && (
-        <p className="text-sm text-subtle-foreground">Looking…</p>
+        <p className="text-sm text-subtle-foreground">{say("history.looking")}</p>
       )}
     </li>
   );
@@ -185,7 +188,7 @@ export function HistoryPage() {
   }
 
   if (timeline.state === "loading") {
-    return <p className="text-[15px] text-subtle-foreground">Looking at your history…</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("history.looking-at-your-history")}</p>;
   }
   if (timeline.state === "failed") {
     return <p className="text-[15px]">{timeline.message}</p>;
@@ -199,8 +202,9 @@ export function HistoryPage() {
           className="flex items-center gap-2.5 rounded-md bg-success-soft p-3 text-[15px] text-success-foreground"
         >
           <CheckCircle2 aria-hidden="true" className="size-5" />
-          Your site is back to &ldquo;{done.title}&rdquo;.
-          {done.published ? " It is live now." : " It is waiting to be published."}
+          {done.published
+            ? say("history.back-to-and-live", { title: done.title })
+            : say("history.back-to-and-waiting", { title: done.title })}
         </p>
       )}
 
@@ -212,14 +216,14 @@ export function HistoryPage() {
         <div className="flex items-center gap-2.5 rounded-lg border border-dashed border-border p-3">
           <Clock aria-hidden="true" className="size-5 text-subtle-foreground" />
           <span className="text-[15px]">
-            Not published yet · {changeCount(timeline.value.unpublished)}
+            {say("history.not-published-yet-count", { changes: changeCount(timeline.value.unpublished) })}
           </span>
         </div>
       )}
 
       {timeline.value.groups.length === 0 ? (
         <p className="text-[15px] text-subtle-foreground">
-          Nothing has been saved on this site yet.
+          {say("history.nothing-has-been-saved-on-this")}
         </p>
       ) : (
         timeline.value.groups.map((group) => (

@@ -5,6 +5,7 @@ import { Avatar } from "../components/ui/avatar";
 import { cn } from "../lib/cn";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../components/ui/menu";
 import { signOut, signOutEverywhere } from "../lib/session";
+import { say } from "../lib/say";
 
 /**
  * PersonMenu is who you are, your account, and the way out. It is one
@@ -35,7 +36,7 @@ export function PersonMenu({ name, className }: { name: string; className?: stri
   return (
     <Menu>
       <MenuTrigger
-        aria-label="You"
+        aria-label={say("person-menu.you")}
         // The avatar is 32px, which is a picture rather than a target. The
         // hit area around it is what a thumb has to find.
         className={cn("flex size-11 items-center justify-center rounded-full hover:bg-muted", className)}
@@ -49,13 +50,13 @@ export function PersonMenu({ name, className }: { name: string; className?: stri
 
         <MenuSeparator />
 
-        <MenuItem onSelect={() => goTo("/account")}>Your account</MenuItem>
-        <MenuItem onSelect={() => goTo("/preferences")}>Preferences</MenuItem>
+        <MenuItem onSelect={() => goTo("/account")}>{say("person-menu.your-account")}</MenuItem>
+        <MenuItem onSelect={() => goTo("/preferences")}>{say("person-menu.preferences")}</MenuItem>
 
         <MenuSeparator />
 
-        <MenuItem onSelect={() => void leave(false)}>Sign out</MenuItem>
-        <MenuItem onSelect={() => void leave(true)}>Sign out everywhere</MenuItem>
+        <MenuItem onSelect={() => void leave(false)}>{say("person-menu.sign-out")}</MenuItem>
+        <MenuItem onSelect={() => void leave(true)}>{say("person-menu.sign-out-everywhere")}</MenuItem>
       </MenuContent>
     </Menu>
   );

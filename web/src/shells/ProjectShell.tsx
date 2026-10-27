@@ -8,10 +8,11 @@ import { Button } from "../components/ui/button";
 import { cn } from "../lib/cn";
 import { useHere } from "../lib/whoami";
 import { setupNavigation, siteNavigation, type NavEntry } from "./navigation";
-import { canSeeSetup } from "./roles";
+import { canSeeSetup, named } from "./roles";
 import { PersonMenu } from "./PersonMenu";
 import { SyncIndicator, type SyncState } from "./SyncIndicator";
 import type { Project } from "../lib/tenancy";
+import { say } from "../lib/say";
 
 export type ProjectShellProps = {
   project: Project;
@@ -49,7 +50,7 @@ function NavGroup({
           {entry.key === "publish" && unpublished !== undefined && unpublished > 0 && (
             <Badge tone="changed">{unpublished}</Badge>
           )}
-          {entry.soon && <Badge tone="neutral">Soon</Badge>}
+          {entry.soon && <Badge tone="neutral">{say("project-shell.soon")}</Badge>}
         </NavLink>
       ))}
     </div>
@@ -68,12 +69,12 @@ export function ProjectShell({
   return (
     <div data-testid="project-shell" className="hidden min-h-dvh flex-wrap sm:flex">
       <aside
-        aria-label="Project navigation"
+        aria-label={say("project-shell.project-navigation")}
         className="flex shrink basis-60 grow flex-col gap-4 border-r border-border bg-card p-3"
       >
         <span className="flex items-center gap-2 px-2 pt-1">
-          <img src="/quiqr-logo.svg" alt="Quiqr" className="h-6 w-auto" />
-          <span className="text-[15px] text-muted-foreground">ChatCMS</span>
+          <img src="/quiqr-logo.svg" alt={say("common.quiqr")} className="h-6 w-auto" />
+          <span className="text-[15px] text-muted-foreground">{say("common.chatcms")}</span>
         </span>
 
         <NavLink
@@ -89,16 +90,16 @@ export function ProjectShell({
           <ChevronsUpDown aria-hidden="true" className="size-4 shrink-0 text-subtle-foreground" />
         </NavLink>
 
-        <NavGroup label="Site" entries={siteNavigation(organisation, project.slug)} unpublished={project.unpublished} />
+        <NavGroup label={say("project-shell.site")} entries={siteNavigation(organisation, project.slug)} unpublished={project.unpublished} />
         {canSeeSetup(viewer.role) && (
-          <NavGroup label="Setup" entries={setupNavigation(organisation, project.slug)} />
+          <NavGroup label={say("project-shell.setup")} entries={setupNavigation(organisation, project.slug)} />
         )}
 
         <div className="mt-auto flex items-center gap-2 border-t border-border-subtle px-2 pt-3">
           <PersonMenu name={viewer.name} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-sm">{viewer.name}</span>
-            <span className="text-xs capitalize text-subtle-foreground">{viewer.role}</span>
+            <span className="text-xs capitalize text-subtle-foreground">{named(viewer.role)}</span>
           </span>
         </div>
       </aside>
@@ -109,7 +110,7 @@ export function ProjectShell({
           <SyncIndicator state={syncState} />
           {actions}
           <Button asChild count={project.unpublished}>
-            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>Publish</NavLink>
+            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>{say("common.publish")}</NavLink>
           </Button>
         </header>
 
@@ -121,7 +122,7 @@ export function ProjectShell({
 
 export function AssistantSlot() {
   return (
-    <Button variant="ghost" size="icon" aria-label="Assistant, coming later" disabled>
+    <Button variant="ghost" size="icon" aria-label={say("project-shell.assistant-coming-later")} disabled>
       <MessageSquare aria-hidden="true" className="size-5" />
     </Button>
   );

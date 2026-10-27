@@ -12,6 +12,7 @@ import { useHere } from "../lib/whoami";
 import { useIsPhone } from "../shells/useIsPhone";
 import { PageEditor } from "./PageEditor";
 import { Preview } from "./Preview";
+import { say } from "../lib/say";
 
 export function EditorPage() {
   const { organisation, who } = useHere();
@@ -24,7 +25,7 @@ export function EditorPage() {
   const onAPhone = useIsPhone();
 
   if (loaded.state !== "ready") {
-    return <p className="p-6 text-[15px] text-muted-foreground">Looking...</p>;
+    return <p className="p-6 text-[15px] text-muted-foreground">{say("common.looking")}</p>;
   }
 
   const project = loaded.value;
@@ -60,14 +61,14 @@ export function EditorPage() {
         <>
           <AssistantSlot />
           <Button className="flex-1" count={project.unpublished}>
-            Publish
+            {say("common.publish")}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
         <Segmented
-          label="What to show"
+          label={say("editor.what-to-show")}
           className="grid grid-cols-2"
           value={showing}
           options={[

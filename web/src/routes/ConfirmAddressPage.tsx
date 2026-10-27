@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { NavLink, useSearchParams } from "react-router";
 
 import { proveTheNewAddress } from "../lib/session";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
 
 /**
  * ConfirmAddressPage is where the link in the message sent to a new address
@@ -31,9 +33,7 @@ export function ConfirmAddressPage() {
         if (cancelled) return;
         setState("failed");
         setTrouble(
-          error instanceof Error
-            ? error.message
-            : "That link cannot be used any more. Ask for a new one from your account.",
+          whatWentWrong(error, "confirm-address.that-link-cannot-be-used-any-more-ask-for-a-new"),
         );
       });
 
@@ -45,32 +45,32 @@ export function ConfirmAddressPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-[420px] flex-col justify-center gap-4 p-6">
       <span className="flex items-center gap-2">
-        <img src="/quiqr-logo.svg" alt="Quiqr" className="h-6 w-auto" />
-        <span className="text-[15px] text-muted-foreground">ChatCMS</span>
+        <img src="/quiqr-logo.svg" alt={say("common.quiqr")} className="h-6 w-auto" />
+        <span className="text-[15px] text-muted-foreground">{say("common.chatcms")}</span>
       </span>
 
       {state === "working" && (
-        <p className="text-[15px] text-muted-foreground">Confirming...</p>
+        <p className="text-[15px] text-muted-foreground">{say("confirm-address.confirming")}</p>
       )}
 
       {state === "done" && (
         <>
-          <h1 className="text-[28px] font-semibold tracking-tight">That is your address now</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight">{say("confirm-address.that-is-your-address-now")}</h1>
           <p role="status" className="text-[15px] text-muted-foreground">
-            You sign in with it from now on.
+            {say("confirm-address.you-sign-in-with-it-from")}
           </p>
           <NavLink to="/projects" className="inline-flex min-h-11 items-center text-[15px] text-primary">
-            Go to your projects
+            {say("confirm-address.go-to-your-projects")}
           </NavLink>
         </>
       )}
 
       {state === "failed" && (
         <>
-          <h1 className="text-[28px] font-semibold tracking-tight">That did not work</h1>
+          <h1 className="text-[28px] font-semibold tracking-tight">{say("confirm-address.that-did-not-work")}</h1>
           <p role="alert" className="text-[15px] text-muted-foreground">{trouble}</p>
           <NavLink to="/account" className="inline-flex min-h-11 items-center text-[15px] text-primary">
-            Back to your account
+            {say("confirm-address.back-to-your-account")}
           </NavLink>
         </>
       )}

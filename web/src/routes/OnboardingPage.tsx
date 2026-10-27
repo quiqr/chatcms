@@ -9,6 +9,7 @@ import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
 import { KeyPanel, PublishingPanel } from "./setup/Panels";
 import { useHere } from "../lib/whoami";
+import { say } from "../lib/say";
 import {
   importSite,
   readKey,
@@ -16,6 +17,7 @@ import {
   readSite,
   type SiteReport,
 } from "../lib/tenancy";
+import { whatWentWrong } from "../lib/api";
 
 type Step = { key: string; label: string; done: boolean };
 
@@ -41,7 +43,7 @@ function Steps({ steps, current }: { steps: Step[]; current: string }) {
             {step.done ? <Check className="size-3" /> : ""}
           </span>
           {step.label}
-          {step.done && <span className="sr-only">done</span>}
+          {step.done && <span className="sr-only">{say("onboarding.done")}</span>}
         </li>
       ))}
     </ol>
@@ -72,7 +74,7 @@ function Section({
 }
 
 function siteSummary(report: SiteReport) {
-  if (report.kind === "none") return "Nothing has been brought in yet.";
+  if (report.kind === "none") return say("onboarding.nothing-has-been-brought-in-yet");
   if (report.ready) {
     return `Hugo site, Quiqr model found: ${report.pages} pages and ${report.collections} collections.`;
   }
@@ -102,7 +104,7 @@ export function OnboardingPage() {
     try {
       await what();
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "That did not work. Please try again.");
+      setProblem(whatWentWrong(error, "common.that-did-not-work-try-again"));
     } finally {
       setBusy(false);
     }
@@ -113,15 +115,15 @@ export function OnboardingPage() {
   const current = !report || report.kind === "none" ? "site" : !hasKey ? "key" : "publishing";
 
   const steps: Step[] = [
-    { key: "site", label: "Where the site comes from", done: Boolean(report && report.kind !== "none") },
-    { key: "key", label: "Key for the git host", done: hasKey },
-    { key: "publishing", label: "How it is published", done: publishing.state === "ready" },
-    { key: "people", label: "Invite people", done: false },
+    { key: "site", label: say("onboarding.where-the-site-comes-from"), done: Boolean(report && report.kind !== "none") },
+    { key: "key", label: say("onboarding.key-for-the-git-host"), done: hasKey },
+    { key: "publishing", label: say("project-settings.how-it-is-published"), done: publishing.state === "ready" },
+    { key: "people", label: say("onboarding.invite-people"), done: false },
   ];
 
   return (
     <div className="flex flex-wrap items-start gap-6">
-      <nav aria-label="Setting up this project" className="min-w-0 shrink grow basis-[220px]">
+      <nav aria-label={say("onboarding.setting-up-this-project")} className="min-w-0 shrink grow basis-[220px]">
         <Steps steps={steps} current={current} />
       </nav>
 
@@ -132,15 +134,15 @@ export function OnboardingPage() {
           </p>
         )}
 
-        <Section title="Where the site comes from" active={current === "site"}>
+        <Section title={say("onboarding.where-the-site-comes-from")} active={current === "site"}>
           <Segmented
-            label="Where the site comes from"
+            label={say("onboarding.where-the-site-comes-from")}
             value={source}
             onValueChange={setSource}
             options={[
-              { value: "repository", label: "A site already in git" },
-              { value: "export", label: "From Quiqr Desktop" },
-              { value: "template", label: "Start from a template" },
+              { value: "repository", label: say("onboarding.a-site-already-in-git") },
+              { value: "export", label: say("onboarding.from-quiqr-desktop") },
+              { value: "template", label: say("onboarding.start-from-a-template") },
             ]}
           />
 
@@ -158,10 +160,10 @@ export function OnboardingPage() {
               <Field
                 label={
                   source === "repository"
-                    ? "Address of the site in git"
+                    ? say("onboarding.address-of-the-site-in-git")
                     : source === "export"
-                      ? "Folder holding the exported site"
-                      : "Name of the template"
+                      ? say("onboarding.folder-holding-the-exported-site")
+                      : say("onboarding.name-of-the-template")
                 }
                 className="font-mono text-sm"
                 required
@@ -170,22 +172,22 @@ export function OnboardingPage() {
               />
             </div>
             <Button type="submit" variant="ink" disabled={busy}>
-              Bring it in
+              {say("onboarding.bring-it-in")}
             </Button>
           </form>
 
           <p className="mt-3 text-[13px] text-subtle-foreground">
-            {site.state === "loading" ? "Looking..." : report ? siteSummary(report) : ""}
+            {site.state === "loading" ? say("common.looking") : report ? siteSummary(report) : ""}
           </p>
 
-          {report?.ready && <Badge tone="live">Ready to edit</Badge>}
+          {report?.ready && <Badge tone="live">{say("onboarding.ready-to-edit")}</Badge>}
         </Section>
 
-        <Section title="Key for the git host" active={current === "key"}>
+        <Section title={say("onboarding.key-for-the-git-host")} active={current === "key"}>
           <KeyPanel organisation={organisation} project={project} onTrouble={setProblem} />
         </Section>
 
-        <Section title="How it is published" active={current === "publishing"}>
+        <Section title={say("onboarding.how-it-is-published")} active={current === "publishing"}>
           <PublishingPanel organisation={organisation} project={project} onTrouble={setProblem} />
         </Section>
 

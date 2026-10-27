@@ -1,3 +1,5 @@
+import { locale, say } from "./say";
+
 /**
  * How a time is written, in one place. Four screens each decided for
  * themselves and produced three different formats; the design asks for
@@ -27,22 +29,24 @@ export function when(at?: Date | string | null): string {
 
   const since = now().getTime() - moment.getTime();
 
-  if (since < minute) return "just now";
+  if (since < minute) return say("when.just-now");
   if (since < hour) {
-    const minutes = Math.floor(since / minute);
-    return `${minutes} min ago`;
+    return say("when.minutes-ago", { minutes: Math.floor(since / minute) });
   }
 
   const today = startOfDay(now());
   const thatDay = startOfDay(moment);
   const daysBack = Math.round((today.getTime() - thatDay.getTime()) / day);
 
-  const clock = moment.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const clock = moment.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
 
   if (daysBack === 0) return clock;
-  if (daysBack === 1) return `Yesterday at ${clock}`;
+  if (daysBack === 1) return say("when.yesterday-at", { clock });
   if (daysBack < 7) {
-    return `${moment.toLocaleDateString(undefined, { weekday: "long" })} at ${clock}`;
+    return say("when.day-at", {
+      day: moment.toLocaleDateString(locale(), { weekday: "long" }),
+      clock,
+    });
   }
 
   return onADay(moment);
@@ -55,7 +59,7 @@ export function onADay(at?: Date | string | null): string {
   if (Number.isNaN(moment.getTime())) return "";
 
   const sameYear = moment.getFullYear() === now().getFullYear();
-  return moment.toLocaleDateString(undefined, {
+  return moment.toLocaleDateString(locale(), {
     day: "numeric",
     month: "long",
     year: sameYear ? undefined : "numeric",

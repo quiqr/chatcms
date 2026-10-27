@@ -8,6 +8,7 @@ import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
 import { onADay } from "../lib/when";
 import { useHere } from "../lib/whoami";
+import { plural, say } from "../lib/say";
 import {
   publishNow,
   readReview,
@@ -21,9 +22,9 @@ import {
 
 const badges: Record<ChangeKind, { label: string; tone: "changed" | "new" | "attention" | "neutral" }> = {
   "changed-page": { label: "Changed", tone: "changed" },
-  "new-page": { label: "New page", tone: "new" },
+  "new-page": { label: say("publish.new-page"), tone: "new" },
   "removed-page": { label: "Removed", tone: "attention" },
-  "new-image": { label: "New image", tone: "new" },
+  "new-image": { label: say("publish.new-image"), tone: "new" },
   "removed-image": { label: "Removed", tone: "attention" },
   "other-file": { label: "Changed", tone: "neutral" },
 };
@@ -70,7 +71,7 @@ function Fields({ fields }: { fields: FieldChange[] }) {
           <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {field.name}
           </dt>
-          <dd>{field.words?.length ? <Words words={field.words} /> : <p className="text-[15px]">Changed</p>}</dd>
+          <dd>{field.words?.length ? <Words words={field.words} /> : <p className="text-[15px]">{say("publish.changed")}</p>}</dd>
         </div>
       ))}
     </dl>
@@ -107,7 +108,7 @@ function ChangeRow({ change }: { change: Change }) {
             className="flex min-h-11 w-fit items-center gap-1.5 text-sm font-medium text-accent-foreground"
           >
             <ChevronDown aria-hidden="true" className={"size-4 transition-transform " + (open ? "rotate-180" : "")} />
-            {open ? "Hide changes" : "Show changes"}
+            {open ? say("publish.hide-changes") : say("publish.show-changes")}
           </button>
           {open && <Fields fields={fields} />}
         </>
@@ -129,7 +130,9 @@ function Progress({ publish }: { publish: Publish }) {
             <AlertTriangle aria-hidden="true" className="size-5 text-danger-foreground" />
           )}
           {step.title}
-          <span className="sr-only">{step.state === "succeeded" ? "done" : "did not finish"}</span>
+          <span className="sr-only">
+            {step.state === "succeeded" ? say("onboarding.done") : say("publish.did-not-finish")}
+          </span>
         </li>
       ))}
     </ol>
@@ -141,16 +144,16 @@ function Done({ publish, onKeepEditing }: { publish: Publish; onKeepEditing: () 
     <section className="flex flex-col gap-4" aria-live="polite">
       <div className="flex items-center gap-2.5">
         <CheckCircle2 aria-hidden="true" className="size-6 text-success-foreground" />
-        <h2 className="text-lg font-semibold">Your site is up to date</h2>
+        <h2 className="text-lg font-semibold">{say("publish.your-site-is-up-to-date")}</h2>
       </div>
       <p className="text-[15px] text-muted-foreground">
         {publish.changeCount === 0
-          ? "There was nothing waiting, so nothing needed to go out."
-          : `${publish.changeCount} ${publish.changeCount === 1 ? "change is" : "changes are"} live now.`}
+          ? say("publish.there-was-nothing-waiting-so-nothing")
+          : plural(publish.changeCount, "publish.change-is-live-one", "publish.change-is-live-many")}
       </p>
       <Progress publish={publish} />
       <div className="flex flex-wrap gap-2">
-        <Button onClick={onKeepEditing}>Back to content</Button>
+        <Button onClick={onKeepEditing}>{say("publish.back-to-content")}</Button>
       </div>
     </section>
   );
@@ -163,12 +166,12 @@ function Trouble({ publish, onTryAgain }: { publish: Publish; onTryAgain: () => 
     <section className="flex flex-col gap-4" aria-live="polite">
       <div className="flex items-center gap-2.5">
         <AlertTriangle aria-hidden="true" className="size-6 text-danger-foreground" />
-        <h2 className="text-lg font-semibold">We couldn&rsquo;t publish this time</h2>
+        <h2 className="text-lg font-semibold">{say("publish.we-couldn-t-publish-this-time")}</h2>
       </div>
       <p className="text-[15px]">{publish.trouble}</p>
       <Progress publish={publish} />
       <div className="flex flex-wrap gap-2">
-        <Button onClick={onTryAgain}>Try again</Button>
+        <Button onClick={onTryAgain}>{say("publish.try-again")}</Button>
       </div>
 
       {publish.detail && (
@@ -181,7 +184,7 @@ function Trouble({ publish, onTryAgain }: { publish: Publish; onTryAgain: () => 
             className="flex min-h-11 w-fit items-center gap-1.5 text-sm text-muted-foreground"
           >
             <ChevronDown aria-hidden="true" className={"size-4 transition-transform " + (showDetail ? "rotate-180" : "")} />
-            Technical details · for implementers
+            {say("publish.technical-details-for-implementers")}
           </button>
           {showDetail && (
             <pre className="max-h-80 overflow-auto rounded-lg bg-muted p-3 text-xs">{publish.detail}</pre>
@@ -228,7 +231,7 @@ export function PublishPage() {
   }
 
   if (review.state === "loading") {
-    return <p className="text-[15px] text-muted-foreground">Looking at what changed…</p>;
+    return <p className="text-[15px] text-muted-foreground">{say("publish.looking-at-what-changed")}</p>;
   }
   if (review.state === "failed") {
     return <p className="text-[15px]">{review.message}</p>;
@@ -242,19 +245,19 @@ export function PublishPage() {
       <header className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">
           {count === 0
-            ? "Nothing is waiting"
+            ? say("publish.nothing-is-waiting")
             : `Ready to publish ${count} ${count === 1 ? "change" : "changes"}`}
         </h2>
         {review.value.lastPublished && (
           <p className="text-sm text-muted-foreground">
-            Last published {onADay(review.value.lastPublished)}
+            {say("publish.last-published")} {onADay(review.value.lastPublished)}
           </p>
         )}
       </header>
 
       {count === 0 ? (
         <p className="text-[15px] text-muted-foreground">
-          Everything you have written is already live.
+          {say("publish.everything-you-have-written-is-already")}
         </p>
       ) : (
         <ul className="flex flex-col">
@@ -265,19 +268,19 @@ export function PublishPage() {
       )}
 
       <Field
-        label="What's in this update?"
-        hint="Optional. People see this later in History."
+        label={say("publish.what-s-in-this-update")}
+        hint={say("publish.optional-people-see-this-later-in")}
         type="text"
         value={note}
         onChange={(event) => setNote(event.target.value)}
-        placeholder="Spring prices"
+        placeholder={say("publish.spring-prices")}
       />
 
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-border bg-card px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0">
         <Button onClick={send} disabled={sending || count === 0} className="w-full sm:w-fit">
-          {sending ? "Publishing…" : `Publish ${count} ${count === 1 ? "change" : "changes"}`}
+          {sending ? say("publish.publishing") : `Publish ${count} ${count === 1 ? "change" : "changes"}`}
         </Button>
-        <p className="text-sm text-muted-foreground">You can keep editing while this happens.</p>
+        <p className="text-sm text-muted-foreground">{say("publish.you-can-keep-editing-while-this")}</p>
       </div>
     </section>
   );

@@ -15,6 +15,8 @@ import {
   whereSignedIn,
 } from "../lib/session";
 import { useHere } from "../lib/whoami";
+import { say } from "../lib/say";
+import { whatWentWrong } from "../lib/api";
 
 export function AccountPage() {
   const { who, again } = useHere();
@@ -40,7 +42,7 @@ export function AccountPage() {
       again();
       setNameSaved(true);
     } catch (error: unknown) {
-      setNameTrouble(error instanceof Error ? error.message : "That did not work.");
+      setNameTrouble(whatWentWrong(error));
     } finally {
       setSavingName(false);
     }
@@ -57,7 +59,7 @@ export function AccountPage() {
       setNext("");
       setPasswordSaved(true);
     } catch (error: unknown) {
-      setPasswordTrouble(error instanceof Error ? error.message : "That did not work.");
+      setPasswordTrouble(whatWentWrong(error));
     } finally {
       setSavingPassword(false);
     }
@@ -68,14 +70,14 @@ export function AccountPage() {
       <YourPicture />
 
       <form onSubmit={saveName} className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Your name</h2>
+        <h2 className="text-[15px] font-semibold">{say("account.your-name")}</h2>
 
         <Field
-          label="Name"
+          label={say("common.name")}
           value={name}
           onChange={(event) => setName(event.target.value)}
           required
-          hint="What other people see beside the changes you make."
+          hint={say("account.what-other-people-see-beside-the")}
         />
 
         {nameTrouble && (
@@ -85,32 +87,32 @@ export function AccountPage() {
         )}
         {nameSaved && (
           <p role="status" className="text-[15px] text-muted-foreground">
-            Saved.
+            {say("common.saved")}
           </p>
         )}
 
         <div>
           <Button type="submit" disabled={savingName || name.trim() === ""}>
-            {savingName ? "Saving..." : "Save"}
+            {savingName ? say("common.saving") : say("account.save")}
           </Button>
         </div>
       </form>
 
       <form onSubmit={savePassword} className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">Your password</h2>
+        <h2 className="text-[15px] font-semibold">{say("account.your-password")}</h2>
 
         <Field
-          label="Your password now"
+          label={say("account.your-password-now")}
           type="password"
           autoComplete="current-password"
           value={current}
           onChange={(event) => setCurrent(event.target.value)}
           required
-          hint="Asked for even though you are signed in, so that a screen left open is not enough to take your account over."
+          hint={say("account.asked-for-even-though-you-are")}
         />
 
         <Field
-          label="New password"
+          label={say("account.new-password")}
           type="password"
           autoComplete="new-password"
           value={next}
@@ -125,13 +127,13 @@ export function AccountPage() {
         )}
         {passwordSaved && (
           <p role="status" className="text-[15px] text-muted-foreground">
-            Your password is changed.
+            {say("account.your-password-is-changed")}
           </p>
         )}
 
         <div>
           <Button type="submit" disabled={savingPassword || current === "" || next === ""}>
-            {savingPassword ? "Saving..." : "Change my password"}
+            {savingPassword ? say("common.saving") : say("account.change-my-password")}
           </Button>
         </div>
       </form>
@@ -162,7 +164,7 @@ function YourPicture() {
       setShown((count) => count + 1);
       again();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -170,7 +172,7 @@ function YourPicture() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">Your picture</h2>
+      <h2 className="text-[15px] font-semibold">{say("account.your-picture")}</h2>
 
       <div className="flex flex-wrap items-center gap-4">
         <Avatar
@@ -182,8 +184,7 @@ function YourPicture() {
         />
 
         <label className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-input px-3 text-sm font-semibold hover:bg-muted">
-          Choose a picture
-          <input
+          {say("common.choose-a-picture")}<input
             type="file"
             accept="image/png,image/jpeg,image/gif,image/webp"
             className="sr-only"
@@ -196,7 +197,7 @@ function YourPicture() {
         </label>
 
         <Button variant="outline" disabled={busy} onClick={() => void run(removePicture)}>
-          Use my initials
+          {say("account.use-my-initials")}
         </Button>
       </div>
 
@@ -230,7 +231,7 @@ function YourAddress({ now }: { now: string }) {
       setWanted("");
       setSent(true);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -238,18 +239,18 @@ function YourAddress({ now }: { now: string }) {
 
   return (
     <form onSubmit={ask} className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">Your email address</h2>
+      <h2 className="text-[15px] font-semibold">{say("account.your-email-address")}</h2>
 
       <p className="text-[15px] text-muted-foreground">
-        You sign in with <strong>{now}</strong>.
+        {say("account.you-sign-in-with-this", { address: now })}
       </p>
 
       <Field
-        label="New address"
+        label={say("account.new-address")}
         type="email"
         value={wanted}
         onChange={(event) => setWanted(event.target.value)}
-        hint="We send a message there. Nothing changes until you follow the link in it."
+        hint={say("account.we-send-a-message-there-nothing")}
       />
 
       {trouble && (
@@ -259,13 +260,13 @@ function YourAddress({ now }: { now: string }) {
       )}
       {sent && (
         <p role="status" className="text-[15px] text-muted-foreground">
-          Check that address for a message. You sign in with {now} until you follow the link.
+          {say("account.check-that-address", { address: now })}
         </p>
       )}
 
       <div>
         <Button type="submit" disabled={busy || wanted.trim() === ""}>
-          {busy ? "Sending..." : "Send me the link"}
+          {busy ? say("common.sending") : say("account.send-me-the-link")}
         </Button>
       </div>
     </form>
@@ -283,13 +284,13 @@ function WhereYouAreSignedIn() {
       await endSession(id);
       again();
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     }
   }
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">Where you are signed in</h2>
+      <h2 className="text-[15px] font-semibold">{say("account.where-you-are-signed-in")}</h2>
 
       {trouble && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
@@ -298,7 +299,7 @@ function WhereYouAreSignedIn() {
       )}
 
       {places.state === "loading" && (
-        <p className="text-[15px] text-muted-foreground">Looking...</p>
+        <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>
       )}
 
       {places.state === "ready" && (
@@ -306,15 +307,15 @@ function WhereYouAreSignedIn() {
           {places.value.sessions.map((place) => (
             <li key={place.id} className="flex flex-wrap items-center gap-3 border-b border-border-subtle pb-3 last:border-0">
               <span className="flex-1 text-[15px]">
-                {place.thisOne ? "This screen" : "Another screen"}
+                {place.thisOne ? say("account.this-screen") : say("account.another-screen")}
                 <span className="block text-[13px] text-subtle-foreground">
-                  Last used {when(place.lastSeen)}
+                  {say("account.last-used")} {when(place.lastSeen)}
                 </span>
               </span>
 
               {!place.thisOne && (
                 <Button variant="outline" onClick={() => void end(place.id)}>
-                  End it
+                  {say("account.end-it")}
                 </Button>
               )}
             </li>

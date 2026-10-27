@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { whatWentWrong } from "./api";
 
 export type Loading<T> =
   | { state: "loading" }
@@ -8,16 +9,28 @@ export type Loading<T> =
 /**
  * useAsync loads something once and gives back a way to load it again. It
  * exists so that every screen reports loading and failure the same way.
+ *
+ * Asking again keeps what it already has on the screen. Going back to
+ * "loading" would blank the screen below, which unmounts whatever somebody
+ * was in the middle of typing: a half-filled form disappears because
+ * something else was saved.
  */
 export function useAsync<T>(load: () => Promise<T>, keys: unknown[]): [Loading<T>, () => void] {
   const [result, setResult] = useState<Loading<T>>({ state: "loading" });
   const [attempt, setAttempt] = useState(0);
+  const asking = useRef(false);
 
-  const again = useCallback(() => setAttempt((count) => count + 1), []);
+  const again = useCallback(() => {
+    asking.current = true;
+    setAttempt((count) => count + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    setResult({ state: "loading" });
+    if (!asking.current) {
+      setResult({ state: "loading" });
+    }
+    asking.current = false;
 
     load()
       .then((value) => {
@@ -27,10 +40,7 @@ export function useAsync<T>(load: () => Promise<T>, keys: unknown[]): [Loading<T
         if (cancelled) return;
         setResult({
           state: "failed",
-          message:
-            error instanceof Error
-              ? error.message
-              : "We could not reach the server. Nothing is lost; please try again.",
+          message: whatWentWrong(error, "common.cannot-reach-the-server"),
         });
       });
 

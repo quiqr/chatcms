@@ -14,7 +14,7 @@ test("everybody is listed with where they belong", async ({
 
   await test.step("and it says where each of them belongs", async () => {
     const row = page.getByRole("row").filter({ hasText: "marieke@korenaar.example" });
-    await expect(row).toContainText("Korenaar Bakery (editor)");
+    await expect(row).toContainText("Korenaar Bakery (Editor)");
   });
 
   await test.step("somebody is found by part of their address", async () => {

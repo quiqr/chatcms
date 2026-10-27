@@ -2,6 +2,7 @@ import { Bold, Image, Italic, Link2, List, Type } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Segmented } from "../components/ui/segmented";
+import { say } from "../lib/say";
 
 type Wrap = { before: string; after: string; sample: string };
 
@@ -22,7 +23,7 @@ const actions: Array<{ key: string; label: string; icon: typeof Bold; wrap: Wrap
 export function BodyEditor({
   value,
   onChange,
-  label = "Page text",
+  label = say("page-editor.page-text"),
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -52,7 +53,7 @@ export function BodyEditor({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-medium">{label}</span>
         <Segmented
-          label="How to edit the text"
+          label={say("body-editor.how-to-edit-the-text")}
           value={showing}
           options={[
             { value: "formatted", label: "Formatted" },
@@ -63,7 +64,7 @@ export function BodyEditor({
       </div>
 
       {showing === "formatted" && (
-        <div className="flex flex-wrap gap-1" role="toolbar" aria-label="Text formatting">
+        <div className="flex flex-wrap gap-1" role="toolbar" aria-label={say("body-editor.text-formatting")}>
           {actions.map((action) => (
             <button
               key={action.key}

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { get, post } from "../api";
+import { get, post, RequestFailed, whatWentWrong } from "../api";
+import { speak } from "../say";
 
 function answers(status: number, body: unknown) {
   return vi.fn().mockResolvedValue({
@@ -79,5 +80,48 @@ describe("a session that has run out", () => {
     await expect(get("/api/organisations/nope/projects")).rejects.toThrow("Nothing here.");
 
     expect(assign).not.toHaveBeenCalled();
+  });
+});
+
+describe("what a screen says went wrong", () => {
+  it("says a refusal the server named, in the language in force", () => {
+    speak("nl");
+    const refused = new RequestFailed({
+      code: "refused",
+      message: "That address is already taken.",
+      key: "refused.address-already-taken",
+    });
+
+    expect(whatWentWrong(refused)).toBe("Dat adres is al bezet.");
+    speak("en");
+  });
+
+  it("fills in what the refusal carried with it", () => {
+    const refused = new RequestFailed({
+      code: "refused",
+      message: "sam@example.org already has an account.",
+      key: "refused.address-has-an-account",
+      detail: { address: "sam@example.org" },
+    });
+
+    expect(whatWentWrong(refused)).toBe("sam@example.org already has an account.");
+  });
+
+  it("falls back to the server's own words for a refusal nobody translated", () => {
+    const refused = new RequestFailed({
+      code: "refused",
+      message: "Something nobody has written a sentence for yet.",
+      key: "refused.nobody-has-this-key",
+    });
+
+    expect(whatWentWrong(refused)).toBe("Something nobody has written a sentence for yet.");
+  });
+
+  it("says its own sentence for anything the browser raised", () => {
+    // A failed connection is in no language anybody chose.
+    expect(whatWentWrong(new Error("Failed to fetch"))).toBe("That did not work.");
+    expect(whatWentWrong(new Error("Failed to fetch"), "common.cannot-reach-the-server")).toBe(
+      "We could not reach the server. Nothing is lost; please try again.",
+    );
   });
 });

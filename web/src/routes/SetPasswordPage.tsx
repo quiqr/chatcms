@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
-import { RequestFailed } from "../lib/api";
+import { whatWentWrong } from "../lib/api";
 import { setPasswordWithToken } from "../lib/session";
+import { say } from "../lib/say";
 
 /**
  * SetPasswordPage is where an invitation and a password reset both land. It
@@ -29,11 +30,7 @@ export function SetPasswordPage() {
       await setPasswordWithToken(token, password);
       navigate("/projects");
     } catch (error) {
-      setProblem(
-        error instanceof RequestFailed
-          ? error.message
-          : "We could not reach the server. Nothing is lost; please try again.",
-      );
+      setProblem(whatWentWrong(error, "common.cannot-reach-the-server"));
     } finally {
       setBusy(false);
     }
@@ -42,9 +39,9 @@ export function SetPasswordPage() {
   if (!token) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-4 p-6">
-        <h1 className="text-[28px] font-semibold tracking-tight">This link is not complete</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight">{say("set-password.this-link-is-not-complete")}</h1>
         <p className="text-[15px] text-muted-foreground">
-          Open the link from your email again, or ask whoever invited you to send another.
+          {say("set-password.open-the-link-from-your-email")}
         </p>
       </main>
     );
@@ -55,25 +52,25 @@ export function SetPasswordPage() {
       <div className="flex min-w-0 shrink grow basis-[420px] items-center justify-center p-6 sm:p-8">
         <div className="w-full max-w-[380px]">
           <span className="flex items-center gap-2">
-            <img src="/quiqr-logo.svg" alt="Quiqr" className="h-6 w-auto" />
-            <span className="text-[15px] text-muted-foreground">ChatCMS</span>
+            <img src="/quiqr-logo.svg" alt={say("common.quiqr")} className="h-6 w-auto" />
+            <span className="text-[15px] text-muted-foreground">{say("common.chatcms")}</span>
           </span>
 
-          <h1 className="mt-8 text-[28px] font-semibold tracking-tight">Choose a password</h1>
+          <h1 className="mt-8 text-[28px] font-semibold tracking-tight">{say("set-password.choose-a-password")}</h1>
           <p className="mt-2 text-[15px] text-muted-foreground">
-            Then you are in. You can change it later.
+            {say("set-password.then-you-are-in-you-can")}
           </p>
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-[22px]">
             <Field
-              label="New password"
+              label={say("set-password.new-password")}
               type="password"
               name="new-password"
               autoComplete="new-password"
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              hint="At least twelve characters. A few words you will remember beats a short tangle."
+              hint={say("set-password.at-least-twelve-characters-a-few")}
             />
 
             {problem && (
@@ -83,19 +80,19 @@ export function SetPasswordPage() {
             )}
 
             <Button type="submit" disabled={busy || password === ""}>
-              {busy ? "Saving..." : "Set my password"}
+              {busy ? say("common.saving") : say("set-password.set-my-password")}
             </Button>
           </form>
 
           <p className="mt-6 text-[13px] text-subtle-foreground">
-            Links run out. If this one has, ask whoever invited you for another.
+            {say("set-password.links-run-out-if-this-one")}
           </p>
         </div>
       </div>
 
       <div className="flex min-w-0 shrink grow basis-[420px] items-center justify-center bg-primary-soft p-8">
         <p className="max-w-[320px] text-[17px] text-primary-soft-foreground">
-          Fill in a form, or just ask. Your site updates as you go.
+          {say("set-password.fill-in-a-form-or-just")}
         </p>
       </div>
     </main>

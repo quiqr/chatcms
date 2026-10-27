@@ -84,6 +84,7 @@ func (s *Service) Create(ctx context.Context, actor policy.Actor, projectID uuid
 	slug := Slug(asked.Title)
 	if !usableSlug.MatchString(slug) {
 		return Editable{}, &httpapi.RefusedError{
+			Key:    "refused.page-needs-name-with-some",
 			Reason: "a page needs a name with some letters or numbers in it",
 		}
 	}
@@ -91,7 +92,9 @@ func (s *Service) Create(ctx context.Context, actor policy.Actor, projectID uuid
 	file := path.Join(strings.TrimSuffix(collection.Folder, "/"), slug+"."+extensionOf(collection))
 	if _, err := fs.Stat(site.FS(), file); err == nil {
 		return Editable{}, &httpapi.RefusedError{
+			Key:    "refused.page-name-taken",
 			Reason: fmt.Sprintf("there is already a page called %q here", asked.Title),
+			Detail: map[string]any{"title": asked.Title},
 		}
 	}
 
@@ -169,6 +172,7 @@ func (s *Service) moveOrCopy(
 	section, _, nested := strings.Cut(key, "/")
 	if !nested {
 		return Editable{}, &httpapi.RefusedError{
+			Key:    "refused.page-model-names-cannot-renamed",
 			Reason: "a page the model names cannot be renamed here; its name is in the model",
 		}
 	}
@@ -186,6 +190,7 @@ func (s *Service) moveOrCopy(
 	slug := Slug(title)
 	if !usableSlug.MatchString(slug) {
 		return Editable{}, &httpapi.RefusedError{
+			Key:    "refused.page-needs-name-with-some",
 			Reason: "a page needs a name with some letters or numbers in it",
 		}
 	}
@@ -196,7 +201,9 @@ func (s *Service) moveOrCopy(
 	}
 	if _, err := fs.Stat(site.FS(), to); err == nil {
 		return Editable{}, &httpapi.RefusedError{
+			Key:    "refused.page-name-taken",
 			Reason: fmt.Sprintf("there is already a page called %q here", title),
+			Detail: map[string]any{"title": title},
 		}
 	}
 
@@ -253,6 +260,7 @@ func (s *Service) Delete(ctx context.Context, actor policy.Actor, projectID uuid
 	section, _, nested := strings.Cut(key, "/")
 	if !nested {
 		return &httpapi.RefusedError{
+			Key:    "refused.page-model-names-cannot-deleted",
 			Reason: "a page the model names cannot be deleted here; it is part of how the site is built",
 		}
 	}
@@ -313,5 +321,9 @@ func noModel(err error) error {
 	if strings.Contains(err.Error(), model.ErrNoModel.Error()) {
 		return ErrNoModel
 	}
-	return &httpapi.RefusedError{Reason: "this site's model cannot be read: " + err.Error()}
+	return &httpapi.RefusedError{
+		Key:    "refused.model-cannot-be-read",
+		Reason: "this site's model cannot be read: " + err.Error(),
+		Detail: map[string]any{"why": err.Error()},
+	}
 }

@@ -5,6 +5,7 @@ import { useParams } from "react-router";
 import { Button } from "../components/ui/button";
 import { useAsync } from "../lib/useAsync";
 import { useHere } from "../lib/whoami";
+import { plural, say } from "../lib/say";
 import {
   abandonChanges,
   answerChanges,
@@ -16,6 +17,7 @@ import {
   type Standing,
   type Word,
 } from "../lib/tenancy";
+import { whatWentWrong } from "../lib/api";
 
 function Words({ words }: { words: Word[] }) {
   return (
@@ -59,17 +61,17 @@ function Question({
   return (
     <li className="flex flex-col gap-2 rounded-md border border-border p-3">
       <p className="text-[15px]">
-        {who} also changed this {field.name.toLowerCase()}. Which one should we keep?
+        {say("sync.also-changed-this-field", { who, field: field.name.toLowerCase() })}
       </p>
       <div className="flex flex-wrap gap-2">
         <Button variant={chosen === "mine" ? "primary" : "ghost"} onClick={() => onChoose("mine")}>
-          Keep mine
+          {say("sync.keep-mine")}
         </Button>
         <Button variant={chosen === "theirs" ? "primary" : "ghost"} onClick={() => onChoose("theirs")}>
-          Use {who}&rsquo;s
+          {say("sync.use-theirs-named", { who })}
         </Button>
         <Button variant="ghost" onClick={() => setComparing(!comparing)}>
-          {comparing ? "Hide" : "Compare"}
+          {comparing ? say("sync.hide") : say("sync.compare")}
         </Button>
       </div>
       {comparing && (
@@ -79,8 +81,8 @@ function Question({
           ) : (
             <>
               <p className="text-[15px]">
-                <span className="text-sm text-subtle-foreground">Mine: </span>
-                {field.mine || "nothing"}
+                <span className="text-sm text-subtle-foreground">{say("sync.mine")} </span>
+                {field.mine || say("sync.nothing")}
               </p>
               <p className="text-[15px]">
                 <span className="text-sm text-subtle-foreground">{who}: </span>
@@ -119,7 +121,7 @@ export function SyncPage() {
     try {
       setAfter(await what());
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
@@ -135,7 +137,7 @@ export function SyncPage() {
   }
 
   if (standing.state === "loading") {
-    return <p className="text-[15px] text-subtle-foreground">Checking…</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("sync.checking")}</p>;
   }
   if (standing.state === "failed") {
     return <p className="text-[15px]">{standing.message}</p>;
@@ -165,19 +167,19 @@ export function SyncPage() {
           {now.said}
         </p>
         <Button variant="ghost" onClick={() => run(() => bringChanges(organisation, project))} disabled={busy}>
-          Check for updates
+          {say("sync.check-for-updates")}
         </Button>
       </div>
 
       {now.unpublished > 0 && (
         <p className="text-[15px] text-subtle-foreground">
-          {now.unpublished} {now.unpublished === 1 ? "change is" : "changes are"} waiting to be published.
+          {plural(now.unpublished, "sync.waiting-one", "sync.waiting-many")}
         </p>
       )}
 
       {(now.arrivedFrom ?? []).length > 0 && now.state === "arrived" && (
         <p className="rounded-md bg-info-soft px-3 py-2 text-[15px] text-info-foreground">
-          {who} updated this site. Their work is here now.
+          {say("sync.updated-this-site", { who })}
         </p>
       )}
 
@@ -187,21 +189,22 @@ export function SyncPage() {
           {page.wholeFile ? (
             <div className="flex flex-col gap-2 rounded-md border border-border p-3">
               <p className="text-[15px]">
-                {page.who || "Someone else"} also changed this. We cannot show the two side by side, so
-                choose which to keep.
+                {say("sync.also-changed-whole-page", {
+                  who: page.who || say("sync.someone-else"),
+                })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant={(choices[page.file]?.["whole"] ?? "mine") === "mine" ? "primary" : "ghost"}
                   onClick={() => setChoices({ ...choices, [page.file]: { whole: "mine" } })}
                 >
-                  Keep mine
+                  {say("sync.keep-mine")}
                 </Button>
                 <Button
                   variant={choices[page.file]?.["whole"] === "theirs" ? "primary" : "ghost"}
                   onClick={() => setChoices({ ...choices, [page.file]: { whole: "theirs" } })}
                 >
-                  Use theirs
+                  {say("sync.use-theirs")}
                 </Button>
               </div>
             </div>
@@ -236,10 +239,10 @@ export function SyncPage() {
             }}
             disabled={busy}
           >
-            {busy ? "Saving…" : "Save these answers"}
+            {busy ? say("sync.saving") : say("sync.save-these-answers")}
           </Button>
           <Button variant="ghost" onClick={() => run(() => abandonChanges(organisation, project))} disabled={busy}>
-            Start again
+            {say("sync.start-again")}
           </Button>
         </div>
       )}
@@ -253,18 +256,21 @@ export function SyncPage() {
             onClick={() => setShowTechnical(!showTechnical)}
             className="flex min-h-11 w-fit items-center text-sm text-subtle-foreground"
           >
-            Technical details · for implementers
+            {say("sync.technical-details-for-implementers")}
           </button>
           {showTechnical && (
             <dl className="rounded-md bg-muted p-3 font-mono text-xs">
+              {/* chatcms-not-a-string: what the technical detail is called, shown as it is */}
               <div className="flex gap-2">
                 <dt>branch</dt>
                 <dd>{now.technical.branch}</dd>
               </div>
+              {/* chatcms-not-a-string: the same */}
               <div className="flex gap-2">
                 <dt>remote</dt>
                 <dd className="break-all">{now.technical.remote}</dd>
               </div>
+              {/* chatcms-not-a-string: the same */}
               <div className="flex gap-2">
                 <dt>head</dt>
                 <dd>{now.technical.head}</dd>

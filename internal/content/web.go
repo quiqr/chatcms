@@ -81,6 +81,7 @@ func (w *Web) SavePage(ctx context.Context, who httpapi.Actor, organisation, pro
 func noModelIsRefusal(err error) error {
 	if errors.Is(err, ErrNoModel) {
 		return &httpapi.RefusedError{
+			Key:    "refused.site-has-no-quiqr-model",
 			Reason: "this site has no Quiqr model yet, so there are no forms to fill in",
 		}
 	}

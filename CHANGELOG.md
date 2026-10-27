@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Dutch, and one place for every string. Every string the interface says now
+  comes from `web/src/strings/`: the English is the catalogue and the type,
+  and Dutch is a file holding exactly its keys, so a missing string fails the
+  build rather than appearing in the wrong language on somebody's screen. A
+  check fails when a string is written in a screen, the way the interface
+  check already fails on a colour written by hand, and it reads the catalogue
+  in both languages so that no version control word can come back in through
+  a translation. A language is chosen on the preferences screen beside the
+  appearance, is kept with the account, takes effect at once and follows to
+  another machine; somebody who has chosen nothing is read to in the language
+  their browser asks for. Dates and times follow it. A refusal from the server
+  carries a key as well as its English reason, so the screen says it in the
+  language whoever is reading chose.
+
 - Acting as somebody else, visibly. Whoever runs the installation can be a
   customer for a while: their screens, and what they may do, so that "I
   cannot see the publish button" can be answered by looking. It announces

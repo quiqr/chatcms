@@ -67,6 +67,7 @@
           runHook preCheck
           npm run typecheck
           npm run check:interface
+          npm run check:strings
           npm run test
           runHook postCheck
         '';

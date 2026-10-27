@@ -7,6 +7,7 @@ import { Field } from "../components/ui/field";
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
 import { useHere } from "../lib/whoami";
+import { plural, say } from "../lib/say";
 import {
   addImage,
   describeImage,
@@ -15,6 +16,7 @@ import {
   removeImage,
   type Image,
 } from "../lib/tenancy";
+import { whatWentWrong } from "../lib/api";
 
 function inWords(bytes: number) {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -63,8 +65,8 @@ function Details({
       </div>
 
       <Field
-        label="Description for screen readers"
-        hint="What is in the picture, for somebody who cannot see it."
+        label={say("media.description-for-screen-readers")}
+        hint={say("media.what-is-in-the-picture-for")}
         type="text"
         value={alt}
         onChange={(event) => setAlt(event.target.value)}
@@ -72,9 +74,9 @@ function Details({
       />
 
       <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Used on</span>
+        <span className="text-sm font-medium">{say("media.used-on")}</span>
         {used.length === 0 ? (
-          <p className="text-[15px] text-subtle-foreground">Not used anywhere yet.</p>
+          <p className="text-[15px] text-subtle-foreground">{say("media.not-used-anywhere-yet")}</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {used.map((page) => (
@@ -87,13 +89,13 @@ function Details({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {picking && <Button onClick={() => onUse(image)}>Use this image</Button>}
+        {picking && <Button onClick={() => onUse(image)}>{say("media.use-this-image")}</Button>}
         <Button variant="ghost" onClick={() => onRemove(false)}>
           <Trash2 aria-hidden="true" className="size-4" />
-          Remove
+          {say("media.remove")}
         </Button>
         <Button variant="ghost" onClick={onClose}>
-          Close
+          {say("media.close")}
         </Button>
       </div>
     </aside>
@@ -133,7 +135,7 @@ export function MediaPage({
       }
       setRefresh(refresh + 1);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That picture could not be added.");
+      setTrouble(whatWentWrong(error, "media.that-picture-could-not-be-added"));
     } finally {
       setBusy(false);
     }
@@ -144,7 +146,7 @@ export function MediaPage({
       await describeImage(organisation, project, name, alt);
       setRefresh(refresh + 1);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That description was not saved.");
+      setTrouble(whatWentWrong(error, "media.that-description-was-not-saved"));
     }
   }
 
@@ -160,14 +162,14 @@ export function MediaPage({
       setAsking(null);
       setRefresh(refresh + 1);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That picture was not removed.");
+      setTrouble(whatWentWrong(error, "media.that-picture-was-not-removed"));
     } finally {
       setBusy(false);
     }
   }
 
   if (images.state === "loading") {
-    return <p className="text-[15px] text-subtle-foreground">Looking at your pictures…</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("media.looking-at-your-pictures")}</p>;
   }
   if (images.state === "failed") {
     return <p className="text-[15px]">{images.message}</p>;
@@ -197,18 +199,19 @@ export function MediaPage({
           className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
         >
           <h3 id="remove-title" className="text-base font-semibold">
-            Remove &ldquo;{asking.name}&rdquo;?
+            {say("media.remove-picture", { name: asking.name })}
           </h3>
           <p className="rounded-md bg-warning-soft p-3 text-[15px] text-warning-foreground">
-            It is on {(asking.usedOn ?? []).length === 1 ? "a page" : `${(asking.usedOn ?? []).length} pages`}.
-            Those pages will have a gap where it was.
+            {say("media.it-is-on-pages", {
+              pages: plural((asking.usedOn ?? []).length, "common.page-one", "common.page-many"),
+            })}
           </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => take(asking, true)} disabled={busy}>
-              {busy ? "Removing…" : "Remove it anyway"}
+              {busy ? say("media.removing") : say("media.remove-it-anyway")}
             </Button>
             <Button variant="ghost" onClick={() => setAsking(null)} disabled={busy}>
-              Keep it
+              {say("common.keep-it")}
             </Button>
           </div>
         </div>
@@ -217,32 +220,32 @@ export function MediaPage({
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[200px] flex-1">
           <Field
-            label="Search"
+            label={say("media.search")}
             type="search"
             value={search}
-            placeholder="Find a picture"
+            placeholder={say("media.find-a-picture")}
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
         <Segmented
-          label="Which pictures to show"
+          label={say("media.which-pictures-to-show")}
           value={filter}
           options={[
             { value: "all", label: `All ${images.value.images.length}` },
-            { value: "unused", label: "Not used anywhere" },
+            { value: "unused", label: say("media.not-used-anywhere") },
           ]}
           onValueChange={(next) => setFilter(next as "all" | "unused")}
         />
         <Button onClick={() => picker.current?.click()} disabled={busy}>
           <Upload aria-hidden="true" className="size-4" />
-          {busy ? "Adding…" : "Add pictures"}
+          {busy ? say("media.adding") : say("media.add-pictures")}
         </Button>
         <input
           ref={picker}
           type="file"
           accept="image/*"
           multiple
-          aria-label="Add pictures"
+          aria-label={say("media.add-pictures")}
           onChange={(event) => add(event.target.files)}
           className="sr-only"
         />
@@ -259,8 +262,8 @@ export function MediaPage({
         {shown.length === 0 ? (
           <p className="text-center text-[15px] text-subtle-foreground">
             {images.value.images.length === 0
-              ? "No pictures yet. Drop some here, or use Add pictures."
-              : "Nothing here matches that."}
+              ? say("media.no-pictures-yet-drop-some-here")
+              : say("media.nothing-here-matches-that")}
           </p>
         ) : (
           <ul className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
@@ -305,7 +308,7 @@ export function MediaPage({
       {shown.length === 0 && images.value.images.length === 0 && (
         <p className="flex items-center gap-2 text-sm text-subtle-foreground">
           <ImageIcon aria-hidden="true" className="size-4" />
-          Pictures live in your site, so they are published with it.
+          {say("media.pictures-live-in-your-site-so")}
         </p>
       )}
     </section>

@@ -58,11 +58,13 @@ func (s *Service) Handler(ctx context.Context, actor policy.Actor, projectID uui
 	handler, err := s.servers.For(ctx, projectID.String(), dir, s.baseURL+under)
 	if errors.Is(err, ErrTooMany) {
 		return nil, &httpapi.RefusedError{
+			Key:    "refused.too-many-sites-being-previewed",
 			Reason: "too many sites are being previewed at once; try again in a few minutes",
 		}
 	}
 	if errors.Is(err, ErrNotReady) {
 		return nil, &httpapi.RefusedError{
+			Key:    "refused.preview-did-not-start-site",
 			Reason: "the preview did not start. Your site may have something in it Hugo cannot build.",
 		}
 	}

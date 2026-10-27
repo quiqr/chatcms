@@ -58,7 +58,7 @@ func (q *Queries) ListAdministrationRecords(ctx context.Context, limit int32) ([
 }
 
 const listAdministrators = `-- name: ListAdministrators :many
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance FROM people WHERE administers ORDER BY lower(email)
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance, language FROM people WHERE administers ORDER BY lower(email)
 `
 
 func (q *Queries) ListAdministrators(ctx context.Context) ([]Person, error) {
@@ -83,6 +83,7 @@ func (q *Queries) ListAdministrators(ctx context.Context) ([]Person, error) {
 			&i.PictureKind,
 			&i.EmailWaiting,
 			&i.Appearance,
+			&i.Language,
 		); err != nil {
 			return nil, err
 		}
@@ -266,7 +267,7 @@ func (q *Queries) ListOrganisationMembers(ctx context.Context, organisationID pg
 const makeAdministrator = `-- name: MakeAdministrator :one
 UPDATE people SET administers = TRUE, updated_at = now()
 WHERE id = $1
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance, language
 `
 
 func (q *Queries) MakeAdministrator(ctx context.Context, id pgtype.UUID) (Person, error) {
@@ -285,6 +286,7 @@ func (q *Queries) MakeAdministrator(ctx context.Context, id pgtype.UUID) (Person
 		&i.PictureKind,
 		&i.EmailWaiting,
 		&i.Appearance,
+		&i.Language,
 	)
 	return i, err
 }
@@ -292,7 +294,7 @@ func (q *Queries) MakeAdministrator(ctx context.Context, id pgtype.UUID) (Person
 const makeAdministratorByEmail = `-- name: MakeAdministratorByEmail :one
 UPDATE people SET administers = TRUE, updated_at = now()
 WHERE lower(email) = lower($1::text) AND NOT administers
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance, language
 `
 
 func (q *Queries) MakeAdministratorByEmail(ctx context.Context, email string) (Person, error) {
@@ -311,12 +313,13 @@ func (q *Queries) MakeAdministratorByEmail(ctx context.Context, email string) (P
 		&i.PictureKind,
 		&i.EmailWaiting,
 		&i.Appearance,
+		&i.Language,
 	)
 	return i, err
 }
 
 const personByEmail = `-- name: PersonByEmail :one
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance FROM people WHERE lower(email) = lower($1::text)
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance, language FROM people WHERE lower(email) = lower($1::text)
 `
 
 func (q *Queries) PersonByEmail(ctx context.Context, email string) (Person, error) {
@@ -335,6 +338,7 @@ func (q *Queries) PersonByEmail(ctx context.Context, email string) (Person, erro
 		&i.PictureKind,
 		&i.EmailWaiting,
 		&i.Appearance,
+		&i.Language,
 	)
 	return i, err
 }
@@ -517,7 +521,7 @@ UPDATE people AS leaving SET administers = FALSE, updated_at = now()
 WHERE leaving.id = $1
   AND leaving.administers
   AND (SELECT count(*) FROM people AS others WHERE others.administers) > 1
-RETURNING leaving.id, leaving.email, leaving.display_name, leaving.password_hash, leaving.disabled_at, leaving.created_at, leaving.updated_at, leaving.administers, leaving.picture, leaving.picture_kind, leaving.email_waiting, leaving.appearance
+RETURNING leaving.id, leaving.email, leaving.display_name, leaving.password_hash, leaving.disabled_at, leaving.created_at, leaving.updated_at, leaving.administers, leaving.picture, leaving.picture_kind, leaving.email_waiting, leaving.appearance, leaving.language
 `
 
 // The last administrator is kept here as well as above, because an
@@ -538,6 +542,7 @@ func (q *Queries) StopAdministrating(ctx context.Context, id pgtype.UUID) (Perso
 		&i.PictureKind,
 		&i.EmailWaiting,
 		&i.Appearance,
+		&i.Language,
 	)
 	return i, err
 }

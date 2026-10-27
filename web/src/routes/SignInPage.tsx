@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { Checkbox, Field } from "../components/ui/field";
-import { RequestFailed } from "../lib/api";
+import { whatWentWrong } from "../lib/api";
 import { signIn } from "../lib/session";
+import { say } from "../lib/say";
 
 export function SignInPage() {
   const navigate = useNavigate();
@@ -28,11 +29,7 @@ export function SignInPage() {
       const then = address.get("then");
       navigate(then && then.startsWith("/") && !then.startsWith("//") ? then : "/projects");
     } catch (error) {
-      setProblem(
-        error instanceof RequestFailed
-          ? error.message
-          : "We could not reach the server. Nothing is lost; please try again.",
-      );
+      setProblem(whatWentWrong(error, "common.cannot-reach-the-server"));
     } finally {
       setBusy(false);
     }
@@ -43,27 +40,27 @@ export function SignInPage() {
       <div className="flex min-w-0 shrink grow basis-[420px] items-center justify-center p-6 sm:p-8">
         <div className="w-full max-w-[380px]">
           <span className="flex items-center gap-2">
-            <img src="/quiqr-logo.svg" alt="Quiqr" className="h-6 w-auto" />
-            <span className="text-[15px] text-muted-foreground">ChatCMS</span>
+            <img src="/quiqr-logo.svg" alt={say("common.quiqr")} className="h-6 w-auto" />
+            <span className="text-[15px] text-muted-foreground">{say("common.chatcms")}</span>
           </span>
 
-          <h1 className="mt-8 text-[28px] font-semibold tracking-tight">Sign in</h1>
+          <h1 className="mt-8 text-[28px] font-semibold tracking-tight">{say("sign-in.sign-in")}</h1>
 
           {address.get("signed-out") ? (
             // Said out loud, because a session that merely ran out ends on
             // this same screen and the two should not look alike.
             <p role="status" className="mt-2 text-[15px] text-muted-foreground">
-              You have signed out.
+              {say("sign-in.you-have-signed-out")}
             </p>
           ) : (
             <p className="mt-2 text-[15px] text-muted-foreground">
-              Edit and publish your website. No technical knowledge needed.
+              {say("sign-in.edit-and-publish-your-website-no")}
             </p>
           )}
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-[22px]">
             <Field
-              label="Email"
+              label={say("common.email")}
               type="email"
               name="email"
               autoComplete="email"
@@ -73,7 +70,7 @@ export function SignInPage() {
             />
 
             <Field
-              label="Password"
+              label={say("sign-in.password")}
               type="password"
               name="password"
               autoComplete="current-password"
@@ -85,13 +82,13 @@ export function SignInPage() {
                   href="/forgot-password"
                   className="-my-3 inline-flex min-h-11 items-center text-[13px] text-primary"
                 >
-                  Forgot password?
+                  {say("sign-in.forgot-password")}
                 </a>
               }
             />
 
             <Checkbox
-              label="Keep me signed in on this device"
+              label={say("sign-in.keep-me-signed-in-on-this")}
               checked={remember}
               onChange={(event) => setRemember(event.target.checked)}
             />
@@ -103,23 +100,23 @@ export function SignInPage() {
             )}
 
             <Button type="submit" disabled={busy}>
-              {busy ? "Signing in..." : "Sign in"}
+              {busy ? say("sign-in.signing-in") : say("sign-in.sign-in")}
             </Button>
           </form>
 
           <p className="mt-6 text-[13px] text-subtle-foreground">
-            Got an invitation email? Use the link in it to set your password first.
+            {say("sign-in.got-an-invitation-email-use-the")}
           </p>
 
           <p className="mt-10 flex flex-wrap gap-4 text-[13px] text-subtle-foreground">
             <a className="inline-flex min-h-11 items-center" href="https://chatcms.eu">
-              chatcms.eu
+              {say("sign-in.chatcms-eu")}
             </a>
             <a className="inline-flex min-h-11 items-center" href="/privacy">
-              Privacy
+              {say("sign-in.privacy")}
             </a>
             <a className="inline-flex min-h-11 items-center" href="/help">
-              Help
+              {say("common.help")}
             </a>
           </p>
         </div>
@@ -127,7 +124,7 @@ export function SignInPage() {
 
       <div className="flex min-w-0 shrink grow basis-[420px] items-center justify-center bg-primary-soft p-8">
         <p className="max-w-[320px] text-[17px] text-primary-soft-foreground">
-          Fill in a form, or just ask. Your site updates as you go.
+          {say("sign-in.fill-in-a-form-or-just")}
         </p>
       </div>
     </main>

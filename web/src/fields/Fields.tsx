@@ -5,6 +5,7 @@ import { Checkbox, Field } from "../components/ui/field";
 import { Button } from "../components/ui/button";
 
 import type { Control, Option } from "../lib/tenancy";
+import { say } from "../lib/say";
 
 export type Change = (path: string, value: unknown) => void;
 
@@ -62,7 +63,9 @@ function Text({ control, onChange }: { control: Control; onChange: Change }) {
         onChange={(event) => onChange(control.path, event.target.value)}
         className="min-h-24 rounded-md border border-input bg-card p-3 text-base sm:text-[15px]"
       />
-      <p className="text-[13px] text-subtle-foreground">{value.length} characters</p>
+      <p className="text-[13px] text-subtle-foreground">
+        {say("fields.characters", { count: value.length })}
+      </p>
     </Label>
   );
 }
@@ -136,7 +139,7 @@ function Select({ control, onChange }: { control: Control; onChange: Change }) {
         onChange={(event) => onChange(control.path, event.target.value || null)}
         className="h-11 rounded-md border border-input bg-card px-3 text-base sm:text-[15px]"
       >
-        <option value="">Not set</option>
+        <option value="">{say("fields.not-set")}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -217,7 +220,7 @@ function ListOfValues({ control, onChange }: { control: Control; onChange: Chang
       </ul>
       <Button variant="ghost" onClick={() => write([...items, ""])} className="w-fit">
         <Plus aria-hidden="true" className="size-4" />
-        Add {control.title.toLowerCase()}
+        {say("fields.add")} {control.title.toLowerCase()}
       </Button>
     </Label>
   );
@@ -286,7 +289,7 @@ function ListOfItems({ control, onChange }: { control: Control; onChange: Change
       </ul>
       <Button variant="ghost" onClick={() => write([...items, {}])} className="w-fit">
         <Plus aria-hidden="true" className="size-4" />
-        Add {control.title.toLowerCase()}
+        {say("fields.add")} {control.title.toLowerCase()}
       </Button>
     </Label>
   );
@@ -339,18 +342,19 @@ function Picture({ control, onChange }: { control: Control; onChange: Change }) 
           type="text"
           aria-label={control.title}
           value={held}
+          // chatcms-not-a-string: an address, shown as an example of one
           placeholder="/images/..."
           onChange={(event) => onChange(control.path, event.target.value || null)}
           className="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 text-base sm:text-[15px]"
         />
         {picking && (
           <Button variant="ghost" onClick={() => picking((path) => onChange(control.path, path))}>
-            {held === "" ? "Choose a picture" : "Replace"}
+            {held === "" ? say("common.choose-a-picture") : say("fields.replace")}
           </Button>
         )}
         {held !== "" && (
           <Button variant="ghost" onClick={() => onChange(control.path, null)}>
-            Remove
+            {say("fields.remove")}
           </Button>
         )}
       </div>
@@ -382,8 +386,7 @@ function Unknown({ control, onChange }: { control: Control; onChange: Change }) 
         onChange={(event) => onChange(control.path, event.target.value)}
       />
       <p className="text-[13px] text-subtle-foreground">
-        This kind of field is shown as plain text for now. What you type is saved exactly as you
-        write it.
+        {say("fields.this-kind-of-field-is-shown")}
       </p>
     </div>
   );

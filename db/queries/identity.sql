@@ -116,3 +116,7 @@ UPDATE sessions SET acting_as = NULL WHERE token_hash = $1;
 
 -- name: GetPerson :one
 SELECT * FROM people WHERE id = $1;
+
+-- name: SetLanguage :exec
+UPDATE people SET language = $2, updated_at = now()
+WHERE id = $1;

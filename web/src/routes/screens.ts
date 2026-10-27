@@ -1,3 +1,5 @@
+// chatcms-not-a-string: the name the design hand-off gives each screen.
+// Only the route test reads these; no screen shows one.
 export type ScreenName =
   | "sign-in"
   | "projects"

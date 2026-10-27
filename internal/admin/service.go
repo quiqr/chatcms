@@ -178,7 +178,10 @@ func (s *Service) StandDown(ctx context.Context, who httpapi.Actor, email string
 	}
 	if err := s.store.StopAdministrating(ctx, person.id); err != nil {
 		if errors.Is(err, ErrLastAdministrator) {
-			return &httpapi.RefusedError{Reason: ErrLastAdministrator.Error()}
+			return &httpapi.RefusedError{
+				Key:    "refused.last-administrator",
+				Reason: ErrLastAdministrator.Error(),
+			}
 		}
 		return err
 	}
@@ -257,13 +260,16 @@ type person struct {
 func (s *Service) personByEmail(ctx context.Context, email string) (person, error) {
 	trimmed := strings.TrimSpace(email)
 	if trimmed == "" {
-		return person{}, &httpapi.RefusedError{Reason: "an email address is needed"}
+		return person{}, &httpapi.RefusedError{Key: "refused.email-address-needed", Reason: "an email address is needed"}
 	}
 
 	row, err := s.store.db.Queries.PersonByEmail(ctx, trimmed)
 	if err != nil {
 		if isNoRows(err) {
-			return person{}, &httpapi.RefusedError{Reason: ErrNoSuchPerson.Error()}
+			return person{}, &httpapi.RefusedError{
+				Key:    "refused.no-such-person",
+				Reason: ErrNoSuchPerson.Error(),
+			}
 		}
 		return person{}, fmt.Errorf("looking for that person failed: %w", err)
 	}
@@ -276,7 +282,7 @@ func refusal(err error) error {
 		return err
 	}
 	if errors.Is(err, tenancy.ErrSlugTaken) {
-		return &httpapi.RefusedError{Reason: "that address is already taken"}
+		return &httpapi.RefusedError{Key: "refused.address-already-taken", Reason: "that address is already taken"}
 	}
 	return err
 }
@@ -350,8 +356,10 @@ func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slu
 			names = append(names, project.Name)
 		}
 		return &httpapi.RefusedError{
+			Key: "refused.organisation-still-holds",
 			Reason: "this organisation still holds " + strings.Join(names, ", ") +
 				"; remove them first",
+			Detail: map[string]any{"sites": strings.Join(names, ", ")},
 		}
 	}
 
@@ -410,6 +418,7 @@ func (s *Service) MakePerson(ctx context.Context, who httpapi.Actor, email, disp
 func (s *Service) ActAs(ctx context.Context, who httpapi.Actor, token, email string) error {
 	if who.ActingAs() {
 		return &httpapi.RefusedError{
+			Key:    "refused.already-acting-as-somebody-stop",
 			Reason: "you are already acting as somebody; stop that first",
 		}
 	}
@@ -422,7 +431,7 @@ func (s *Service) ActAs(ctx context.Context, who httpapi.Actor, token, email str
 		return err
 	}
 	if them.id.String() == who.ID {
-		return &httpapi.RefusedError{Reason: "you are already yourself"}
+		return &httpapi.RefusedError{Key: "refused.already-yourself", Reason: "you are already yourself"}
 	}
 
 	theirs, err := s.tenancy.ActorFor(ctx, them.id)
@@ -431,6 +440,7 @@ func (s *Service) ActAs(ctx context.Context, who httpapi.Actor, token, email str
 	}
 	if !policy.MayBeActedAs(theirs) {
 		return &httpapi.RefusedError{
+			Key:    "refused.somebody-who-administers-installation-cannot",
 			Reason: "somebody who administers this installation cannot be acted as",
 		}
 	}
@@ -441,6 +451,7 @@ func (s *Service) ActAs(ctx context.Context, who httpapi.Actor, token, email str
 	}
 	if !whole.AccountOn {
 		return &httpapi.RefusedError{
+			Key:    "refused.account-off-so-nobody-can",
 			Reason: "that account is off, so nobody can use it, including you",
 		}
 	}

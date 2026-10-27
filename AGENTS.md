@@ -77,6 +77,7 @@ goose -dir db/migrations postgres "$CHATCMS_DATABASE_URL" up
 
 cd web && npm run dev              # frontend dev server, proxies /api to the Go server
 cd web && npm run typecheck        # what the frontend check runs
+cd web && npm run check:strings    # no string written where it is shown
 cd web && npm run test             # Vitest
 
 bash scripts/ship-change.sh <change> "<commit subject>"
@@ -99,6 +100,13 @@ frontend was not built.
 
 UI work follows `docs/design/DESIGN.md`; reference screens are in
 `docs/design/reference/`.
+
+Every string the interface says lives in `web/src/strings/`: `en.ts` is the
+catalogue and the type, and another language is a file holding exactly its
+keys, so a missing one fails the type check. Screens call `say("a.key")`;
+`npm run check:strings` fails when a string is written where it is shown. A
+refusal from the server carries a key as well as its English reason, and the
+screen says the catalogue's version of it.
 
 ## How to work
 

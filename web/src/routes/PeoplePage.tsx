@@ -10,6 +10,8 @@ import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/u
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
+import { say } from "../lib/say";
+import { named } from "../shells/roles";
 import {
   changeOrganisationRole,
   inviteToOrganisation,
@@ -18,6 +20,7 @@ import {
   sendTheInvitationAgain,
   useHere,
 } from "../lib/whoami";
+import { whatWentWrong } from "../lib/api";
 import {
   changeRole,
   invitePerson,
@@ -28,13 +31,13 @@ import {
 } from "../lib/tenancy";
 
 const whatEachRoleCanDo: { role: string; says: string }[] = [
-  { role: "Owner", says: "Everything, including billing and deleting the project." },
+  { role: "owner", says: say("people.everything-including-billing-and-deleting-the-pr") },
   {
-    role: "Implementer",
-    says: "Sets up where the site lives, how it is published, and who may use it; sees technical detail.",
+    role: "implementer",
+    says: say("people.sets-up-where-the-site-lives-how-it-is-published"),
   },
-  { role: "Editor", says: "Edits pages and media, and publishes the site." },
-  { role: "Viewer", says: "Reads content and previews; cannot change anything." },
+  { role: "editor", says: say("people.edits-pages-and-media-and-publishes-the-site") },
+  { role: "viewer", says: say("people.reads-content-and-previews-cannot-change-anythin") },
 ];
 
 // The roles an organisation has, which are not the roles a project has.
@@ -60,7 +63,7 @@ function RoleSelect({
     >
       {choices.map((role) => (
         <option key={role} value={role}>
-          {role}
+          {named(role)}
         </option>
       ))}
     </select>
@@ -98,7 +101,7 @@ export function PeoplePage() {
       setEmail("");
       loadAgain();
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "The invitation could not be sent.");
+      setProblem(whatWentWrong(error, "people.the-invitation-could-not-be-sent"));
     } finally {
       setBusy(false);
     }
@@ -112,7 +115,7 @@ export function PeoplePage() {
         : changeOrganisationRole(organisation, member.personId, next));
       loadAgain();
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "That change could not be made.");
+      setProblem(whatWentWrong(error, "people.that-change-could-not-be-made"));
     }
   }
 
@@ -121,7 +124,7 @@ export function PeoplePage() {
     try {
       await sendTheInvitationAgain(organisation, member.personId);
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "That could not be sent again.");
+      setProblem(whatWentWrong(error, "people.that-could-not-be-sent-again"));
     }
   }
 
@@ -133,18 +136,18 @@ export function PeoplePage() {
         : removeFromOrganisation(organisation, member.personId));
       loadAgain();
     } catch (error) {
-      setProblem(error instanceof Error ? error.message : "That person could not be removed.");
+      setProblem(whatWentWrong(error, "people.that-person-could-not-be-removed"));
     }
   }
 
   return (
     <div className="flex flex-wrap items-start gap-6">
       <div className="min-w-0 max-w-full shrink grow-[999] basis-[520px]">
-        <h2 className="text-[22px] font-semibold tracking-tight">People &amp; roles</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight">{say("people.people-roles")}</h2>
 
         <div className="mt-4">
           <Segmented
-            label="Who to show"
+            label={say("people.who-to-show")}
             value={level}
             onValueChange={(next) => {
               setLevel(next as "project" | "organisation");
@@ -152,7 +155,7 @@ export function PeoplePage() {
               setProblem("");
             }}
             options={[
-              { value: "project", label: "This project" },
+              { value: "project", label: say("people.this-project") },
               { value: "organisation", label: "Organisation" },
             ]}
           />
@@ -167,10 +170,10 @@ export function PeoplePage() {
         >
           <div className="min-w-[220px] flex-1">
             <Field
-              label="Invite someone"
+              label={say("people.invite-someone")}
               type="email"
               required
-              placeholder="their email address"
+              placeholder={say("common.their-email-address")}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -178,11 +181,11 @@ export function PeoplePage() {
           <RoleSelect
             value={role}
             onChange={setRole}
-            label="Role for the person you invite"
+            label={say("people.role-for-the-person-you-invite")}
             choices={here ? roles : organisationRoles}
           />
           <Button type="submit" variant="ink" disabled={busy}>
-            {busy ? "Sending..." : "Send invite"}
+            {busy ? say("common.sending") : say("people.send-invite")}
           </Button>
         </form>
 
@@ -193,7 +196,7 @@ export function PeoplePage() {
         )}
 
         {people.state === "loading" && (
-          <p className="mt-6 text-[15px] text-muted-foreground">Looking up who is here...</p>
+          <p className="mt-6 text-[15px] text-muted-foreground">{say("people.looking-up-who-is-here")}</p>
         )}
 
         {people.state === "failed" && (
@@ -207,11 +210,11 @@ export function PeoplePage() {
             <Table>
               <thead>
                 <tr>
-                  <TableHeaderCell>Person</TableHeaderCell>
-                  <TableHeaderCell>Role</TableHeaderCell>
-                  <TableHeaderCell>Last active</TableHeaderCell>
+                  <TableHeaderCell>{say("common.person")}</TableHeaderCell>
+                  <TableHeaderCell>{say("people.role")}</TableHeaderCell>
+                  <TableHeaderCell>{say("people.last-active")}</TableHeaderCell>
                   <TableHeaderCell>
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{say("people.actions")}</span>
                   </TableHeaderCell>
                 </tr>
               </thead>
@@ -231,7 +234,7 @@ export function PeoplePage() {
                             </span>
                           )}
                         </span>
-                        {member.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+                        {member.stillToAccept && <Badge tone="changed">{say("common.still-to-accept")}</Badge>}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -245,10 +248,10 @@ export function PeoplePage() {
                     <TableCell>
                       <span className="text-[13px] text-subtle-foreground">
                         {member.stillToAccept
-                          ? "Not yet"
+                          ? say("people.not-yet")
                           : member.lastSeen
                             ? when(member.lastSeen)
-                            : "Never"}
+                            : say("people.never")}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -262,15 +265,15 @@ export function PeoplePage() {
                         <MenuContent align="end">
                           {member.stillToAccept && (
                             <MenuItem onSelect={() => void sendAgain(member)}>
-                              Send the invitation again
+                              {say("people.send-the-invitation-again")}
                             </MenuItem>
                           )}
                           <MenuItem destructive onSelect={() => void take(member)}>
                             {member.stillToAccept
-                              ? "Withdraw the invitation"
+                              ? say("people.withdraw-the-invitation")
                               : here
-                                ? "Remove from this project"
-                                : "Remove from the organisation"}
+                                ? say("people.remove-from-this-project")
+                                : say("people.remove-from-the-organisation")}
                           </MenuItem>
                         </MenuContent>
                       </Menu>
@@ -284,11 +287,11 @@ export function PeoplePage() {
       </div>
 
       <aside className="min-w-0 shrink grow basis-[280px] rounded-xl border border-border bg-card p-4">
-        <h3 className="text-[15px] font-semibold">What each role can do</h3>
+        <h3 className="text-[15px] font-semibold">{say("people.what-each-role-can-do")}</h3>
         <dl className="mt-3 flex flex-col gap-3">
           {whatEachRoleCanDo.map((entry) => (
             <div key={entry.role}>
-              <dt className="text-sm font-medium">{entry.role}</dt>
+              <dt className="text-sm font-medium">{named(entry.role)}</dt>
               <dd className="text-[13px] text-subtle-foreground">{entry.says}</dd>
             </div>
           ))}

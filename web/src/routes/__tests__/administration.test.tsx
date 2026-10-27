@@ -227,8 +227,8 @@ describe("the administration screen", () => {
     renderPage();
 
     expect(await screen.findByText("Marieke de Vries")).toBeInTheDocument();
-    expect(screen.getByText(/Korenaar Bakery \(member\)/)).toBeInTheDocument();
-    expect(screen.getByText(/The site \(editor\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Korenaar Bakery \(Member\)/)).toBeInTheDocument();
+    expect(screen.getByText(/The site \(Editor\)/)).toBeInTheDocument();
     expect(screen.getByText(/Showing 1 of 12/)).toBeInTheDocument();
   });
 

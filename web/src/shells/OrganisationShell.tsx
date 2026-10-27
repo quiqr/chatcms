@@ -5,6 +5,7 @@ import { NavLink } from "react-router";
 import { PersonMenu } from "./PersonMenu";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "../components/ui/menu";
 import { useAdministers } from "./useAdministers";
+import { say } from "../lib/say";
 
 export type OrganisationShellProps = {
   organisation: { name: string };
@@ -24,8 +25,8 @@ export function OrganisationShell({
   return (
     <div data-testid="organisation-shell" className="min-h-dvh">
       <header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-3">
-        <NavLink to="/projects" className="flex min-h-11 items-center" aria-label="Quiqr ChatCMS, go to your projects">
-          <img src="/quiqr-logo.svg" alt="Quiqr ChatCMS" className="h-7 w-auto" />
+        <NavLink to="/projects" className="flex min-h-11 items-center" aria-label={say("organisation-shell.quiqr-chatcms-go-to-your-projects")}>
+          <img src="/quiqr-logo.svg" alt={say("organisation-shell.quiqr-chatcms")} className="h-7 w-auto" />
         </NavLink>
 
         <Menu>
@@ -43,7 +44,7 @@ export function OrganisationShell({
               <>
                 <MenuSeparator />
                 <MenuItem asChild>
-                  <NavLink to="/administration">Start an organisation</NavLink>
+                  <NavLink to="/administration">{say("organisation-shell.start-an-organisation")}</NavLink>
                 </MenuItem>
               </>
             )}
@@ -57,11 +58,11 @@ export function OrganisationShell({
             to="/administration"
             className="flex h-11 items-center px-3 text-sm text-muted-foreground"
           >
-            Administration
+            {say("organisation-shell.administration")}
           </NavLink>
         )}
         <NavLink to="/help" className="flex h-11 items-center px-3 text-sm text-muted-foreground">
-          Help
+          {say("common.help")}
         </NavLink>
         {viewer && <PersonMenu name={viewer.name} />}
       </header>

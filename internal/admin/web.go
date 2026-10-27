@@ -27,7 +27,7 @@ func (w *Web) PutSomebodyInto(ctx context.Context, who httpapi.Actor, slug, emai
 	// larger one is a silent demotion nobody is told about.
 	asked := policy.OrganisationRole(role)
 	if asked != policy.OrganisationOwner && asked != policy.OrganisationMember {
-		return &httpapi.RefusedError{Reason: "that is not a role an organisation has"}
+		return &httpapi.RefusedError{Key: "refused.not-role-organisation-has", Reason: "that is not a role an organisation has"}
 	}
 	return w.service.PutSomebodyInto(ctx, who, slug, email, asked)
 }

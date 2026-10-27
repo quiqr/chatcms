@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import { speak } from "../say";
 import { onADay, when, withTheClock } from "../when";
 
 const theMoment = new Date("2026-10-27T15:00:00");
@@ -56,5 +57,25 @@ describe("how a time is written", () => {
     at(theMoment);
     expect(when("not a date at all")).toBe("");
     expect(onADay("not a date at all")).toBe("");
+  });
+});
+
+describe("a date in the language that is in force", () => {
+  it("writes the words and the day in Dutch", () => {
+    at(theMoment);
+    speak("nl");
+
+    expect(when(new Date(theMoment.getTime() - 20_000))).toBe("zojuist");
+    expect(when(new Date(theMoment.getTime() - 12 * 60_000))).toBe("12 min geleden");
+
+    const yesterday = new Date("2026-10-26T09:12:00");
+    expect(when(yesterday)).toMatch(/^Gisteren om /);
+
+    const thisWeek = new Date("2026-10-23T09:12:00");
+    expect(when(thisWeek)).toMatch(/^vrijdag om /);
+
+    expect(onADay(new Date("2026-03-04T09:12:00"))).toBe("4 maart");
+
+    speak("en");
   });
 });

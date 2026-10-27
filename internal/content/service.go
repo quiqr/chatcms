@@ -123,7 +123,11 @@ func load(ctx context.Context, site Site, key string) (Page, *forms.Form, error)
 		// A model with a mistake in it is not a site without one. What the
 		// parser says names the file and the field, which is what somebody
 		// fixing it needs.
-		return Page{}, nil, &httpapi.RefusedError{Reason: "this site's model cannot be read: " + err.Error()}
+		return Page{}, nil, &httpapi.RefusedError{
+			Key:    "refused.model-cannot-be-read",
+			Reason: "this site's model cannot be read: " + err.Error(),
+			Detail: map[string]any{"why": err.Error()},
+		}
 	}
 
 	page, found := Locate(m, key)
@@ -177,7 +181,9 @@ func (s *Service) Save(ctx context.Context, actor policy.Actor, projectID uuid.U
 	for path, value := range edit.Values {
 		if !known[path] {
 			return Editable{}, &httpapi.RefusedError{
+				Key:    "refused.no-such-field",
 				Reason: fmt.Sprintf("this page has no field called %q", path),
+				Detail: map[string]any{"field": path},
 			}
 		}
 		if err := set(form, path, value); err != nil {
@@ -187,6 +193,7 @@ func (s *Service) Save(ctx context.Context, actor policy.Actor, projectID uuid.U
 	if edit.Body != nil {
 		if !hasBody(form) {
 			return Editable{}, &httpapi.RefusedError{
+				Key:    "refused.page-s-model-does-not",
 				Reason: "this page's model does not give its text a field, so there is nothing to write it to",
 			}
 		}

@@ -242,6 +242,7 @@ func (s *Service) Answered(ctx context.Context, actor policy.Actor, projectID uu
 
 	if len(resolutions) != len(result.Conflict.Paths) {
 		return Standing{}, &httpapi.RefusedError{
+			Key:    "refused.every-page-two-people-changed",
 			Reason: "every page that two people changed needs an answer before this can finish",
 		}
 	}

@@ -265,7 +265,11 @@ Hide what a role can't use; don't show disabled controls for it.
   publish, version, go back to, "edited by two people".
 - Times are relative and human ("12 min ago", "Tuesday at 9:12").
 - Errors: what happened → reassurance → one concrete fix.
-- UI language: English in the designs; plan for i18n (Dutch next).
+- UI language: English in the designs. Every string lives in
+  `web/src/strings/`, and the interface is readable in English and in Dutch;
+  a language is chosen on the preferences screen and kept with the account.
+  The copy rules above hold in every language, and the check reads the
+  catalogue in each of them.
 
 ## 8. Room for later milestones
 

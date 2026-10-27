@@ -31,6 +31,7 @@ type Service struct {
 // Preferences is the little of identity that tenancy needs.
 type Preferences interface {
 	AppearanceFor(ctx context.Context, personID uuid.UUID) (string, error)
+	LanguageFor(ctx context.Context, personID uuid.UUID) (string, error)
 }
 
 // KnowsWhatTheyChose gives the service somewhere to ask.
@@ -231,7 +232,10 @@ func (s *Service) ChangeRole(ctx context.Context, who httpapi.Actor, organisatio
 		return httpapi.MemberView{}, httpapi.ErrMissing
 	}
 	if !knownRole(policy.Role(role)) {
-		return httpapi.MemberView{}, &httpapi.RefusedError{Reason: ErrNotARole.Error()}
+		return httpapi.MemberView{}, &httpapi.RefusedError{
+			Key:    "refused.not-a-role",
+			Reason: ErrNotARole.Error(),
+		}
 	}
 
 	if err := s.store.SetProjectRole(ctx, project.ID, person, policy.Role(role)); err != nil {
@@ -438,6 +442,7 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 		Administers:   policy.Can(actor, policy.ActionAdministerInstallation, policy.Resource{}),
 		Organisations: views,
 		Appearance:    s.appearanceFor(ctx, personID),
+		Language:      s.languageFor(ctx, personID),
 	}
 	if who.ActingAs() {
 		answer.ActingAs = &httpapi.ActingAsView{
@@ -446,6 +451,19 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 		}
 	}
 	return answer, nil
+}
+
+// languageFor is what this person chose. A preference that cannot be read
+// is not a reason to refuse a screen; the browser decides instead.
+func (s *Service) languageFor(ctx context.Context, personID uuid.UUID) string {
+	if s.preferences == nil {
+		return ""
+	}
+	chosen, err := s.preferences.LanguageFor(ctx, personID)
+	if err != nil {
+		return ""
+	}
+	return chosen
 }
 
 // appearanceFor is what this person chose. A preference that cannot be read
@@ -473,7 +491,7 @@ func (s *Service) Rename(ctx context.Context, who httpapi.Actor, slug, name stri
 	}
 
 	if strings.TrimSpace(name) == "" {
-		return httpapi.OrganisationView{}, &httpapi.RefusedError{Reason: "an organisation needs a name"}
+		return httpapi.OrganisationView{}, &httpapi.RefusedError{Key: "refused.organisation-needs-name", Reason: "an organisation needs a name"}
 	}
 
 	organisation, err := s.store.OrganisationBySlug(ctx, slug)
@@ -542,7 +560,7 @@ func (s *Service) ChangeProject(ctx context.Context, who httpapi.Actor, organisa
 	}
 
 	if strings.TrimSpace(name) == "" {
-		return httpapi.ProjectView{}, &httpapi.RefusedError{Reason: "a project needs a name"}
+		return httpapi.ProjectView{}, &httpapi.RefusedError{Key: "refused.project-needs-name", Reason: "a project needs a name"}
 	}
 
 	changed, err := s.store.UpdateProject(ctx, found.ID, strings.TrimSpace(name), strings.TrimSpace(domain))
@@ -601,7 +619,7 @@ func (s *Service) ChangeOrganisationRole(ctx context.Context, who httpapi.Actor,
 
 	asked := policy.OrganisationRole(role)
 	if asked != policy.OrganisationOwner && asked != policy.OrganisationMember {
-		return &httpapi.RefusedError{Reason: "that is not a role an organisation has"}
+		return &httpapi.RefusedError{Key: "refused.not-role-organisation-has", Reason: "that is not a role an organisation has"}
 	}
 
 	person, err := uuid.Parse(personID)

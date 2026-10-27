@@ -28,10 +28,15 @@ type AccountService interface {
 	EndSession(ctx context.Context, who Actor, sessionID string) error
 
 	SetAppearance(ctx context.Context, who Actor, chosen string) error
+	SetLanguage(ctx context.Context, who Actor, chosen string) error
 }
 
 type appearanceRequest struct {
 	Appearance string `json:"appearance"`
+}
+
+type languageRequest struct {
+	Language string `json:"language"`
 }
 
 // SessionView is one place somebody is signed in.
@@ -190,6 +195,23 @@ func accountHandlers(mux *http.ServeMux, service AccountService) {
 		})))
 
 	mux.HandleFunc("/api/account/appearance", MethodNotAllowed)
+
+	mux.Handle("PUT /api/account/language", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body languageRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+
+			if err := service.SetLanguage(r.Context(), ActorFrom(r.Context()), body.Language); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.HandleFunc("/api/account/language", MethodNotAllowed)
 
 	mux.Handle("GET /api/account/sessions", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {

@@ -8,6 +8,7 @@ import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
 import { onADay } from "../lib/when";
 import { useHere } from "../lib/whoami";
+import { say } from "../lib/say";
 import {
   createPage,
   deletePage,
@@ -16,6 +17,7 @@ import {
   type ContentItem,
   type ContentSection,
 } from "../lib/tenancy";
+import { whatWentWrong } from "../lib/api";
 
 const atATime = 20;
 
@@ -46,18 +48,17 @@ function Ask({
         className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4"
       >
         <h3 id="ask-title" className="text-base font-semibold">
-          Remove &ldquo;{asking.title}&rdquo;?
+          {say("content.remove-page", { title: asking.title })}
         </h3>
         <p className="text-[15px]">
-          It will go from your site the next time you publish. Until then nothing changes for
-          anybody reading it, and you can bring it back from your history.
+          {say("content.it-will-go-from-your-site")}
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => onDo(asking.title)} disabled={busy}>
-            {busy ? "Removing…" : "Yes, remove it"}
+            {busy ? say("content.removing") : say("common.yes-remove-it")}
           </Button>
           <Button variant="ghost" onClick={onCancel} disabled={busy}>
-            Keep it
+            {say("common.keep-it")}
           </Button>
         </div>
       </div>
@@ -82,8 +83,8 @@ function Ask({
         {heading}
       </h3>
       <Field
-        label="Name"
-        hint="This is what it is called, and what its address is made from."
+        label={say("common.name")}
+        hint={say("content.this-is-what-it-is-called")}
         type="text"
         value={title}
         autoFocus
@@ -91,10 +92,10 @@ function Ask({
       />
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => onDo(title)} disabled={busy || title.trim() === ""}>
-          {busy ? "Working…" : asking.what === "new" ? "Make it" : "Save the name"}
+          {busy ? say("content.working") : asking.what === "new" ? say("content.make-it") : say("common.save-the-name")}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          {say("content.cancel")}
         </Button>
       </div>
     </div>
@@ -124,7 +125,7 @@ function Row({
       >
         {item.title}
       </button>
-      {item.waiting && <Badge tone="changed">Not published</Badge>}
+      {item.waiting && <Badge tone="changed">{say("content.not-published")}</Badge>}
       {item.by && (
         <span className="text-sm text-subtle-foreground">
           {item.by}
@@ -153,7 +154,7 @@ function Row({
                 className="flex min-h-11 items-center gap-2 rounded px-2 text-left text-[15px] hover:bg-muted"
               >
                 <Pencil aria-hidden="true" className="size-4" />
-                Rename
+                {say("content.rename")}
               </button>
               <button
                 type="button"
@@ -164,7 +165,7 @@ function Row({
                 className="flex min-h-11 items-center gap-2 rounded px-2 text-left text-[15px] hover:bg-muted"
               >
                 <Copy aria-hidden="true" className="size-4" />
-                Make a copy
+                {say("content.make-a-copy")}
               </button>
               <button
                 type="button"
@@ -175,7 +176,7 @@ function Row({
                 className="flex min-h-11 items-center gap-2 rounded px-2 text-left text-[15px] text-destructive-foreground hover:bg-muted"
               >
                 <Trash2 aria-hidden="true" className="size-4" />
-                Remove…
+                {say("content.remove-2")}
               </button>
             </div>
           )}
@@ -219,14 +220,14 @@ export function ContentPage() {
       setAsking(null);
       setRefresh(refresh + 1);
     } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
+      setTrouble(whatWentWrong(error));
     } finally {
       setBusy(false);
     }
   }
 
   if (content.state === "loading") {
-    return <p className="text-[15px] text-subtle-foreground">Looking at what is here…</p>;
+    return <p className="text-[15px] text-subtle-foreground">{say("content.looking-at-what-is-here")}</p>;
   }
   if (content.state === "failed") {
     return <p className="text-[15px]">{content.message}</p>;
@@ -245,10 +246,10 @@ export function ContentPage() {
       {asking && <Ask asking={asking} busy={busy} onDo={act} onCancel={() => setAsking(null)} />}
 
       <Field
-        label="Search"
+        label={say("content.search")}
         type="search"
         value={search}
-        placeholder="Find a page"
+        placeholder={say("content.find-a-page")}
         onChange={(event) => setSearch(event.target.value)}
       />
 
@@ -276,14 +277,14 @@ export function ContentPage() {
                   }
                 >
                   <Plus aria-hidden="true" className="size-4" />
-                  New {section.itemName}
+                  {say("content.new")} {section.itemName}
                 </Button>
               )}
             </div>
 
             {matching.length === 0 ? (
               <p className="text-[15px] text-subtle-foreground">
-                {looking === "" ? "Nothing here yet." : "Nothing here matches that."}
+                {looking === "" ? say("content.nothing-here-yet") : say("content.nothing-here-matches-that")}
               </p>
             ) : (
               <ul className="flex flex-col">
@@ -305,7 +306,7 @@ export function ContentPage() {
                 onClick={() => setShowing({ ...showing, [section.key]: limit + atATime })}
                 className="flex min-h-11 w-fit items-center text-sm font-medium text-primary"
               >
-                Show {Math.min(atATime, matching.length - shown.length)} more
+                {say("content.show-more", { count: Math.min(atATime, matching.length - shown.length) })}
               </button>
             )}
           </div>
