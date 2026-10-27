@@ -1,10 +1,11 @@
 ---
 # chatcms-8n4m
 title: 'Organisations: make, rename and switch, instead of one hardcoded slug'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-26T16:45:44Z
+openspec-link: openspec/changes/archive/2026-10-27-add-organisations
 updated_at: 2026-10-26T23:06:22Z
 parent: chatcms-8vem
 blocked_by:
@@ -60,3 +61,44 @@ to create. A second organisation would therefore open the wrong one.
 - `docs/design/COMPARISON.md`, the projects screen row.
 - `chatcms-rbdb`, which adds the administrator this epic draws the screens
   for.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-27-add-organisations`.
+
+An organisation is now a thing the application knows about rather than a
+constant it was compiled with. Every project route said `technative`, in
+eight places, so a second organisation would have opened the first one's
+work.
+
+- **The address carries it.** A project is only unique within its
+  organisation, so its address is `/o/:organisation/p/:project/...`. One
+  request tells each screen who is looking, what they may switch to, and
+  where they are; asking per screen would be several answers that can
+  disagree.
+- **An organisation screen**: its name, its address, and who is in it.
+  Renaming keeps the address, because links already sent are written against
+  it.
+- **An organisation somebody is not in is nothing there**, not a redirect to
+  one they are in. A redirect makes a wrong link look like a working one.
+- **`check-interface` now fails if any source file names an organisation**, so
+  this cannot come back quietly.
+
+### Four defects this turned up
+
+- **History called a change made minutes ago "Yesterday".** Each version is
+  compared in the offset git recorded it in, against the server's own day.
+  Caught only because the clock passed midnight during a run.
+- **Refreshing the shell blanked every screen below it**, losing whatever
+  somebody was in the middle of. The last answer is kept while a newer one is
+  fetched.
+- **An administrator could not see an organisation's people**, because
+  reachability was decided before the permission was asked.
+- **The projects screen asked an endpoint that lists only organisations you
+  belong to**, so an administrator, who belongs to none, saw nothing.
+
+### Still on the demo scaffold
+
+The project shell still reads its project from `web/src/demo/content.ts`,
+which is why the count on the Publish button can disagree with the publish
+screen. That is the project settings epic, `chatcms-1r7q`.
