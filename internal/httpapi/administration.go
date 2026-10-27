@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -25,6 +26,9 @@ type AdministrationService interface {
 	TurnAccountOn(ctx context.Context, who Actor, email string) error
 	Organisation(ctx context.Context, who Actor, slug string) (OrganisationWholeView, error)
 	RemoveOrganisation(ctx context.Context, who Actor, slug string) error
+	People(ctx context.Context, who Actor, search string, most int32) (PeopleView, error)
+	Person(ctx context.Context, who Actor, email string) (PersonWholeView, error)
+	MakePerson(ctx context.Context, who Actor, email, displayName string) (PersonWholeView, error)
 	MayAdminister(ctx context.Context, who Actor) bool
 }
 
@@ -53,6 +57,37 @@ type OrganisationWholeView struct {
 	Projects []ProjectView `json:"projects"`
 }
 
+// BelongingView is one place somebody can reach, and what they hold there.
+type BelongingView struct {
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+	// Organisation is the address of the organisation a site is in, and is
+	// empty for an organisation itself.
+	Organisation string `json:"organisation,omitempty"`
+	Role         string `json:"role"`
+}
+
+// PersonWholeView is one person and everywhere they can reach.
+type PersonWholeView struct {
+	PersonID      string          `json:"personId"`
+	Email         string          `json:"email"`
+	DisplayName   string          `json:"displayName"`
+	Administers   bool            `json:"administers"`
+	AccountOn     bool            `json:"accountOn"`
+	StillToAccept bool            `json:"stillToAccept"`
+	LastSeen      *time.Time      `json:"lastSeen,omitempty"`
+	Organisations []BelongingView `json:"organisations"`
+	Projects      []BelongingView `json:"projects"`
+}
+
+// PeopleView is a page of them, and how many there are altogether, so that
+// the screen can say what it is not showing.
+type PeopleView struct {
+	People     []PersonWholeView `json:"people"`
+	Shown      int64        `json:"shown"`
+	Altogether int64        `json:"altogether"`
+}
+
 // OrganisationSummaryView is one organisation as an administrator sees it,
 // which includes ones they are not in.
 type OrganisationSummaryView struct {
@@ -75,6 +110,11 @@ type organisationPersonRequest struct {
 
 type administratorRequest struct {
 	Email string `json:"email"`
+}
+
+type makePersonRequest struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
 }
 
 func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
@@ -213,6 +253,47 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 			w.WriteHeader(http.StatusNoContent)
 		})))
 
+	mux.Handle("GET /api/administration/people", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			people, err := service.People(r.Context(), ActorFrom(r.Context()),
+				r.URL.Query().Get("search"), howMany(r.URL.Query().Get("most")))
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusOK, people)
+		})))
+
+	mux.Handle("POST /api/administration/people", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body makePersonRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			made, err := service.MakePerson(r.Context(), ActorFrom(r.Context()),
+				body.Email, body.DisplayName)
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusCreated, made)
+		})))
+
+	mux.HandleFunc("/api/administration/people", MethodNotAllowed)
+
+	mux.Handle("GET /api/administration/people/{email}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			person, err := service.Person(r.Context(), ActorFrom(r.Context()), r.PathValue("email"))
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusOK, person)
+		})))
+
+	mux.HandleFunc("/api/administration/people/{email}", MethodNotAllowed)
+
 	mux.Handle("GET /api/administration/records", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			records, err := service.Records(r.Context(), ActorFrom(r.Context()), 100)
@@ -222,4 +303,17 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 			}
 			WriteJSON(w, http.StatusOK, map[string]any{"records": records})
 		})))
+}
+
+// howMany reads the asked-for size of a page. Anything unreadable is the
+// default rather than an error: a screen asking for nonsense gets a page.
+func howMany(asked string) int32 {
+	if asked == "" {
+		return 0
+	}
+	most, err := strconv.Atoi(asked)
+	if err != nil {
+		return 0
+	}
+	return int32(most)
 }

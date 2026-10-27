@@ -1,12 +1,13 @@
 ---
 # chatcms-d4f3
 title: 'Administration: open, change and remove an organisation'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-27T15:17:16Z
-updated_at: 2026-10-27T18:33:22Z
+updated_at: 2026-10-27T19:40:00Z
 parent: chatcms-8vem
+openspec-link: openspec/changes/archive/2026-10-27-add-organisation-administration
 ---
 
 ## Purpose
@@ -42,3 +43,23 @@ is a rule `chatcms-rbdb` states and no screen offers.
 
 - `openspec/changes/archive/2026-10-26-add-application-administrator`
 - `openspec/changes/archive/2026-10-27-add-organisations`
+
+## Summary of Changes
+
+An organisation opened from the administration screen now shows everything in
+it at once: its name, who is in it with what role, and the sites it holds.
+
+- `GET /api/administration/organisations/{organisation}` answers with the
+  organisation, its people and its sites in one view; always as lists, so an
+  empty organisation reads as nothing rather than as nothing at all.
+- `DELETE` on the same address removes one. It is refused while the
+  organisation still holds sites, and the refusal names them, so that letting
+  go of several customers' work is never one confirmation.
+- Removing touches the database only. A test makes a real remote through
+  `internal/gitsync`, removes the site and then the organisation, and proves
+  the remote is still there afterwards.
+- The screen renames, puts somebody in, takes somebody out, and removes after
+  a confirmation that says in plain words what stays.
+- Proved by handler tests for both endpoints, five integration tests against a
+  real database, and `test/e2e/18-administering-an-organisation.spec.mjs` at
+  1440 px and at 390 px.

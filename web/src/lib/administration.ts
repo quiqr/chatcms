@@ -81,3 +81,37 @@ export function readOrganisation(organisation: string) {
 export function removeOrganisation(organisation: string) {
   return remove<void>(`/api/administration/organisations/${organisation}`);
 }
+
+export type Belonging = {
+  slug: string;
+  name: string;
+  organisation?: string;
+  role: string;
+};
+
+export type PersonWhole = {
+  personId: string;
+  email: string;
+  displayName: string;
+  administers: boolean;
+  accountOn: boolean;
+  stillToAccept: boolean;
+  lastSeen?: string;
+  organisations: Belonging[];
+  projects: Belonging[];
+};
+
+export function listEveryPerson(search: string) {
+  const asked = search.trim() === "" ? "" : `?search=${encodeURIComponent(search.trim())}`;
+  return get<{ people: PersonWhole[]; shown: number; altogether: number }>(
+    `/api/administration/people${asked}`,
+  );
+}
+
+export function readPerson(email: string) {
+  return get<PersonWhole>(`/api/administration/people/${encodeURIComponent(email)}`);
+}
+
+export function makePerson(body: { email: string; displayName: string }) {
+  return post<PersonWhole>("/api/administration/people", body);
+}

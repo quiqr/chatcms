@@ -13,11 +13,10 @@ test("somebody who has left is stopped, and what they wrote stays theirs", async
   });
 
   await test.step("the account is turned off", async () => {
-    await boss.goto(`${chatcms.url}/administration`);
-    await boss.getByLabel("Their email address").fill("owner@example.org");
+    await boss.goto(`${chatcms.url}/administration/people/owner%40example.org`);
     await boss.getByRole("button", { name: "Turn it off" }).click();
 
-    await expect(boss.getByText(/owner@example.org can no longer sign in/)).toBeVisible();
+    await expect(boss.getByText("Account off", { exact: true })).toBeVisible();
   });
 
   await test.step("they cannot sign in", async () => {
@@ -32,10 +31,9 @@ test("somebody who has left is stopped, and what they wrote stays theirs", async
   });
 
   await test.step("and it can be turned on again", async () => {
-    await boss.getByLabel("Their email address").fill("owner@example.org");
     await boss.getByRole("button", { name: "Turn it on again" }).click();
 
-    await expect(boss.getByText(/owner@example.org can sign in again/)).toBeVisible();
+    await expect(boss.getByText("Account off", { exact: true })).toHaveCount(0);
 
     const back = await signingIn(boss, chatcms, "owner@example.org", "a long enough passphrase");
     expect(back.status(), "the password it had no longer works").toBe(200);
@@ -48,9 +46,8 @@ test("an administrator cannot turn off their own account", async ({
   administering: page,
   chatcms,
 }) => {
-  await page.goto(`${chatcms.url}/administration`);
+  await page.goto(`${chatcms.url}/administration/people/admin%40example.org`);
 
-  await page.getByLabel("Their email address").fill("admin@example.org");
   await page.getByRole("button", { name: "Turn it off" }).click();
 
   await expect(page.getByRole("alert")).toContainText("your own account");

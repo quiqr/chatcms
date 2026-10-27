@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
 	"github.com/quiqr/chatcms/internal/tenancy"
@@ -41,6 +42,7 @@ type Service struct {
 type Accounts interface {
 	TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error
 	TurnAccountOn(ctx context.Context, personID uuid.UUID) error
+	MakeSomebody(ctx context.Context, email, displayName string) (auth.Person, error)
 }
 
 func NewService(store *Store, tenancy Tenancy, accounts Accounts) *Service {
@@ -357,4 +359,44 @@ func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slu
 
 	s.record(ctx, who, RemovedAnOrganisation, organisation.ID.String(), organisation.Name, nil)
 	return nil
+}
+
+// People is everybody on the installation, with where each one belongs. The
+// search narrows it by name or address, and how many are answered is capped
+// so that a list cannot become a way to read the whole database in one go.
+func (s *Service) People(ctx context.Context, who httpapi.Actor, search string, most int32) ([]PersonWithReach, int64, error) {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionSeeEveryPerson); err != nil {
+		return nil, 0, err
+	}
+	return s.store.People(ctx, search, most)
+}
+
+// Person is one of them, with everything they can reach and nothing about
+// anybody else.
+func (s *Service) Person(ctx context.Context, who httpapi.Actor, email string) (PersonWithReach, error) {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionSeeEveryPerson); err != nil {
+		return PersonWithReach{}, err
+	}
+
+	found, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return PersonWithReach{}, err
+	}
+	return s.store.Person(ctx, found.id)
+}
+
+// MakePerson gives an address an account and sends the way in. No password
+// is set here, by anybody.
+func (s *Service) MakePerson(ctx context.Context, who httpapi.Actor, email, displayName string) (PersonWithReach, error) {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionMakeAPerson); err != nil {
+		return PersonWithReach{}, err
+	}
+
+	made, err := s.accounts.MakeSomebody(ctx, email, displayName)
+	if err != nil {
+		return PersonWithReach{}, err
+	}
+
+	s.record(ctx, who, MadeAPerson, made.ID.String(), made.Email, nil)
+	return s.store.Person(ctx, made.ID)
 }

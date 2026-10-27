@@ -5,7 +5,7 @@ import { test, expect, worksOnAPhone } from "./fixtures.mjs";
 
 async function start(page, chatcms, name, owner) {
   await page.goto(`${chatcms.url}/administration`);
-  await page.getByLabel("Name").fill(name);
+  await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Who owns it").fill(owner);
   await page.getByRole("button", { name: "Start it" }).click();
 }

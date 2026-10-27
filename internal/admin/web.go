@@ -129,3 +129,64 @@ func (w *Web) Organisations(ctx context.Context, who httpapi.Actor) ([]httpapi.O
 	}
 	return out, nil
 }
+
+func (w *Web) People(ctx context.Context, who httpapi.Actor, search string, most int32) (httpapi.PeopleView, error) {
+	people, altogether, err := w.service.People(ctx, who, search, most)
+	if err != nil {
+		return httpapi.PeopleView{}, err
+	}
+
+	out := httpapi.PeopleView{
+		People:     make([]httpapi.PersonWholeView, 0, len(people)),
+		Altogether: altogether,
+		Shown:      int64(len(people)),
+	}
+	for _, person := range people {
+		out.People = append(out.People, personView(person))
+	}
+	return out, nil
+}
+
+func (w *Web) Person(ctx context.Context, who httpapi.Actor, email string) (httpapi.PersonWholeView, error) {
+	person, err := w.service.Person(ctx, who, email)
+	if err != nil {
+		return httpapi.PersonWholeView{}, err
+	}
+	return personView(person), nil
+}
+
+func (w *Web) MakePerson(ctx context.Context, who httpapi.Actor, email, displayName string) (httpapi.PersonWholeView, error) {
+	made, err := w.service.MakePerson(ctx, who, email, displayName)
+	if err != nil {
+		return httpapi.PersonWholeView{}, err
+	}
+	return personView(made), nil
+}
+
+func personView(person PersonWithReach) httpapi.PersonWholeView {
+	view := httpapi.PersonWholeView{
+		PersonID:      person.ID,
+		Email:         person.Email,
+		DisplayName:   person.DisplayName,
+		Administers:   person.Administers,
+		AccountOn:     person.AccountOn,
+		StillToAccept: person.StillToAccept,
+		Organisations: make([]httpapi.BelongingView, 0, len(person.Organisations)),
+		Projects:      make([]httpapi.BelongingView, 0, len(person.Projects)),
+	}
+	if person.EverSeen {
+		seen := person.LastSeen
+		view.LastSeen = &seen
+	}
+	for _, where := range person.Organisations {
+		view.Organisations = append(view.Organisations, httpapi.BelongingView{
+			Slug: where.Slug, Name: where.Name, Role: where.Role,
+		})
+	}
+	for _, where := range person.Projects {
+		view.Projects = append(view.Projects, httpapi.BelongingView{
+			Slug: where.Slug, Name: where.Name, Organisation: where.Organisation, Role: where.Role,
+		})
+	}
+	return view
+}

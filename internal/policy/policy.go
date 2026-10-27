@@ -54,6 +54,8 @@ const (
 	ActionRemoveOrganisation       Action = "remove-organisation"
 	ActionSeeEveryOrganisation     Action = "see-every-organisation"
 	ActionManageOrganisationPeople Action = "manage-organisation-people"
+	ActionSeeEveryPerson           Action = "see-every-person"
+	ActionMakeAPerson              Action = "make-a-person"
 	ActionAdministerInstallation   Action = "administer-installation"
 )
 
@@ -66,6 +68,8 @@ var overTheInstallation = map[Action]bool{
 	ActionRemoveOrganisation:       true,
 	ActionSeeEveryOrganisation:     true,
 	ActionManageOrganisationPeople: true,
+	ActionSeeEveryPerson:           true,
+	ActionMakeAPerson:              true,
 	ActionAdministerInstallation:   true,
 }
 
@@ -94,6 +98,8 @@ var Actions = []Action{
 	ActionRemoveOrganisation,
 	ActionSeeEveryOrganisation,
 	ActionManageOrganisationPeople,
+	ActionSeeEveryPerson,
+	ActionMakeAPerson,
 	ActionAdministerInstallation,
 }
 

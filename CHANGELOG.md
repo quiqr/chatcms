@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Every person on the installation. Whoever runs it now sees who is here:
+  each person's name, address, whether their account is on, when they were
+  last here, and every organisation and site they can reach, read in one
+  query rather than one per person. The list can be searched by name or
+  address, each person opens on a screen of their own where their account is
+  turned off or on again, and a person can be made from an address and a
+  name. Making one sends the same way in as every other invitation and sets
+  no password: an administrator never types somebody else's.
+
 - Administering an organisation. Whoever runs the installation opens an
   organisation from the administration screen and sees everything in it at
   once: its name, who is in it with what role, and the sites it holds. The

@@ -42,6 +42,7 @@ const (
 	StoodDownAnAdmin      What = "removed an administrator"
 	TurnedAnAccountOff    What = "turned an account off"
 	TurnedAnAccountOn     What = "turned an account on again"
+	MadeAPerson           What = "made a person"
 )
 
 // Record is one act, with who did it and what it was done to. The names are
@@ -174,4 +175,97 @@ func uuidText(id pgtype.UUID) string {
 		return ""
 	}
 	return uuid.UUID(id.Bytes).String()
+}
+
+// Belonging is one place somebody can reach, and what they hold there.
+type Belonging struct {
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+	// Organisation is the address of the organisation a site is in, and is
+	// empty for an organisation itself.
+	Organisation string `json:"organisation,omitempty"`
+	Role         string `json:"role"`
+}
+
+// PersonWithReach is one person and everywhere they can reach.
+type PersonWithReach struct {
+	ID            string
+	Email         string
+	DisplayName   string
+	Administers   bool
+	AccountOn     bool
+	StillToAccept bool
+	LastSeen      time.Time
+	EverSeen      bool
+	Organisations []Belonging
+	Projects      []Belonging
+}
+
+// People is every person on the installation, with where each belongs read
+// in the same query. The search is matched against name and address; an
+// empty one matches everybody.
+func (s *Store) People(ctx context.Context, search string, most int32) ([]PersonWithReach, int64, error) {
+	if most <= 0 || most > 500 {
+		most = 100
+	}
+
+	rows, err := s.db.Queries.ListEveryPerson(ctx, store.ListEveryPersonParams{
+		Search: strings.TrimSpace(search),
+		Most:   most,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("reading the people failed: %w", err)
+	}
+
+	out := make([]PersonWithReach, 0, len(rows))
+	var altogether int64
+	for _, row := range rows {
+		altogether = row.Altogether
+		out = append(out, PersonWithReach{
+			ID:            uuidText(row.ID),
+			Email:         row.Email,
+			DisplayName:   row.DisplayName,
+			Administers:   row.Administers,
+			AccountOn:     !row.DisabledAt.Valid,
+			StillToAccept: !row.HasPassword,
+			LastSeen:      row.LastSeen.Time,
+			EverSeen:      row.LastSeen.Valid,
+			Organisations: belongings(row.Organisations),
+			Projects:      belongings(row.Projects),
+		})
+	}
+	return out, altogether, nil
+}
+
+// Person is one of them, by the address that identifies them.
+func (s *Store) Person(ctx context.Context, personID uuid.UUID) (PersonWithReach, error) {
+	row, err := s.db.Queries.PersonWithReach(ctx, pgUUID(personID))
+	if err != nil {
+		if isNoRows(err) {
+			return PersonWithReach{}, ErrNoSuchPerson
+		}
+		return PersonWithReach{}, fmt.Errorf("reading that person failed: %w", err)
+	}
+
+	return PersonWithReach{
+		ID:            uuidText(row.ID),
+		Email:         row.Email,
+		DisplayName:   row.DisplayName,
+		Administers:   row.Administers,
+		AccountOn:     !row.DisabledAt.Valid,
+		StillToAccept: !row.HasPassword,
+		LastSeen:      row.LastSeen.Time,
+		EverSeen:      row.LastSeen.Valid,
+		Organisations: belongings(row.Organisations),
+		Projects:      belongings(row.Projects),
+	}, nil
+}
+
+func belongings(encoded []byte) []Belonging {
+	out := []Belonging{}
+	if len(encoded) == 0 {
+		return out
+	}
+	_ = json.Unmarshal(encoded, &out)
+	return out
 }

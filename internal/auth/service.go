@@ -268,6 +268,33 @@ func (s *Service) TurnAccountOff(ctx context.Context, who httpapi.Actor, personI
 	return s.sessions.RevokeAll(ctx, personID)
 }
 
+// MakeSomebody gives an address an account with no password and sends the
+// way in. Nobody but the person themselves ever sets the password: one that
+// somebody else typed is one nobody can prove was never written down.
+func (s *Service) MakeSomebody(ctx context.Context, email, displayName string) (Person, error) {
+	address := strings.ToLower(strings.TrimSpace(email))
+	if address == "" {
+		return Person{}, &httpapi.RefusedError{Reason: "an email address is needed"}
+	}
+
+	if _, err := s.people.ByEmail(ctx, address); err == nil {
+		return Person{}, &httpapi.RefusedError{
+			Reason: address + " already has an account",
+		}
+	} else if !errors.Is(err, ErrNoSuchPerson) {
+		return Person{}, err
+	}
+
+	person, err := s.people.Create(ctx, address, strings.TrimSpace(displayName), "")
+	if err != nil {
+		return Person{}, err
+	}
+	if err := s.Invite(ctx, person.ID); err != nil {
+		return Person{}, err
+	}
+	return person, nil
+}
+
 // TurnAccountOn lets it be used again, with the password it had.
 func (s *Service) TurnAccountOn(ctx context.Context, personID uuid.UUID) error {
 	return s.people.TurnOn(ctx, personID)

@@ -11,11 +11,11 @@ import {
   appoint,
   listAdministrators,
   listEveryOrganisation,
+  listEveryPerson,
   listRecords,
   makeOrganisation,
+  makePerson,
   standDown,
-  turnAccountOff,
-  turnAccountOn,
 } from "../lib/administration";
 
 function slugFrom(name: string) {
@@ -179,38 +179,168 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
 }
 
 /**
- * Accounts is where somebody who has left is stopped. An account belongs to
- * the installation rather than to an organisation, so this is the only place
- * it can be done: an organisation's owner turning one off would lock that
- * person out of every other organisation too.
+ * People is everybody on the installation. It answers "who is this address,
+ * and what can they reach" without a database client, and is the way to one
+ * person's own screen, where their account is turned off.
  */
-function Accounts({ onChanged }: { onChanged: () => void }) {
-  const [email, setEmail] = useState("");
-  const [said, setSaid] = useState("");
-  const [trouble, setTrouble] = useState("");
-
-  async function run(what: () => Promise<void>, done: string) {
-    setTrouble("");
-    setSaid("");
-    try {
-      await what();
-      setSaid(done);
-      onChanged();
-    } catch (error: unknown) {
-      setTrouble(error instanceof Error ? error.message : "That did not work.");
-    }
-  }
-
-  const asked = email.trim();
+function People() {
+  const [search, setSearch] = useState("");
+  const [asked, setAsked] = useState("");
+  const [people] = useAsync(() => listEveryPerson(asked), [asked]);
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-[15px] font-semibold">Somebody who has left</h2>
+      <h2 className="text-[15px] font-semibold">People</h2>
 
-      <p className="text-[15px] text-muted-foreground">
-        Turning an account off stops it being used anywhere here, and ends whatever it has open.
-        What that person wrote stays theirs.
-      </p>
+      <form
+        className="flex flex-wrap items-end gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setAsked(search);
+        }}
+      >
+        <div className="min-w-[240px] flex-1">
+          <Field
+            label="Find somebody"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="part of a name or an address"
+          />
+        </div>
+        <Button type="submit" variant="outline">
+          Find
+        </Button>
+        {asked !== "" && (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setAsked("");
+            }}
+          >
+            Everybody
+          </Button>
+        )}
+      </form>
+
+      {people.state === "loading" && <p className="text-[15px] text-muted-foreground">Looking...</p>}
+
+      {people.state === "failed" && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+          {people.message}
+        </p>
+      )}
+
+      {people.state === "ready" && people.value.people.length === 0 && (
+        <p className="text-[15px] text-subtle-foreground">Nobody here matches that.</p>
+      )}
+
+      {people.state === "ready" && people.value.people.length > 0 && (
+        <>
+          <TableWrapper>
+            <Table>
+              <thead>
+                <tr>
+                  <TableHeaderCell>Person</TableHeaderCell>
+                  <TableHeaderCell>Where they belong</TableHeaderCell>
+                  <TableHeaderCell>Last here</TableHeaderCell>
+                </tr>
+              </thead>
+              <tbody>
+                {people.value.people.map((person) => (
+                  <tr key={person.personId}>
+                    <TableCell>
+                      <NavLink
+                        to={`/administration/people/${encodeURIComponent(person.email)}`}
+                        className="inline-flex min-h-11 items-center text-[15px] font-semibold underline-offset-2 hover:underline"
+                      >
+                        {person.displayName || person.email}
+                      </NavLink>
+                      <span className="block text-[13px] text-subtle-foreground">{person.email}</span>
+                      <span className="mt-1 flex flex-wrap items-center gap-2">
+                        {person.administers && <Badge tone="published">Administers</Badge>}
+                        {!person.accountOn && <Badge tone="changed">Account off</Badge>}
+                        {person.stillToAccept && <Badge tone="changed">Still to accept</Badge>}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {person.organisations.length === 0 && person.projects.length === 0 ? (
+                        <span className="text-[13px] text-subtle-foreground">Nowhere yet</span>
+                      ) : (
+                        <span className="text-[13px] text-subtle-foreground">
+                          {person.organisations.map((where) => `${where.name} (${where.role})`).join(", ")}
+                          {person.organisations.length > 0 && person.projects.length > 0 && " · "}
+                          {person.projects.map((site) => `${site.name} (${site.role})`).join(", ")}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-[13px] text-subtle-foreground">
+                        {person.lastSeen ? when(person.lastSeen) : "Never"}
+                      </span>
+                    </TableCell>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrapper>
+
+          {people.value.shown < people.value.altogether && (
+            <p className="text-[13px] text-subtle-foreground">
+              Showing {people.value.shown} of {people.value.altogether}. Search to find the rest.
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function NewPerson({ onMade }: { onMade: () => void }) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [said, setSaid] = useState("");
+  const [trouble, setTrouble] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <form
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const asked = email.trim();
+        setBusy(true);
+        setTrouble("");
+        setSaid("");
+        void makePerson({ email: asked, displayName: name.trim() })
+          .then(() => {
+            setEmail("");
+            setName("");
+            setSaid(`${asked} has been sent a way in.`);
+            onMade();
+          })
+          .catch((error: unknown) => {
+            setTrouble(error instanceof Error ? error.message : "That did not work.");
+          })
+          .finally(() => setBusy(false));
+      }}
+    >
+      <h2 className="text-[15px] font-semibold">Make a person</h2>
+
+      <Field
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        required
+      />
+
+      <Field
+        label="Their name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        hint="They can change it themselves afterwards."
+      />
 
       {trouble && (
         <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
@@ -223,33 +353,14 @@ function Accounts({ onChanged }: { onChanged: () => void }) {
         </p>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-[240px] flex-1">
-          <Field
-            label="Their email address"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
+      <Button type="submit" disabled={busy || email.trim() === ""}>
+        {busy ? "Making..." : "Make them"}
+      </Button>
 
-        <Button
-          variant="outline"
-          disabled={asked === ""}
-          onClick={() => void run(() => turnAccountOff(asked), `${asked} can no longer sign in.`)}
-        >
-          Turn it off
-        </Button>
-
-        <Button
-          variant="outline"
-          disabled={asked === ""}
-          onClick={() => void run(() => turnAccountOn(asked), `${asked} can sign in again.`)}
-        >
-          Turn it on again
-        </Button>
-      </div>
-    </section>
+      <p className="text-[13px] text-subtle-foreground">
+        They choose their own password from the link they are sent. Nobody else ever sets it.
+      </p>
+    </form>
   );
 }
 
@@ -344,7 +455,9 @@ export function AdministrationPage() {
 
       <Administrators onChanged={somethingWasDone} />
 
-      <Accounts onChanged={somethingWasDone} />
+      <People key={done} />
+
+      <NewPerson onMade={somethingWasDone} />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold">What has been done</h2>

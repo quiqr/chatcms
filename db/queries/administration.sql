@@ -69,3 +69,60 @@ DELETE FROM projects WHERE id = $1;
 SELECT id, slug, name, domain FROM projects
 WHERE organisation_id = $1
 ORDER BY lower(name);
+
+-- name: ListEveryPerson :many
+-- Where somebody belongs is read with the list, so that fifty people cost
+-- one query rather than a hundred and fifty.
+SELECT p.id,
+       p.email,
+       p.display_name,
+       p.administers,
+       p.disabled_at,
+       (p.password_hash IS NOT NULL)::boolean AS has_password,
+       (SELECT max(s.last_seen_at)
+        FROM sessions s
+        WHERE s.person_id = p.id AND s.revoked_at IS NULL)::timestamptz AS last_seen,
+       COALESCE((SELECT json_agg(json_build_object('slug', o.slug, 'name', o.name, 'role', m.role)
+                                 ORDER BY lower(o.name))
+                 FROM organisation_members m
+                 JOIN organisations o ON o.id = m.organisation_id
+                 WHERE m.person_id = p.id), '[]')::json AS organisations,
+       COALESCE((SELECT json_agg(json_build_object('slug', pr.slug, 'name', pr.name,
+                                                   'organisation', po.slug, 'role', pm.role)
+                                 ORDER BY lower(pr.name))
+                 FROM project_members pm
+                 JOIN projects pr ON pr.id = pm.project_id
+                 JOIN organisations po ON po.id = pr.organisation_id
+                 WHERE pm.person_id = p.id), '[]')::json AS projects,
+       count(*) OVER () AS altogether
+FROM people p
+WHERE sqlc.arg('search')::text = ''
+   OR p.email ILIKE '%' || sqlc.arg('search')::text || '%'
+   OR p.display_name ILIKE '%' || sqlc.arg('search')::text || '%'
+ORDER BY lower(p.email)
+LIMIT sqlc.arg('most')::int;
+
+-- name: PersonWithReach :one
+SELECT p.id,
+       p.email,
+       p.display_name,
+       p.administers,
+       p.disabled_at,
+       (p.password_hash IS NOT NULL)::boolean AS has_password,
+       (SELECT max(s.last_seen_at)
+        FROM sessions s
+        WHERE s.person_id = p.id AND s.revoked_at IS NULL)::timestamptz AS last_seen,
+       COALESCE((SELECT json_agg(json_build_object('slug', o.slug, 'name', o.name, 'role', m.role)
+                                 ORDER BY lower(o.name))
+                 FROM organisation_members m
+                 JOIN organisations o ON o.id = m.organisation_id
+                 WHERE m.person_id = p.id), '[]')::json AS organisations,
+       COALESCE((SELECT json_agg(json_build_object('slug', pr.slug, 'name', pr.name,
+                                                   'organisation', po.slug, 'role', pm.role)
+                                 ORDER BY lower(pr.name))
+                 FROM project_members pm
+                 JOIN projects pr ON pr.id = pm.project_id
+                 JOIN organisations po ON po.id = pr.organisation_id
+                 WHERE pm.person_id = p.id), '[]')::json AS projects
+FROM people p
+WHERE p.id = $1;

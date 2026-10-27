@@ -12,7 +12,7 @@ test("an administrator starts an organisation and somebody is invited to it", as
   });
 
   await test.step("an organisation is started, owned by somebody else", async () => {
-    await page.getByLabel("Name").fill("Bakkerij Zuid");
+    await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
     await expect(page.getByText("Its address will be /o/bakkerij-zuid")).toBeVisible();
 
     await page.getByLabel("Who owns it").fill("owner@example.org");

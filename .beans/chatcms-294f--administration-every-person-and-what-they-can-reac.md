@@ -1,11 +1,11 @@
 ---
 # chatcms-294f
 title: 'Administration: every person, and what they can reach'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-27T15:17:33Z
-updated_at: 2026-10-27T15:17:33Z
+updated_at: 2026-10-27T19:45:00Z
 parent: chatcms-8vem
 ---
 

@@ -3,6 +3,7 @@
 package admin_test
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log/slog"
@@ -19,6 +20,7 @@ import (
 	"github.com/quiqr/chatcms/internal/auth"
 	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
+	"github.com/quiqr/chatcms/internal/mail"
 	"github.com/quiqr/chatcms/internal/policy"
 	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/tenancy"
@@ -562,4 +564,218 @@ func gitBinary(t *testing.T) string {
 
 func pgUUID(id uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: id, Valid: true}
+}
+
+type postbox struct {
+	sent []string
+}
+
+func (p *postbox) Post(_ context.Context, to string, _ mail.Message) error {
+	p.sent = append(p.sent, to)
+	return nil
+}
+
+func TestEverybodyIsListedWithWhereTheyBelong(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+	editor := h.person(t, "editor@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	organisation, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := h.tenancy.CreateProject(t.Context(), organisation.ID, "shop", "The shop", "bakery.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.tenancy.SetProjectRole(t.Context(), project.ID, mustParse(t, editor.ID), policy.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+
+	listed, err := h.web.People(t.Context(), boss, "", 0)
+	if err != nil {
+		t.Fatalf("People() error = %v, want nil", err)
+	}
+	if listed.Altogether != 3 || int(listed.Shown) != 3 {
+		t.Errorf("People() shows %d of %d, want 3 of 3", listed.Shown, listed.Altogether)
+	}
+
+	by := map[string]httpapi.PersonWholeView{}
+	for _, person := range listed.People {
+		by[person.Email] = person
+	}
+
+	if places := by[owner.Email].Organisations; len(places) != 1 || places[0].Slug != "bakery" ||
+		places[0].Role != string(policy.OrganisationOwner) {
+		t.Errorf("the owner belongs to %+v, want owner of bakery", places)
+	}
+	if sites := by[editor.Email].Projects; len(sites) != 1 || sites[0].Slug != "shop" ||
+		sites[0].Organisation != "bakery" || sites[0].Role != string(policy.RoleEditor) {
+		t.Errorf("the editor reaches %+v, want editor on bakery/shop", sites)
+	}
+	if places := by[boss.Email].Organisations; len(places) != 0 {
+		t.Errorf("the administrator belongs to %+v, want nowhere", places)
+	}
+	if !by[boss.Email].Administers {
+		t.Error("the administrator is not marked as one")
+	}
+	if len(by[boss.Email].Projects) != 0 {
+		t.Errorf("the administrator reaches %+v, want nothing", by[boss.Email].Projects)
+	}
+}
+
+func TestSomebodyIsFoundByNameOrAddress(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	h.person(t, "marieke@korenaar.example")
+	h.person(t, "sam@korenaar.example")
+
+	found, err := h.web.People(t.Context(), boss, "marieke", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found.People) != 1 || found.People[0].Email != "marieke@korenaar.example" {
+		t.Errorf("searching for marieke found %+v", found.People)
+	}
+
+	none, err := h.web.People(t.Context(), boss, "nobody-is-called-this", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(none.People) != 0 {
+		t.Errorf("searching for nobody found %+v", none.People)
+	}
+}
+
+func TestOnlyAnAdministratorReadsThePeople(t *testing.T) {
+	h := newHarness(t)
+	h.administrator(t, "boss@example.org")
+	ordinary := h.person(t, "ordinary@example.org")
+
+	if _, err := h.web.People(t.Context(), ordinary, "", 0); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("People() as an ordinary person error = %v, want ErrNotAllowed", err)
+	}
+	if _, err := h.web.Person(t.Context(), ordinary, "ordinary@example.org"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("Person() about themselves error = %v, want ErrNotAllowed", err)
+	}
+	if _, err := h.web.MakePerson(t.Context(), ordinary, "new@example.org", ""); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("MakePerson() as an ordinary person error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestOnePersonIsOpenedAndTheirAccountTurnedOff(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	opened, err := h.web.Person(t.Context(), boss, owner.Email)
+	if err != nil {
+		t.Fatalf("Person() error = %v, want nil", err)
+	}
+	if !opened.AccountOn || len(opened.Organisations) != 1 {
+		t.Errorf("Person() = %+v, want an account that is on, in one organisation", opened)
+	}
+	if opened.LastSeen != nil {
+		t.Errorf("Person() says they were last here at %v, and they never were", opened.LastSeen)
+	}
+
+	if err := h.web.TurnAccountOff(t.Context(), boss, owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	again, err := h.web.Person(t.Context(), boss, owner.Email)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.AccountOn {
+		t.Error("the account is still on after it was turned off")
+	}
+}
+
+func TestOpeningAnAddressNobodyHasSaysSo(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+
+	_, err := h.web.Person(t.Context(), boss, "nobody@example.org")
+	if err == nil {
+		t.Fatal("Person() for an address nobody has error = nil, want a refusal")
+	}
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("Person() error = %v, want a refusal with a reason", err)
+	}
+}
+
+func TestAPersonIsMadeAndSentTheWayIn(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+
+	post := &postbox{}
+	h.identity.SendsWith(post)
+
+	made, err := h.web.MakePerson(t.Context(), boss, "Sam@Example.org", "Sam Dekker")
+	if err != nil {
+		t.Fatalf("MakePerson() error = %v, want nil", err)
+	}
+	if made.Email != "sam@example.org" || made.DisplayName != "Sam Dekker" {
+		t.Errorf("MakePerson() = %+v, want sam@example.org as Sam Dekker", made)
+	}
+	if !made.StillToAccept {
+		t.Error("a person made this way has a password already")
+	}
+	if len(post.sent) != 1 || post.sent[0] != "sam@example.org" {
+		t.Errorf("the way in was sent to %v", post.sent)
+	}
+
+	// No password was set, so signing in with anything at all is refused.
+	if _, _, _, err := h.identity.SignIn(t.Context(), "sam@example.org",
+		"a long enough passphrase", "a-caller", false); err == nil {
+		t.Error("somebody made by an administrator can be signed in as")
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, record := range records {
+		if record.Did == string(admin.MadeAPerson) && record.To == "sam@example.org" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("making a person is not in the history: %+v", records)
+	}
+}
+
+func TestAnAddressThatIsAlreadySomebodyIsRefused(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	h.person(t, "sam@example.org")
+
+	_, err := h.web.MakePerson(t.Context(), boss, "SAM@example.org", "Somebody Else")
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("MakePerson() at a taken address error = %v, want a refusal", err)
+	}
+	if !strings.Contains(refused.Reason, "sam@example.org") {
+		t.Errorf("the refusal says %q, want it to name the address", refused.Reason)
+	}
+
+	// The account that was there is untouched.
+	kept, err := h.web.Person(t.Context(), boss, "sam@example.org")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.DisplayName == "Somebody Else" {
+		t.Error("the account that was already there was renamed")
+	}
 }

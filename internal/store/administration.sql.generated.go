@@ -139,6 +139,88 @@ func (q *Queries) ListEveryOrganisation(ctx context.Context) ([]ListEveryOrganis
 	return items, nil
 }
 
+const listEveryPerson = `-- name: ListEveryPerson :many
+SELECT p.id,
+       p.email,
+       p.display_name,
+       p.administers,
+       p.disabled_at,
+       (p.password_hash IS NOT NULL)::boolean AS has_password,
+       (SELECT max(s.last_seen_at)
+        FROM sessions s
+        WHERE s.person_id = p.id AND s.revoked_at IS NULL)::timestamptz AS last_seen,
+       COALESCE((SELECT json_agg(json_build_object('slug', o.slug, 'name', o.name, 'role', m.role)
+                                 ORDER BY lower(o.name))
+                 FROM organisation_members m
+                 JOIN organisations o ON o.id = m.organisation_id
+                 WHERE m.person_id = p.id), '[]')::json AS organisations,
+       COALESCE((SELECT json_agg(json_build_object('slug', pr.slug, 'name', pr.name,
+                                                   'organisation', po.slug, 'role', pm.role)
+                                 ORDER BY lower(pr.name))
+                 FROM project_members pm
+                 JOIN projects pr ON pr.id = pm.project_id
+                 JOIN organisations po ON po.id = pr.organisation_id
+                 WHERE pm.person_id = p.id), '[]')::json AS projects,
+       count(*) OVER () AS altogether
+FROM people p
+WHERE $1::text = ''
+   OR p.email ILIKE '%' || $1::text || '%'
+   OR p.display_name ILIKE '%' || $1::text || '%'
+ORDER BY lower(p.email)
+LIMIT $2::int
+`
+
+type ListEveryPersonParams struct {
+	Search string `json:"search"`
+	Most   int32  `json:"most"`
+}
+
+type ListEveryPersonRow struct {
+	ID            pgtype.UUID        `json:"id"`
+	Email         string             `json:"email"`
+	DisplayName   string             `json:"display_name"`
+	Administers   bool               `json:"administers"`
+	DisabledAt    pgtype.Timestamptz `json:"disabled_at"`
+	HasPassword   bool               `json:"has_password"`
+	LastSeen      pgtype.Timestamptz `json:"last_seen"`
+	Organisations []byte             `json:"organisations"`
+	Projects      []byte             `json:"projects"`
+	Altogether    int64              `json:"altogether"`
+}
+
+// Where somebody belongs is read with the list, so that fifty people cost
+// one query rather than a hundred and fifty.
+func (q *Queries) ListEveryPerson(ctx context.Context, arg ListEveryPersonParams) ([]ListEveryPersonRow, error) {
+	rows, err := q.db.Query(ctx, listEveryPerson, arg.Search, arg.Most)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListEveryPersonRow{}
+	for rows.Next() {
+		var i ListEveryPersonRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.DisplayName,
+			&i.Administers,
+			&i.DisabledAt,
+			&i.HasPassword,
+			&i.LastSeen,
+			&i.Organisations,
+			&i.Projects,
+			&i.Altogether,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOrganisationMembers = `-- name: ListOrganisationMembers :many
 SELECT m.person_id, m.role, p.email, p.display_name, p.password_hash
 FROM organisation_members m
@@ -253,6 +335,61 @@ func (q *Queries) PersonByEmail(ctx context.Context, email string) (Person, erro
 		&i.PictureKind,
 		&i.EmailWaiting,
 		&i.Appearance,
+	)
+	return i, err
+}
+
+const personWithReach = `-- name: PersonWithReach :one
+SELECT p.id,
+       p.email,
+       p.display_name,
+       p.administers,
+       p.disabled_at,
+       (p.password_hash IS NOT NULL)::boolean AS has_password,
+       (SELECT max(s.last_seen_at)
+        FROM sessions s
+        WHERE s.person_id = p.id AND s.revoked_at IS NULL)::timestamptz AS last_seen,
+       COALESCE((SELECT json_agg(json_build_object('slug', o.slug, 'name', o.name, 'role', m.role)
+                                 ORDER BY lower(o.name))
+                 FROM organisation_members m
+                 JOIN organisations o ON o.id = m.organisation_id
+                 WHERE m.person_id = p.id), '[]')::json AS organisations,
+       COALESCE((SELECT json_agg(json_build_object('slug', pr.slug, 'name', pr.name,
+                                                   'organisation', po.slug, 'role', pm.role)
+                                 ORDER BY lower(pr.name))
+                 FROM project_members pm
+                 JOIN projects pr ON pr.id = pm.project_id
+                 JOIN organisations po ON po.id = pr.organisation_id
+                 WHERE pm.person_id = p.id), '[]')::json AS projects
+FROM people p
+WHERE p.id = $1
+`
+
+type PersonWithReachRow struct {
+	ID            pgtype.UUID        `json:"id"`
+	Email         string             `json:"email"`
+	DisplayName   string             `json:"display_name"`
+	Administers   bool               `json:"administers"`
+	DisabledAt    pgtype.Timestamptz `json:"disabled_at"`
+	HasPassword   bool               `json:"has_password"`
+	LastSeen      pgtype.Timestamptz `json:"last_seen"`
+	Organisations []byte             `json:"organisations"`
+	Projects      []byte             `json:"projects"`
+}
+
+func (q *Queries) PersonWithReach(ctx context.Context, id pgtype.UUID) (PersonWithReachRow, error) {
+	row := q.db.QueryRow(ctx, personWithReach, id)
+	var i PersonWithReachRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.Administers,
+		&i.DisabledAt,
+		&i.HasPassword,
+		&i.LastSeen,
+		&i.Organisations,
+		&i.Projects,
 	)
 	return i, err
 }

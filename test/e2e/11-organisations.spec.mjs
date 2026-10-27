@@ -8,7 +8,7 @@ test("an administrator starts a second organisation and the two stay apart", asy
 }, testInfo) => {
   await test.step("a second organisation, owned by the same person", async () => {
     await page.goto(`${chatcms.url}/administration`);
-    await page.getByLabel("Name").fill("Bakkerij Zuid");
+    await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
     await page.getByLabel("Who owns it").fill("owner@example.org");
     await page.getByRole("button", { name: "Start it" }).click();
 
@@ -25,7 +25,7 @@ test("somebody in two organisations sees each one's own projects", async ({
 }, testInfo) => {
   // The administrator makes the second one; the owner is put in it.
   await administering.goto(`${chatcms.url}/administration`);
-  await administering.getByLabel("Name").fill("Bakkerij Zuid");
+  await administering.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
   await administering.getByLabel("Who owns it").fill("owner@example.org");
   await administering.getByRole("button", { name: "Start it" }).click();
   await expect(administering.getByText("/o/bakkerij-zuid")).toBeVisible();

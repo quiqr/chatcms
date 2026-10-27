@@ -17,6 +17,7 @@ function answers(byPath: Record<string, unknown>) {
 
 const empty = {
   "/api/administration/organisations": { organisations: [] },
+  "/api/administration/people": { people: [], shown: 0, altogether: 0 },
   "/api/administration/administrators": { administrators: [] },
   "/api/administration/records": { records: [] },
 };
@@ -175,7 +176,14 @@ describe("the administration screen", () => {
         return Promise.resolve({
           ok: true,
           status: 200,
-          json: async () => ({ organisations: [], administrators: [], records: [] }),
+          json: async () => ({
+            organisations: [],
+            administrators: [],
+            records: [],
+            people: [],
+            shown: 0,
+            altogether: 0,
+          }),
         });
       }),
     );
@@ -188,5 +196,75 @@ describe("the administration screen", () => {
     await user.click(screen.getByRole("button", { name: "Start it" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("That address is already taken.");
+  });
+
+  it("lists people with where they belong, and what it is not showing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      answers({
+        ...empty,
+        "/api/administration/people": {
+          people: [
+            {
+              personId: "p1",
+              email: "marieke@korenaar.example",
+              displayName: "Marieke de Vries",
+              administers: false,
+              accountOn: true,
+              stillToAccept: false,
+              organisations: [{ slug: "bakery", name: "Korenaar Bakery", role: "member" }],
+              projects: [
+                { slug: "korenaar", name: "The site", organisation: "bakery", role: "editor" },
+              ],
+            },
+          ],
+          shown: 1,
+          altogether: 12,
+        },
+      }),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Marieke de Vries")).toBeInTheDocument();
+    expect(screen.getByText(/Korenaar Bakery \(member\)/)).toBeInTheDocument();
+    expect(screen.getByText(/The site \(editor\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Showing 1 of 12/)).toBeInTheDocument();
+  });
+
+  it("says a person was sent a way in, rather than a password", async () => {
+    document.cookie = "chatcms_request_token=a-token; path=/";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((path: string, options?: { method?: string }) => {
+        if (path === "/api/administration/people" && options?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            status: 201,
+            json: async () => ({ email: "sam@example.org" }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            organisations: [],
+            administrators: [],
+            records: [],
+            people: [],
+            shown: 0,
+            altogether: 0,
+          }),
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(await screen.findByLabelText("Email"), "sam@example.org");
+    await user.click(screen.getByRole("button", { name: "Make them" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("sent a way in");
   });
 });

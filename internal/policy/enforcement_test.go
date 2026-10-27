@@ -101,6 +101,13 @@ var allowedToNameAdministering = []string{
 	// administers, so that the interface can leave out what it must. Nothing
 	// here decides from it.
 	"internal/httpapi/",
+	// The list of people says, beside each one, whether they administer the
+	// installation. These three read that column and carry it to the screen;
+	// internal/admin/service.go, which is where a decision would be
+	// tempting, is deliberately not listed and still asks policy.Can.
+	"internal/admin/admin.go",
+	"internal/admin/web.go",
+	"internal/admin/admin_integration_test.go",
 }
 
 // generatedGo is code sqlc writes from the SQL. A column named in a struct it

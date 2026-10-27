@@ -16,6 +16,7 @@ import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
 import { AccountPage } from "./routes/AccountPage";
 import { AdministeredOrganisationPage } from "./routes/AdministeredOrganisationPage";
+import { AdministeredPersonPage } from "./routes/AdministeredPersonPage";
 import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { PreferencesPage } from "./routes/PreferencesPage";
@@ -52,6 +53,10 @@ export function App() {
           <Route
             path="/administration"
             element={<OrganisationPage title="Administration" body={<AdministrationPage />} />}
+          />
+          <Route
+            path="/administration/people/:email"
+            element={<OrganisationPage title="Person" body={<AdministeredPersonPage />} />}
           />
           <Route
             path="/administration/o/:organisation"

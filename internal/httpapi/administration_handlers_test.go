@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -83,6 +84,31 @@ func (s *stubAdministration) TurnAccountOn(_ context.Context, _ Actor, email str
 	return s.err
 }
 
+func (s *stubAdministration) People(_ context.Context, _ Actor, search string, most int32) (PeopleView, error) {
+	s.note("people " + search + " " + strconv.Itoa(int(most)))
+	return PeopleView{
+		People: []PersonWholeView{{
+			Email:         "marieke@example.org",
+			DisplayName:   "Marieke de Vries",
+			AccountOn:     true,
+			Organisations: []BelongingView{{Slug: "bakery", Name: "Bakery", Role: "member"}},
+			Projects:      []BelongingView{{Slug: "korenaar", Organisation: "bakery", Role: "editor"}},
+		}},
+		Shown:      1,
+		Altogether: 1,
+	}, s.err
+}
+
+func (s *stubAdministration) Person(_ context.Context, _ Actor, email string) (PersonWholeView, error) {
+	s.note("person " + email)
+	return PersonWholeView{Email: email, AccountOn: true}, s.err
+}
+
+func (s *stubAdministration) MakePerson(_ context.Context, _ Actor, email, displayName string) (PersonWholeView, error) {
+	s.note("make person " + email + " " + displayName)
+	return PersonWholeView{Email: email, DisplayName: displayName, StillToAccept: true}, s.err
+}
+
 func (s *stubAdministration) MayAdminister(context.Context, Actor) bool {
 	s.note("may administer")
 	return s.administers
@@ -123,6 +149,9 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodDelete, "/api/administration/organisations/bakery", nil},
 		{http.MethodPost, "/api/administration/accounts/a@b.c/off", nil},
 		{http.MethodPost, "/api/administration/accounts/a@b.c/on", nil},
+		{http.MethodGet, "/api/administration/people", nil},
+		{http.MethodPost, "/api/administration/people", map[string]any{"email": "a@b.c"}},
+		{http.MethodGet, "/api/administration/people/a@b.c", nil},
 	} {
 		recorder := call(t, handler, each.method, each.path, each.body)
 		if recorder.Code != http.StatusUnauthorized {
@@ -343,5 +372,86 @@ func TestAdministrationRefusesTheWrongMethod(t *testing.T) {
 		if recorder.Code != http.StatusMethodNotAllowed {
 			t.Errorf("PUT %s = %d, want 405", path, recorder.Code)
 		}
+	}
+}
+
+func TestThePeopleAreListedWithWhatWasAsked(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/administration/people?search=marieke&most=25", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "people marieke 25" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+	if !strings.Contains(recorder.Body.String(), "\"altogether\":1") {
+		t.Errorf("the answer does not say how many there are: %s", recorder.Body)
+	}
+	if !strings.Contains(recorder.Body.String(), "korenaar") {
+		t.Errorf("the answer does not say where they belong: %s", recorder.Body)
+	}
+}
+
+func TestANonsensePageSizeIsStillAPage(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet, "/api/administration/people?most=lots", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "people  0" {
+		t.Errorf("the service was asked %v, want the default page", service.asked)
+	}
+}
+
+func TestOnePersonIsRead(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/administration/people/marieke@example.org", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "person marieke@example.org" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestMakingAPersonPassesOnWhatWasAsked(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost, "/api/administration/people",
+		map[string]any{"email": "sam@example.org", "displayName": "Sam Dekker"})
+
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want 201: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "make person sam@example.org Sam Dekker" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestMakingAPersonReportsARefusalWithItsReason(t *testing.T) {
+	handler := withAdministration(&stubAdministration{
+		err: &RefusedError{Reason: "sam@example.org already has an account"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost, "/api/administration/people",
+		map[string]any{"email": "sam@example.org"})
+
+	if recorder.Code != http.StatusConflict && recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want a refusal: %s", recorder.Code, recorder.Body)
+	}
+	if !strings.Contains(recorder.Body.String(), "already has an account") {
+		t.Errorf("the reason did not reach the screen: %s", recorder.Body)
 	}
 }
