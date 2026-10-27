@@ -2,7 +2,7 @@
 import { test, expect, saves, worksOnAPhone } from "./fixtures.mjs";
 
 test("a page is made, edited and removed", async ({ signedIn: page, chatcms }, testInfo) => {
-  await page.goto(`${chatcms.url}/p/korenaar/content`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/content`);
 
   await test.step("a page is made and opens", async () => {
     await page.getByRole("button", { name: /New / }).first().click();
@@ -18,7 +18,7 @@ test("a page is made, edited and removed", async ({ signedIn: page, chatcms }, t
   });
 
   await test.step("it is listed, and marked as not published", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/content`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/content`);
     await expect(page.getByRole("button", { name: "Autumn prices", exact: true })).toBeVisible();
     await expect(page.getByText("Not published").first()).toBeVisible();
   });
@@ -39,7 +39,7 @@ test("a page is made, edited and removed", async ({ signedIn: page, chatcms }, t
 });
 
 test("a picture is added, described and used", async ({ signedIn: page, chatcms }, testInfo) => {
-  await page.goto(`${chatcms.url}/p/korenaar/media`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/media`);
 
   await test.step("a picture is added", async () => {
     await page.getByLabel("Add pictures").setInputFiles({

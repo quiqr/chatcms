@@ -4,6 +4,7 @@ import { useParams } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   abandonChanges,
   answerChanges,
@@ -94,7 +95,8 @@ function Question({
   );
 }
 
-export function SyncPage({ organisation }: { organisation: string }) {
+export function SyncPage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const [choices, setChoices] = useState<Record<string, Record<string, "mine" | "theirs">>>({});
   const [busy, setBusy] = useState(false);

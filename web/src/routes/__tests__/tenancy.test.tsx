@@ -1,7 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PeoplePage } from "../PeoplePage";
 import { ProjectsPage } from "../ProjectsPage";
@@ -37,9 +38,9 @@ describe("the projects screen", () => {
     );
 
     return render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <Inside><MemoryRouter initialEntries={["/projects"]}>
         <ProjectsPage />
-      </MemoryRouter>,
+      </MemoryRouter></Inside>,
     );
   }
 
@@ -90,9 +91,9 @@ describe("the projects screen", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <Inside><MemoryRouter initialEntries={["/projects"]}>
         <ProjectsPage />
-      </MemoryRouter>,
+      </MemoryRouter></Inside>,
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent("You are not allowed to do that.");
@@ -111,11 +112,11 @@ describe("the people and roles screen", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     return render(
-      <MemoryRouter initialEntries={["/p/korenaar/people"]}>
+      <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/people"]}>
         <Routes>
-          <Route path="/p/:project/people" element={<PeoplePage organisation="technative" />} />
+          <Route path="/o/:organisation/p/:project/people" element={<PeoplePage />} />
         </Routes>
-      </MemoryRouter>,
+      </MemoryRouter></Inside>,
     );
   }
 
@@ -221,19 +222,19 @@ describe("making a new project", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <Inside><MemoryRouter initialEntries={["/projects"]}>
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/p/:project/setup" element={<p>the setup screen</p>} />
+          <Route path="/o/:organisation/p/:project/setup" element={<p>the setup screen</p>} />
         </Routes>
-      </MemoryRouter>,
+      </MemoryRouter></Inside>,
     );
 
     await userEvent.click(await screen.findByRole("button", { name: /New project/ }));
 
     const dialog = await screen.findByRole("dialog", { name: "New project" });
     await userEvent.type(within(dialog).getByLabelText("Name"), "Korenaar Bakery");
-    expect(dialog).toHaveTextContent("/p/korenaar-bakery");
+    expect(dialog).toHaveTextContent("/o/technative/p/korenaar-bakery");
 
     await userEvent.click(within(dialog).getByRole("button", { name: /Make it and set it up/ }));
 
@@ -267,11 +268,11 @@ describe("making a new project", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <Inside><MemoryRouter initialEntries={["/projects"]}>
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
         </Routes>
-      </MemoryRouter>,
+      </MemoryRouter></Inside>,
     );
 
     await userEvent.click(await screen.findByRole("button", { name: /New project/ }));

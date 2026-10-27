@@ -34,6 +34,8 @@ type Options struct {
 	Secure bool
 	// Tenancy serves organisations, projects and the people on them.
 	Tenancy TenancyService
+	// WhoAmI serves what a screen needs before it can draw anything.
+	WhoAmI WhoAmIService
 	// Administration serves what somebody who administers the installation
 	// may do: organisations, who is in them, and who administers.
 	Administration AdministrationService
@@ -90,6 +92,12 @@ func New(opts Options) http.Handler {
 		mux.Handle("POST /api/organisations", RequireActor(createOrganisationHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations", MethodNotAllowed)
 
+		mux.Handle("PUT /api/organisations/{organisation}",
+			RequireActor(renameOrganisationHandler(opts.Tenancy)))
+		mux.Handle("GET /api/organisations/{organisation}/people",
+			RequireActor(organisationPeopleHandler(opts.Tenancy)))
+		mux.HandleFunc("/api/organisations/{organisation}/people", MethodNotAllowed)
+
 		mux.Handle("GET /api/organisations/{organisation}/projects",
 			RequireActor(listProjectsHandler(opts.Tenancy)))
 		mux.Handle("POST /api/organisations/{organisation}/projects",
@@ -111,6 +119,11 @@ func New(opts Options) http.Handler {
 		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}/people/{person}",
 			RequireActor(removePersonHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people/{person}", MethodNotAllowed)
+	}
+
+	if opts.WhoAmI != nil {
+		mux.Handle("GET /api/whoami", RequireActor(whoAmIHandler(opts.WhoAmI)))
+		mux.HandleFunc("/api/whoami", MethodNotAllowed)
 	}
 
 	if opts.Administration != nil {

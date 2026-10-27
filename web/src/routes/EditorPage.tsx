@@ -7,11 +7,13 @@ import { demoProjects, demoViewer } from "../demo/content";
 import { EditorShell, type EditorLayout } from "../shells/EditorShell";
 import { PhoneShell } from "../shells/PhoneShell";
 import { AssistantSlot } from "../shells/ProjectShell";
+import { useHere } from "../lib/whoami";
 import { useIsPhone } from "../shells/useIsPhone";
 import { PageEditor } from "./PageEditor";
 import { Preview } from "./Preview";
 
-export function EditorPage({ organisation }: { organisation: string }) {
+export function EditorPage() {
+  const { organisation } = useHere();
   const { project: slug, "*": page = "" } = useParams();
   const project =
     demoProjects.find((candidate) => candidate.slug === slug) ??

@@ -13,14 +13,14 @@ test("work done outside ChatCMS arrives", async ({ signedIn: page, chatcms }, te
   });
 
   await test.step("ChatCMS brings it in and says whose it was", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/sync`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/sync`);
     await page.getByRole("button", { name: "Check for updates" }).click();
 
     await expect(page.getByText(/Joris updated this site/)).toBeVisible({ timeout: 60_000 });
   });
 
   await test.step("the page is there to edit", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/content`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/content`);
     await expect(page.getByRole("button", { name: "From elsewhere", exact: true })).toBeVisible();
   });
 

@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PageEditor } from "../PageEditor";
 
@@ -63,11 +64,11 @@ function server(sent?: (body: unknown) => void, answer: unknown = aPage) {
 
 function renderEditor() {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/content/home"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/content/home"]}>
       <Routes>
-        <Route path="/p/:project/content/*" element={<PageEditor organisation="technative" />} />
+        <Route path="/o/:organisation/p/:project/content/*" element={<PageEditor organisation="technative" />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

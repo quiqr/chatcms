@@ -28,10 +28,14 @@ test("an administrator starts an organisation and somebody is invited to it", as
   });
 
   await test.step("the administrator is not in it", async () => {
-    // An organisation they started but do not belong to is not among their
-    // own projects, because administering is not membership.
-    await page.goto(`${chatcms.url}/projects`);
-    await expect(page.getByText("Bakkerij Zuid")).toHaveCount(0);
+    // They can see it, because administering is for managing organisations.
+    // They are not one of its people, because administering is not
+    // membership.
+    await page.goto(`${chatcms.url}/o/bakkerij-zuid/settings`);
+
+    await expect(page.getByRole("heading", { name: "Who is in it" })).toBeVisible();
+    await expect(page.getByText("admin@example.org")).toHaveCount(0);
+    await expect(page.getByText("owner@example.org")).toBeVisible();
   });
 
   await worksOnAPhone(page, testInfo);
@@ -65,14 +69,14 @@ test("a project is made and somebody invited to it as an editor", async ({
 
     const asking = page.getByRole("dialog", { name: "New project" });
     await asking.getByLabel("Name").fill("Studio Zuid");
-    await expect(asking).toContainText("/p/studio-zuid");
+    await expect(asking).toContainText("/o/technative/p/studio-zuid");
 
     await asking.getByRole("button", { name: /Make it and set it up/ }).click();
     await page.waitForURL(/\/p\/studio-zuid\/setup/);
   });
 
   await test.step("somebody is invited as an editor", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/people`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
 
     await page.getByLabel("Invite someone").fill("marieke@korenaar.example");
     await page.getByLabel("Role for the person you invite").selectOption("editor");

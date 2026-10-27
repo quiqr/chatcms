@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   publishNow,
   readReview,
@@ -197,7 +198,8 @@ function Trouble({ publish, onTryAgain }: { publish: Publish; onTryAgain: () => 
   );
 }
 
-export function PublishPage({ organisation }: { organisation: string }) {
+export function PublishPage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const [note, setNote] = useState("");
   const [publish, setPublish] = useState<Publish | null>(null);

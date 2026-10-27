@@ -330,3 +330,66 @@ func projectFrom(row store.Project) Project {
 func pgUUID(id uuid.UUID) pgtype.UUID {
 	return pgtype.UUID{Bytes: id, Valid: true}
 }
+
+// EveryOrganisation is all of them, which only an administrator is shown.
+func (s *Store) EveryOrganisation(ctx context.Context) ([]Organisation, error) {
+	rows, err := s.db.Queries.ListEveryOrganisation(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("reading the organisations failed: %w", err)
+	}
+
+	out := make([]Organisation, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, Organisation{
+			ID:   uuid.UUID(row.ID.Bytes),
+			Slug: row.Slug,
+			Name: row.Name,
+		})
+	}
+	return out, nil
+}
+
+// RenameOrganisation changes the name and leaves the address alone.
+func (s *Store) RenameOrganisation(ctx context.Context, organisationID uuid.UUID, name string) (Organisation, error) {
+	row, err := s.db.Queries.RenameOrganisation(ctx, store.RenameOrganisationParams{
+		ID:   pgUUID(organisationID),
+		Name: name,
+	})
+	if err != nil {
+		return Organisation{}, fmt.Errorf("renaming the organisation failed: %w", err)
+	}
+	return organisationFrom(row), nil
+}
+
+// OrganisationMember is somebody in an organisation. It is its own type
+// rather than Member, because what somebody holds on an organisation is not
+// the same thing as what they hold on a project, and one type for both would
+// say they were.
+type OrganisationMember struct {
+	PersonID    uuid.UUID
+	Email       string
+	DisplayName string
+	Role        policy.OrganisationRole
+	// StillToAccept says they have been invited and have not set a password.
+	StillToAccept bool
+}
+
+// OrganisationMembers is who belongs to one, and what each holds there.
+func (s *Store) OrganisationMembers(ctx context.Context, organisationID uuid.UUID) ([]OrganisationMember, error) {
+	rows, err := s.db.Queries.ListOrganisationMembers(ctx, pgUUID(organisationID))
+	if err != nil {
+		return nil, fmt.Errorf("reading who is in the organisation failed: %w", err)
+	}
+
+	out := make([]OrganisationMember, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, OrganisationMember{
+			PersonID:      uuid.UUID(row.PersonID.Bytes),
+			Email:         row.Email,
+			DisplayName:   row.DisplayName,
+			Role:          policy.OrganisationRole(row.Role),
+			StillToAccept: row.PasswordHash == nil,
+		})
+	}
+	return out, nil
+}

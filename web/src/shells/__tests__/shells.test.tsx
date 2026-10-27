@@ -8,18 +8,23 @@ import { EditorShell } from "../EditorShell";
 import { OrganisationShell } from "../OrganisationShell";
 import { PhoneShell } from "../PhoneShell";
 import { ProjectShell } from "../ProjectShell";
+import { Inside } from "../../routes/__tests__/here";
 import { canSeeSetup, canSeeTechnicalDetail } from "../roles";
 import { phoneWidth, useIsPhone } from "../useIsPhone";
 
 const project = demoProjects[0]!;
 
 function at(path: string, element: ReactNode) {
-  return render(<MemoryRouter initialEntries={[path]}>{element}</MemoryRouter>);
+  return render(
+    <Inside>
+      <MemoryRouter initialEntries={[path]}>{element}</MemoryRouter>
+    </Inside>,
+  );
 }
 
 describe("ProjectShell", () => {
   it("shows the site navigation", () => {
-    at("/p/korenaar/content", <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>);
+    at("/o/technative/p/korenaar/content", <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>);
 
     const navigation = screen.getByRole("complementary", { name: "Project navigation" });
     for (const label of ["Content", "Media", "Publish", "History"]) {
@@ -28,7 +33,7 @@ describe("ProjectShell", () => {
   });
 
   it("shows how much is waiting to be published", () => {
-    at("/p/korenaar/content", <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>);
+    at("/o/technative/p/korenaar/content", <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>);
 
     const publish = screen.getAllByRole("link", { name: /Publish/ });
     expect(publish.some((link) => link.textContent?.includes(String(project.unpublished)))).toBe(true);
@@ -36,7 +41,7 @@ describe("ProjectShell", () => {
 
   it("leaves setup out for an editor rather than showing it greyed out", () => {
     at(
-      "/p/korenaar/content",
+      "/o/technative/p/korenaar/content",
       <ProjectShell project={project} viewer={{ name: "Marieke", role: "editor" }} title="Content">
         body
       </ProjectShell>,
@@ -49,7 +54,7 @@ describe("ProjectShell", () => {
 
   it("gives the content the room and lets the navigation yield", () => {
     const { container } = at(
-      "/p/korenaar/content",
+      "/o/technative/p/korenaar/content",
       <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>,
     );
 
@@ -63,7 +68,7 @@ describe("ProjectShell", () => {
 
   it("is hidden at phone widths", () => {
     const { container } = at(
-      "/p/korenaar/content",
+      "/o/technative/p/korenaar/content",
       <ProjectShell project={project} viewer={demoViewer} title="Content">body</ProjectShell>,
     );
 
@@ -75,7 +80,7 @@ describe("ProjectShell", () => {
 
 describe("PhoneShell", () => {
   it("has a tab bar for the site sections", () => {
-    at("/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
+    at("/o/technative/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
 
     const tabs = screen.getByRole("navigation", { name: "Site sections" });
     for (const label of ["Content", "Media", "Publish", "History"]) {
@@ -84,14 +89,14 @@ describe("PhoneShell", () => {
   });
 
   it("keeps its bottom bar clear of the device", () => {
-    at("/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
+    at("/o/technative/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
 
     expect(screen.getByTestId("phone-tab-bar").className).toContain("pb-safe");
   });
 
   it("gives way to the editing actions while a page is being edited", () => {
     at(
-      "/p/korenaar/content/about",
+      "/o/technative/p/korenaar/content/about",
       <PhoneShell project={project} viewer={demoViewer} bottomBar={<button type="button">Publish</button>}>
         body
       </PhoneShell>,
@@ -102,7 +107,7 @@ describe("PhoneShell", () => {
   });
 
   it("is hidden above phone widths", () => {
-    const { container } = at("/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
+    const { container } = at("/o/technative/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
 
     expect(container.querySelector("[data-testid='phone-shell']")!.className).toContain("sm:hidden");
   });
@@ -125,7 +130,7 @@ describe("OrganisationShell", () => {
 describe("EditorShell", () => {
   function editor(layout: "form" | "split" | "preview" = "split") {
     return at(
-      "/p/korenaar/content/about",
+      "/o/technative/p/korenaar/content/about",
       <EditorShell
         project={project}
         breadcrumb="News / About us"
@@ -229,7 +234,7 @@ function renderHook<T>(use: () => T): { result: T } {
 
 describe("the phone frame and sideways scrolling", () => {
   it("clips sideways rather than letting the page move", () => {
-    at("/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
+    at("/o/technative/p/korenaar/content", <PhoneShell project={project} viewer={demoViewer}>body</PhoneShell>);
 
     const shell = screen.getByTestId("phone-shell");
     expect(shell.className).toContain("overflow-x-clip");

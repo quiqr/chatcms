@@ -8,6 +8,7 @@ import { Field } from "../components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "../components/ui/menu";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   changeRole,
   invitePerson,
@@ -52,7 +53,8 @@ function RoleSelect({
   );
 }
 
-export function PeoplePage({ organisation }: { organisation: string }) {
+export function PeoplePage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const [people, loadAgain] = useAsync(() => listPeople(organisation, project), [organisation, project]);
 

@@ -156,7 +156,6 @@ export function PageEditor({
           </Button>
         </div>
         <MediaPage
-          organisation={organisation}
           picking
           onUse={(image) => {
             choosing("/" + image.path.replace(/^static\//, ""));

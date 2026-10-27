@@ -96,6 +96,11 @@ var administersField = regexp.MustCompile(`\.Administers\b`)
 var allowedToNameAdministering = []string{
 	"internal/policy/",
 	"internal/tenancy/tenancy.go",
+	// Carries it only as a value it has been told, the same way it carries a
+	// role: the answer a screen is given says whether the person looking
+	// administers, so that the interface can leave out what it must. Nothing
+	// here decides from it.
+	"internal/httpapi/",
 }
 
 // generatedGo is code sqlc writes from the SQL. A column named in a struct it

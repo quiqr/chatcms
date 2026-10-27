@@ -49,3 +49,10 @@ RETURNING *;
 
 -- name: RemoveOrganisation :exec
 DELETE FROM organisations WHERE id = $1;
+
+-- name: ListOrganisationMembers :many
+SELECT m.person_id, m.role, p.email, p.display_name, p.password_hash
+FROM organisation_members m
+JOIN people p ON p.id = m.person_id
+WHERE m.organisation_id = $1
+ORDER BY lower(p.email);

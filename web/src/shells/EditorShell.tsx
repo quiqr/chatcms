@@ -5,6 +5,7 @@ import { NavLink } from "react-router";
 import { Button } from "../components/ui/button";
 import { Segmented } from "../components/ui/segmented";
 import { AssistantSlot } from "./ProjectShell";
+import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
 import type { DemoProject } from "../demo/content";
 
@@ -34,6 +35,7 @@ export function EditorShell({
   form,
   preview,
 }: EditorShellProps) {
+  const { organisation } = useHere();
   return (
     <div data-testid="editor-shell" className="flex min-h-dvh flex-wrap">
       <nav
@@ -44,7 +46,7 @@ export function EditorShell({
         {railEntries.map((entry) => (
           <NavLink
             key={entry.key}
-            to={`/p/${project.slug}/${entry.key}`}
+            to={`/o/${organisation}/p/${project.slug}/${entry.key}`}
             aria-label={entry.label}
             className="flex size-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
           >
@@ -56,7 +58,7 @@ export function EditorShell({
       <div className="flex min-w-0 shrink grow-[999] basis-[560px] flex-col">
         <header className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border bg-card px-6 py-3">
           <Button variant="ghost" size="iconCompact" asChild aria-label="Back to content">
-            <NavLink to={`/p/${project.slug}/content`}>
+            <NavLink to={`/o/${organisation}/p/${project.slug}/content`}>
               <ArrowLeft aria-hidden="true" className="size-4" />
             </NavLink>
           </Button>
@@ -75,7 +77,7 @@ export function EditorShell({
           />
           <AssistantSlot />
           <Button asChild count={project.unpublished}>
-            <NavLink to={`/p/${project.slug}/publish`}>Publish</NavLink>
+            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>Publish</NavLink>
           </Button>
         </header>
 

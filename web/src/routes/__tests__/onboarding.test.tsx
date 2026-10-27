@@ -1,7 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OnboardingPage } from "../OnboardingPage";
 
@@ -36,11 +37,11 @@ function server(overrides: Record<string, unknown> = {}) {
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/setup"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/setup"]}>
       <Routes>
-        <Route path="/p/:project/setup" element={<OnboardingPage organisation="technative" />} />
+        <Route path="/o/:organisation/p/:project/setup" element={<OnboardingPage />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

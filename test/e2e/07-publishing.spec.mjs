@@ -6,7 +6,7 @@ test("what changed is shown, and then it is published", async ({ signedIn: page,
   const project = chatcms.projectId();
   const before = chatcms.onTheRemote(project, "rev-parse", "refs/heads/main").trim();
 
-  await page.goto(`${chatcms.url}/p/korenaar/publish`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/publish`);
 
   await test.step("what changed is said as pages and fields", async () => {
     await expect(page.getByRole("heading", { name: /Ready to publish \d+ changes?/ })).toBeVisible();

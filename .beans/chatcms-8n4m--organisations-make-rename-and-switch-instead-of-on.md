@@ -1,11 +1,11 @@
 ---
 # chatcms-8n4m
 title: 'Organisations: make, rename and switch, instead of one hardcoded slug'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-26T16:45:44Z
-updated_at: 2026-10-26T21:01:51Z
+updated_at: 2026-10-26T23:06:22Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-rbdb

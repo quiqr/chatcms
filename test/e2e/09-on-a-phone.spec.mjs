@@ -8,11 +8,11 @@ import { test, expect, onAPhone, worksOnAPhone } from "./fixtures.mjs";
 
 const screens = [
   ["the projects", "/projects"],
-  ["the content browser", "/p/korenaar/content"],
-  ["the pictures", "/p/korenaar/media"],
-  ["the people", "/p/korenaar/people"],
-  ["setting a project up", "/p/studio-noord/setup"],
-  ["how the site stands", "/p/korenaar/sync"],
+  ["the content browser", "/o/technative/p/korenaar/content"],
+  ["the pictures", "/o/technative/p/korenaar/media"],
+  ["the people", "/o/technative/p/korenaar/people"],
+  ["setting a project up", "/o/technative/p/studio-noord/setup"],
+  ["how the site stands", "/o/technative/p/korenaar/sync"],
 ];
 
 for (const [what, where] of screens) {
@@ -32,7 +32,7 @@ for (const [what, where] of screens) {
 test("the editor works on a phone", async ({ signedIn: page, chatcms }, testInfo) => {
   test.skip(!onAPhone(testInfo), "this is about the phone layout");
 
-  await page.goto(`${chatcms.url}/p/korenaar/content/home`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/content/home`);
   await expect(page.getByRole("textbox", { name: "Page title" })).toBeVisible();
 
   await worksOnAPhone(page, testInfo);

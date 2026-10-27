@@ -10,7 +10,7 @@ test("an invitation arrives as a message, and the link in it sets a password", a
   const invited = "nieuw@korenaar.example";
 
   await test.step("somebody is invited", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/people`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
     await page.getByLabel("Invite someone").fill(invited);
     await page.getByLabel("Role for the person you invite").selectOption("editor");
     await page.getByRole("button", { name: /Send invite/i }).click();

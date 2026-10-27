@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MediaPage } from "../MediaPage";
 
@@ -29,11 +30,11 @@ function server(answers: Record<string, unknown>, sent?: (path: string, method: 
 
 function renderPage(props: { picking?: boolean; onUse?: (image: unknown) => void } = {}) {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/media"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/media"]}>
       <Routes>
-        <Route path="/p/:project/media" element={<MediaPage organisation="technative" {...props} />} />
+        <Route path="/o/:organisation/p/:project/media" element={<MediaPage {...props} />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

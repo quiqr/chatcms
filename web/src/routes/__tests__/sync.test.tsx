@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SyncPage } from "../SyncPage";
 
@@ -20,11 +21,11 @@ function server(answers: Record<string, unknown>, sent?: (path: string, body: un
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/sync"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/sync"]}>
       <Routes>
-        <Route path="/p/:project/sync" element={<SyncPage organisation="technative" />} />
+        <Route path="/o/:organisation/p/:project/sync" element={<SyncPage />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

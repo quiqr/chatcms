@@ -157,6 +157,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Assets:         webui.Handler(),
 		Auth:           server.auth,
 		Tenancy:        server.tenancy,
+		WhoAmI:         server.tenancy,
 		Administration: server.admin,
 		Onboarding:     server.onboarding,
 		Publish:        server.publish,

@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   addImage,
   describeImage,
@@ -100,14 +101,13 @@ function Details({
 }
 
 export function MediaPage({
-  organisation,
   picking = false,
   onUse,
 }: {
-  organisation: string;
   picking?: boolean;
   onUse?: (image: Image) => void;
 }) {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const [refresh, setRefresh] = useState(0);
   const [search, setSearch] = useState("");

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +11,29 @@ beforeEach(() => {
   // about addresses rather than about what any screen shows.
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ organisations: [], projects: [], people: [] }) }),
+    vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      // One answer that satisfies every screen, because this test is about
+      // addresses rather than about what any screen shows.
+      json: async () => ({
+        person: { id: "person-1", email: "joris@example.org", displayName: "Joris Bakker" },
+        administers: false,
+        organisations: [{ slug: "technative", name: "TechNative" }],
+        projects: [],
+        people: [],
+        sections: [],
+        images: [],
+        versions: [],
+        changes: [],
+        records: [],
+        fields: [],
+        body: "",
+        title: "",
+        section: "",
+        hasBody: false,
+      }),
+    }),
   );
 });
 
@@ -28,17 +50,24 @@ function at(path: string) {
 }
 
 describe("routes", () => {
-  it("gives every milestone screen an address that reaches it", () => {
+  it("gives every milestone screen an address that reaches it", async () => {
     for (const screen_ of screens) {
-      const path = pathFor(screen_.name);
+      const path = pathFor(screen_.name, "technative");
       const { unmount } = at(path);
 
-      expect(
-        document.querySelector(
-          "[data-testid='project-shell'], [data-testid='phone-shell'], [data-testid='organisation-shell'], [data-testid='editor-shell'], main",
-        ),
-        `${screen_.name} at ${path} renders nothing`,
-      ).not.toBeNull();
+      // The shell asks the server who is looking before it draws anything,
+      // so this waits for the screen rather than asserting against the wait.
+      await waitFor(
+        () => {
+          expect(
+            document.querySelector(
+              "[data-testid='project-shell'], [data-testid='phone-shell'], [data-testid='organisation-shell'], [data-testid='editor-shell'], main",
+            ),
+            `${screen_.name} at ${path} renders nothing`,
+          ).not.toBeNull();
+        },
+        { timeout: 3000 },
+      );
 
       expect(screen.queryByText("This address does not exist"), `${screen_.name} at ${path}`).toBeNull();
       unmount();
@@ -57,13 +86,13 @@ describe("routes", () => {
     expect(await screen.findByRole("heading", { name: "Projects" })).toBeInTheDocument();
   });
 
-  it("renders one frame rather than both, so a screen loads once", () => {
-    at("/p/korenaar/content");
+  it("renders one frame rather than both, so a screen loads once", async () => {
+    at("/o/technative/p/korenaar/content");
 
     // The test environment reports a wide window, so the project frame is the
     // one chosen. Which frame is chosen for which width is the shells' own
     // test; what matters here is that only one is mounted.
-    expect(screen.getByTestId("project-shell")).toBeInTheDocument();
+    expect(await screen.findByTestId("project-shell")).toBeInTheDocument();
     expect(screen.queryByTestId("phone-shell")).toBeNull();
   });
 });
@@ -76,6 +105,6 @@ describe("placeholder data", () => {
 
   it("refuses to name a screen that does not exist", () => {
     // @ts-expect-error the point of the test is the unknown name
-    expect(() => pathFor("not-a-screen")).toThrow();
+    expect(() => pathFor("not-a-screen", "technative")).toThrow();
   });
 });

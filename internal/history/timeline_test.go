@@ -180,3 +180,49 @@ func TestAnEmptyHistoryIsAnEmptyTimeline(t *testing.T) {
 		t.Errorf("groups = %v, want none", periods(timeline))
 	}
 }
+
+func TestAVersionWrittenInAnotherOffsetIsStillToday(t *testing.T) {
+	// Git records the offset the commit was made in. A change made ten
+	// minutes ago, just after midnight in that offset, must not be filed
+	// under Yesterday because the server reads its clock in another.
+	east := time.FixedZone("east", 2*60*60)
+	justAfterMidnight := time.Date(2026, 10, 27, 0, 25, 0, 0, east)
+
+	now := justAfterMidnight.In(time.UTC).Add(10 * time.Minute)
+
+	timeline := history.Build(
+		[]gitsync.Version{aVersionAt("just-now", justAfterMidnight, "A change")},
+		nil, "", 0, now,
+	)
+
+	if said := timeline.Groups[0].Period; said != "Today" {
+		t.Errorf("a change ten minutes old was filed under %q, want Today", said)
+	}
+}
+
+func TestADayOldChangeIsYesterdayWhateverTheOffset(t *testing.T) {
+	west := time.FixedZone("west", -7*60*60)
+	now := time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
+	theDayBefore := time.Date(2026, 10, 26, 5, 0, 0, 0, west)
+
+	timeline := history.Build(
+		[]gitsync.Version{aVersionAt("then", theDayBefore, "A change")},
+		nil, "", 0, now,
+	)
+
+	if said := timeline.Groups[0].Period; said != "Yesterday" {
+		t.Errorf("a change from the day before was filed under %q, want Yesterday", said)
+	}
+}
+
+// aVersionAt is one version at a given moment, which is all these two tests
+// are about.
+func aVersionAt(id string, when time.Time, title string) gitsync.Version {
+	return gitsync.Version{
+		ID:      id,
+		Time:    when,
+		Author:  gitsync.Identity{Name: "Somebody"},
+		Paths:   []string{"content/a.md"},
+		Message: title,
+	}
+}

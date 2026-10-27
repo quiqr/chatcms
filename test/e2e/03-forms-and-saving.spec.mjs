@@ -6,13 +6,13 @@ test("every kind of field is drawn, and saving changes only what was typed", asy
   // The seeded site has work waiting, so the published file is not what the
   // editor is editing. Publishing first makes the two the same, which is
   // what lets the comparison afterwards mean anything.
-  await page.goto(`${chatcms.url}/p/korenaar/publish`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/publish`);
   await page.getByRole("button", { name: /^Publish \d+ changes?$/ }).click();
   await expect(page.getByText("Your site is up to date")).toBeVisible({ timeout: 60_000 });
 
   const before = chatcms.onTheRemote(chatcms.projectId(), "cat-file", "blob", "refs/heads/main:content/_index.md");
 
-  await page.goto(`${chatcms.url}/p/korenaar/content/home`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/content/home`);
 
   await test.step("every kind of field the model declares is drawn", async () => {
     await expect(page.getByRole("textbox", { name: "Page title" })).toHaveValue("Korenaar Bakery");
@@ -41,7 +41,7 @@ test("every kind of field is drawn, and saving changes only what was typed", asy
   await test.step("the file differs only in what was typed", async () => {
     // Published so that the remote carries the save, then compared line for
     // line: anything else changing would be a change nobody asked for.
-    await page.goto(`${chatcms.url}/p/korenaar/publish`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/publish`);
     await page.getByRole("button", { name: /^Publish \d+ changes?$/ }).click();
     await expect(page.getByText("Your site is up to date")).toBeVisible({ timeout: 60_000 });
 

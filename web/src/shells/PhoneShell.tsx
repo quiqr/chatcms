@@ -4,6 +4,7 @@ import { NavLink } from "react-router";
 import { Avatar, Tile } from "../components/ui/avatar";
 import { cn } from "../lib/cn";
 import { siteNavigation } from "./navigation";
+import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
 import type { DemoProject, Role } from "../demo/content";
 
@@ -22,7 +23,8 @@ export function PhoneShell({
   bottomBar,
   children,
 }: PhoneShellProps) {
-  const tabs = siteNavigation(project.slug);
+  const { organisation } = useHere();
+  const tabs = siteNavigation(organisation, project.slug);
 
   return (
     <div

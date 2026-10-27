@@ -5,7 +5,7 @@ import { test, expect, worksOnAPhone } from "./fixtures.mjs";
 test("a site is brought in with a key of its own", async ({ signedIn: page, chatcms }, testInfo) => {
   // studio-noord is seeded with no site, which is what an implementer starts
   // from.
-  await page.goto(`${chatcms.url}/p/studio-noord/setup`);
+  await page.goto(`${chatcms.url}/o/technative/p/studio-noord/setup`);
 
   await test.step("the project has a key, and only the half that may be shown", async () => {
     await page.getByRole("button", { name: "Make a key" }).click();

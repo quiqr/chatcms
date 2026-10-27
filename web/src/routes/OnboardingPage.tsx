@@ -8,6 +8,7 @@ import { Field } from "../components/ui/field";
 import { RadioCards } from "../components/ui/radio-cards";
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   defaultPublishBranch,
   importSite,
@@ -84,7 +85,8 @@ function siteSummary(report: SiteReport) {
   return report.problem ?? "Something is missing.";
 }
 
-export function OnboardingPage({ organisation }: { organisation: string }) {
+export function OnboardingPage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
 
   const [site, reloadSite] = useAsync(() => readSite(organisation, project), [organisation, project]);

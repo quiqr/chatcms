@@ -25,10 +25,18 @@ export const test = base.extend({
   },
 
   // Somebody who administers the installation, which is who acceptance test 1
-  // begins with.
-  administering: async ({ page, chatcms }, use) => {
-    await signIn(page, chatcms, administrator);
-    await use(page);
+  // begins with. They get a browser of their own, so that a test can have
+  // both them and a customer signed in at once without one signing the other
+  // out.
+  administering: async ({ browser, chatcms }, use) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    try {
+      await signIn(page, chatcms, administrator);
+      await use(page);
+    } finally {
+      await context.close();
+    }
   },
 });
 

@@ -11,6 +11,8 @@ import (
 // it; the status codes and the wording live here.
 type TenancyService interface {
 	ListOrganisations(ctx context.Context, actor Actor) ([]OrganisationView, error)
+	Rename(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
+	OrganisationPeople(ctx context.Context, actor Actor, slug string) ([]MemberView, error)
 	CreateOrganisation(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	ListProjects(ctx context.Context, actor Actor, organisationSlug string) ([]ProjectView, error)
 	CreateProject(ctx context.Context, actor Actor, organisationSlug, slug, name, domain string) (ProjectView, error)
@@ -59,6 +61,10 @@ type MemberView struct {
 	DisplayName   string `json:"displayName"`
 	Role          string `json:"role"`
 	StillToAccept bool   `json:"stillToAccept"`
+}
+
+type renameOrganisationRequest struct {
+	Name string `json:"name"`
 }
 
 type createOrganisationRequest struct {
@@ -241,5 +247,33 @@ func removePersonHandler(service TenancyService) http.Handler {
 			return
 		}
 		WriteJSON(w, http.StatusNoContent, nil)
+	})
+}
+
+func renameOrganisationHandler(service TenancyService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body renameOrganisationRequest
+		if err := Decode(w, r, &body); err != nil {
+			WriteDecodeError(w, err)
+			return
+		}
+
+		renamed, err := service.Rename(r.Context(), ActorFrom(r.Context()), r.PathValue("organisation"), body.Name)
+		if err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, renamed)
+	})
+}
+
+func organisationPeopleHandler(service TenancyService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		people, err := service.OrganisationPeople(r.Context(), ActorFrom(r.Context()), r.PathValue("organisation"))
+		if err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]any{"people": people})
 	})
 }

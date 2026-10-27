@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   createPage,
   deletePage,
@@ -190,7 +191,8 @@ function Row({
   );
 }
 
-export function ContentPage({ organisation }: { organisation: string }) {
+export function ContentPage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const goTo = useNavigate();
   const [refresh, setRefresh] = useState(0);
@@ -212,7 +214,7 @@ export function ContentPage({ organisation }: { organisation: string }) {
     try {
       if (asking.what === "new") {
         const made = await createPage(organisation, project, asking.section, title);
-        goTo(`/p/${project}/content/${made.key}`);
+        goTo(`/o/${organisation}/p/${project}/content/${made.key}`);
         return;
       }
       if (asking.what === "delete") {
@@ -296,7 +298,7 @@ export function ContentPage({ organisation }: { organisation: string }) {
                     key={item.key}
                     item={item}
                     canChange={section.key !== "pages"}
-                    onOpen={() => goTo(`/p/${project}/content/${item.key}`)}
+                    onOpen={() => goTo(`/o/${organisation}/p/${project}/content/${item.key}`)}
                     onAsk={setAsking}
                   />
                 ))}

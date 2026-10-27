@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HistoryPage } from "../HistoryPage";
 
@@ -55,11 +56,11 @@ function server(answers: Record<string, unknown>, sent?: (path: string, body: un
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/history"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/history"]}>
       <Routes>
-        <Route path="/p/:project/history" element={<HistoryPage organisation="technative" />} />
+        <Route path="/o/:organisation/p/:project/history" element={<HistoryPage />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

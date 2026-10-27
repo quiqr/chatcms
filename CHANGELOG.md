@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- Organisations are real. The address says which one you are looking at, the
+  switcher moves between them, and an organisation screen shows its name, its
+  address and who is in it. Renaming one keeps its address, so links already
+  sent go on working. Until now every screen was told it was in one
+  particular organisation, so a second one would have shown the first one's
+  work.
 - Invitations and password resets are sent. Until now they were issued and
   written to the log, so nobody could be invited without an implementer
   pasting a link by hand. Sending goes through the job queue, so a slow mail

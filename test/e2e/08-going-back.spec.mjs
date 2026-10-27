@@ -6,7 +6,7 @@ test("a site goes back to an earlier version, and back again", async ({ signedIn
   const project = chatcms.projectId();
 
   await test.step("the site is published, so there is a version to go back from", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/publish`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/publish`);
     await page.getByLabel("What's in this update?").fill("Spring prices");
     await page.getByRole("button", { name: /^Publish \d+ changes?$/ }).click();
     await expect(page.getByText("Your site is up to date")).toBeVisible({ timeout: 60_000 });
@@ -16,7 +16,7 @@ test("a site goes back to an earlier version, and back again", async ({ signedIn
   });
 
   await test.step("the history reads in plain language, with one version live", async () => {
-    await page.goto(`${chatcms.url}/p/korenaar/history`);
+    await page.goto(`${chatcms.url}/o/technative/p/korenaar/history`);
 
     await expect(page.getByText("Live now")).toHaveCount(1);
     await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();

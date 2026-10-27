@@ -126,6 +126,29 @@ for (const path of sources(sourceDir)) {
 
 void MINIMUM_TOUCH;
 
+// No screen may name an organisation. One did, in eight places, and a second
+// organisation would therefore have opened the first one's data. The
+// organisation comes from the address now, and this keeps it that way.
+//
+// The demo scaffold is exempt: it exists to be obviously fake, says so in its
+// own name, and the screens that still read it are named in
+// docs/design/COMPARISON.md.
+const NAMED_ORGANISATIONS = ["technative"];
+
+for (const path of sources(sourceDir)) {
+  const name = relative(root, path);
+  if (name.includes("/demo/") || name.includes("__tests__")) continue;
+
+  const text = readFileSync(path, "utf8");
+  for (const named of NAMED_ORGANISATIONS) {
+    if (new RegExp(`["'\`]${named}["'\`]`, "i").test(text)) {
+      problems.push(
+        `${name} names the organisation "${named}"; it comes from the address, never from a constant`,
+      );
+    }
+  }
+}
+
 if (problems.length > 0) {
   console.error(`check-interface: ${problems.length} problem(s)`);
   for (const problem of problems) console.error(`  ${problem}`);

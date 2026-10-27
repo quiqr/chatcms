@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { Inside } from "./here";import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ContentPage } from "../ContentPage";
 
@@ -43,13 +44,13 @@ function server(answers: Record<string, unknown>, sent?: (path: string, method: 
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={["/p/korenaar/content"]}>
+    <Inside><MemoryRouter initialEntries={["/o/technative/p/korenaar/content"]}>
       <Routes>
-        <Route path="/p/:project/content" element={<ContentPage organisation="technative" />} />
-        <Route path="/p/:project/content/*" element={<p>the editor</p>} />
-        <Route path="/p/:project/setup" element={<p>the setup screen</p>} />
+        <Route path="/o/:organisation/p/:project/content" element={<ContentPage />} />
+        <Route path="/o/:organisation/p/:project/content/*" element={<p>the editor</p>} />
+        <Route path="/o/:organisation/p/:project/setup" element={<p>the setup screen</p>} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter></Inside>,
   );
 }
 

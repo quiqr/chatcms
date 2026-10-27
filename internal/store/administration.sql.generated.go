@@ -135,6 +135,48 @@ func (q *Queries) ListEveryOrganisation(ctx context.Context) ([]ListEveryOrganis
 	return items, nil
 }
 
+const listOrganisationMembers = `-- name: ListOrganisationMembers :many
+SELECT m.person_id, m.role, p.email, p.display_name, p.password_hash
+FROM organisation_members m
+JOIN people p ON p.id = m.person_id
+WHERE m.organisation_id = $1
+ORDER BY lower(p.email)
+`
+
+type ListOrganisationMembersRow struct {
+	PersonID     pgtype.UUID `json:"person_id"`
+	Role         string      `json:"role"`
+	Email        string      `json:"email"`
+	DisplayName  string      `json:"display_name"`
+	PasswordHash *string     `json:"password_hash"`
+}
+
+func (q *Queries) ListOrganisationMembers(ctx context.Context, organisationID pgtype.UUID) ([]ListOrganisationMembersRow, error) {
+	rows, err := q.db.Query(ctx, listOrganisationMembers, organisationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganisationMembersRow{}
+	for rows.Next() {
+		var i ListOrganisationMembersRow
+		if err := rows.Scan(
+			&i.PersonID,
+			&i.Role,
+			&i.Email,
+			&i.DisplayName,
+			&i.PasswordHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const makeAdministrator = `-- name: MakeAdministrator :one
 UPDATE people SET administers = TRUE, updated_at = now()
 WHERE id = $1

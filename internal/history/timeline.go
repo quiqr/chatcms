@@ -147,20 +147,24 @@ func periodOf(at, now time.Time) string {
 		return "Earlier"
 	}
 
+	// Both are read in one zone before their days are compared. A version
+	// carries the offset it was written in, so a change made ten minutes ago
+	// in a different offset would otherwise be filed under Yesterday.
+	here := at.In(now.Location())
 	today := startOfDay(now)
-	switch day := startOfDay(at); {
+	switch day := startOfDay(here); {
 	case !day.Before(today):
 		return "Today"
 	case !day.Before(today.AddDate(0, 0, -1)):
 		return "Yesterday"
 	case !day.Before(today.AddDate(0, 0, -7)):
 		return "Earlier this week"
-	case at.Year() == now.Year() && at.Month() == now.Month():
+	case here.Year() == now.Year() && here.Month() == now.Month():
 		return "Earlier this month"
-	case at.Year() == now.Year():
-		return at.Format("January")
+	case here.Year() == now.Year():
+		return here.Format("January")
 	default:
-		return at.Format("January 2006")
+		return here.Format("January 2006")
 	}
 }
 

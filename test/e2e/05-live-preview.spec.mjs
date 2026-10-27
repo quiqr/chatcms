@@ -2,7 +2,7 @@
 import { test, expect, onAPhone, saves, worksOnAPhone } from "./fixtures.mjs";
 
 test("a change shows in the preview within seconds", async ({ signedIn: page, chatcms }, testInfo) => {
-  await page.goto(`${chatcms.url}/p/korenaar/content/home`);
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/content/home`);
 
   // On a phone the form and the preview take turns, so each has to be asked
   // for. On a desk they are side by side and nothing needs pressing.

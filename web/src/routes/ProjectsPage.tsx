@@ -7,7 +7,8 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Tile } from "../components/ui/avatar";
 import { useAsync } from "../lib/useAsync";
-import { createProject, listOrganisations, listProjects, type Project } from "../lib/tenancy";
+import { createProject, listProjects, type Project } from "../lib/tenancy";
+import { useHere } from "../lib/whoami";
 import { OrganisationShell } from "../shells/OrganisationShell";
 
 function status(project: Project) {
@@ -20,7 +21,7 @@ function status(project: Project) {
 function ProjectCard({ organisation, project }: { organisation: string; project: Project }) {
   return (
     <NavLink
-      to={`/p/${project.slug}/content`}
+      to={`/o/${organisation}/p/${project.slug}/content`}
       className="flex min-h-11 flex-col gap-3 rounded-xl border border-border bg-card p-4 hover:border-input"
     >
       <span className="flex items-center gap-2.5">
@@ -91,7 +92,11 @@ function NewProject({
       )}
       <Field
         label="Name"
-        hint={slug ? `Its address here will be /p/${slug}` : "What the customer calls their site"}
+        hint={
+          slug
+            ? `Its address here will be /o/${organisation}/p/${slug}`
+            : "What the customer calls their site"
+        }
         type="text"
         value={name}
         autoFocus
@@ -122,10 +127,10 @@ export function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [making, setMaking] = useState(false);
 
-  const [organisations] = useAsync(listOrganisations, []);
-  const current =
-    fromAddress ??
-    (organisations.state === "ready" ? organisations.value.organisations[0]?.slug : undefined);
+  // Who is looking and what they may switch to is already known: asking
+  // again here would be a second answer that can disagree with the first.
+  const { who, organisation: here } = useHere();
+  const current = fromAddress ?? here;
 
   const [projects] = useAsync(
     () => (current ? listProjects(current) : Promise.resolve({ projects: [] })),
@@ -144,16 +149,12 @@ export function ProjectsPage() {
   }, [projects, search]);
 
   const organisationName =
-    organisations.state === "ready"
-      ? (organisations.value.organisations.find((one) => one.slug === current)?.name ??
-        current ??
-        "Your work")
-      : "Your work";
+    who.organisations.find((one) => one.slug === current)?.name ?? current ?? "Your work";
 
   return (
     <OrganisationShell
       organisation={{ name: organisationName }}
-      organisations={organisations.state === "ready" ? organisations.value.organisations : []}
+      organisations={who.organisations}
     >
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="flex-1 text-[28px] font-semibold tracking-tight">Projects</h1>
@@ -181,7 +182,7 @@ export function ProjectsPage() {
           organisation={current ?? ""}
           onMade={(slug) => {
             setMaking(false);
-            goTo(`/p/${slug}/setup`);
+            goTo(`/o/${current}/p/${slug}/setup`);
           }}
           onCancel={() => setMaking(false)}
         />

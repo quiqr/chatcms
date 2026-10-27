@@ -6,6 +6,7 @@ import { Avatar, Tile } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/cn";
+import { useHere } from "../lib/whoami";
 import { setupNavigation, siteNavigation, type NavEntry } from "./navigation";
 import { canSeeSetup } from "./roles";
 import { SyncIndicator, type SyncState } from "./SyncIndicator";
@@ -62,6 +63,7 @@ export function ProjectShell({
   syncState = "saved",
   children,
 }: ProjectShellProps) {
+  const { organisation } = useHere();
   return (
     <div data-testid="project-shell" className="hidden min-h-dvh flex-wrap sm:flex">
       <aside
@@ -86,9 +88,9 @@ export function ProjectShell({
           <ChevronsUpDown aria-hidden="true" className="size-4 shrink-0 text-subtle-foreground" />
         </NavLink>
 
-        <NavGroup label="Site" entries={siteNavigation(project.slug)} unpublished={project.unpublished} />
+        <NavGroup label="Site" entries={siteNavigation(organisation, project.slug)} unpublished={project.unpublished} />
         {canSeeSetup(viewer.role) && (
-          <NavGroup label="Setup" entries={setupNavigation(project.slug)} />
+          <NavGroup label="Setup" entries={setupNavigation(organisation, project.slug)} />
         )}
 
         <div className="mt-auto flex items-center gap-2 border-t border-border-subtle px-2 pt-3">
@@ -106,7 +108,7 @@ export function ProjectShell({
           <SyncIndicator state={syncState} />
           {actions}
           <Button asChild count={project.unpublished}>
-            <NavLink to={`/p/${project.slug}/publish`}>Publish</NavLink>
+            <NavLink to={`/o/${organisation}/p/${project.slug}/publish`}>Publish</NavLink>
           </Button>
         </header>
 

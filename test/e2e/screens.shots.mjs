@@ -13,14 +13,14 @@ const into = process.env.CHATCMS_SHOTS ?? "shots";
 
 const screens = [
   ["projects", "/projects"],
-  ["onboarding", "/p/studio-noord/setup"],
-  ["content", "/p/korenaar/content"],
-  ["editor", "/p/korenaar/content/home"],
-  ["media", "/p/korenaar/media"],
-  ["people", "/p/korenaar/people"],
-  ["history", "/p/korenaar/history"],
-  ["sync", "/p/korenaar/sync"],
-  ["publish", "/p/korenaar/publish"],
+  ["onboarding", "/o/technative/p/studio-noord/setup"],
+  ["content", "/o/technative/p/korenaar/content"],
+  ["editor", "/o/technative/p/korenaar/content/home"],
+  ["media", "/o/technative/p/korenaar/media"],
+  ["people", "/o/technative/p/korenaar/people"],
+  ["history", "/o/technative/p/korenaar/history"],
+  ["sync", "/o/technative/p/korenaar/sync"],
+  ["publish", "/o/technative/p/korenaar/publish"],
 ];
 
 async function capture(page, name, testInfo) {

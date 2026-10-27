@@ -3,6 +3,7 @@ package tenancy
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -238,7 +239,11 @@ func (s *Service) reach(ctx context.Context, who httpapi.Actor, organisationSlug
 	}
 
 	if _, member := actor.Organisations[organisation.ID.String()]; !member {
-		if !s.holdsAnyProjectIn(ctx, actor, organisation) {
+		// Somebody who administers the installation reaches every
+		// organisation, because managing them is what administering is for.
+		// It still grants nothing over what is inside them.
+		seesEvery := policy.Can(actor, policy.ActionSeeEveryOrganisation, policy.Resource{})
+		if !seesEvery && !s.holdsAnyProjectIn(ctx, actor, organisation) {
 			return Organisation{}, policy.Actor{}, httpapi.ErrMissing
 		}
 	}
@@ -344,4 +349,107 @@ func mustParse(id string) uuid.UUID {
 		return uuid.Nil
 	}
 	return parsed
+}
+
+// WhoAmI answers what a screen needs before it can draw its shell: who is
+// looking, whether they administer the installation, and which organisations
+// they may switch to.
+func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmIView, error) {
+	personID, err := uuid.Parse(who.ID)
+	if err != nil {
+		return httpapi.WhoAmIView{}, httpapi.ErrNotAllowed
+	}
+
+	actor, err := s.actor(ctx, who)
+	if err != nil {
+		return httpapi.WhoAmIView{}, err
+	}
+
+	organisations, err := s.store.OrganisationsFor(ctx, personID)
+	if err != nil {
+		return httpapi.WhoAmIView{}, err
+	}
+
+	// An administrator sees every organisation, because managing them is
+	// what administering is for. They are not thereby in any of them.
+	if policy.Can(actor, policy.ActionSeeEveryOrganisation, policy.Resource{}) {
+		organisations, err = s.store.EveryOrganisation(ctx)
+		if err != nil {
+			return httpapi.WhoAmIView{}, err
+		}
+	}
+
+	views := make([]httpapi.OrganisationView, 0, len(organisations))
+	for _, organisation := range organisations {
+		views = append(views, httpapi.OrganisationView{Slug: organisation.Slug, Name: organisation.Name})
+	}
+
+	return httpapi.WhoAmIView{
+		Person: httpapi.PersonView{
+			ID:          who.ID,
+			Email:       who.Email,
+			DisplayName: who.DisplayName,
+		},
+		Administers:   policy.Can(actor, policy.ActionAdministerInstallation, policy.Resource{}),
+		Organisations: views,
+	}, nil
+}
+
+// Rename gives an organisation a different name. Its address does not change
+// with it, because links already written would stop working.
+func (s *Service) Rename(ctx context.Context, who httpapi.Actor, slug, name string) (httpapi.OrganisationView, error) {
+	actor, err := s.actor(ctx, who)
+	if err != nil {
+		return httpapi.OrganisationView{}, err
+	}
+	if !policy.Can(actor, policy.ActionRenameOrganisation, policy.Resource{}) {
+		return httpapi.OrganisationView{}, httpapi.ErrNotAllowed
+	}
+
+	if strings.TrimSpace(name) == "" {
+		return httpapi.OrganisationView{}, &httpapi.RefusedError{Reason: "an organisation needs a name"}
+	}
+
+	organisation, err := s.store.OrganisationBySlug(ctx, slug)
+	if err != nil {
+		return httpapi.OrganisationView{}, err
+	}
+
+	renamed, err := s.store.RenameOrganisation(ctx, organisation.ID, strings.TrimSpace(name))
+	if err != nil {
+		return httpapi.OrganisationView{}, err
+	}
+	return httpapi.OrganisationView{Slug: renamed.Slug, Name: renamed.Name}, nil
+}
+
+// OrganisationPeople is who belongs to an organisation, which its owner
+// manages and anybody in it may see.
+func (s *Service) OrganisationPeople(ctx context.Context, who httpapi.Actor, slug string) ([]httpapi.MemberView, error) {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Seeing who else is here is part of belonging. Changing it is not.
+	if !policy.Can(actor, policy.ActionReadContent, policy.Organisation(organisation.ID.String())) &&
+		!policy.Can(actor, policy.ActionSeeEveryOrganisation, policy.Resource{}) {
+		return nil, httpapi.ErrMissing
+	}
+
+	people, err := s.store.OrganisationMembers(ctx, organisation.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	views := make([]httpapi.MemberView, 0, len(people))
+	for _, person := range people {
+		views = append(views, httpapi.MemberView{
+			PersonID:      person.PersonID.String(),
+			Email:         person.Email,
+			DisplayName:   person.DisplayName,
+			Role:          string(person.Role),
+			StillToAccept: person.StillToAccept,
+		})
+	}
+	return views, nil
 }

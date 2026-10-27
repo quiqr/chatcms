@@ -30,6 +30,16 @@ func (s *stubTenancy) ListOrganisations(context.Context, Actor) ([]OrganisationV
 	return s.organisations, s.err
 }
 
+func (s *stubTenancy) Rename(_ context.Context, _ Actor, slug, name string) (OrganisationView, error) {
+	s.record("rename")
+	return OrganisationView{Slug: slug, Name: name}, s.err
+}
+
+func (s *stubTenancy) OrganisationPeople(context.Context, Actor, string) ([]MemberView, error) {
+	s.record("organisation-people")
+	return nil, s.err
+}
+
 func (s *stubTenancy) CreateOrganisation(_ context.Context, _ Actor, slug, name string) (OrganisationView, error) {
 	s.record("create-organisation")
 	return OrganisationView{Slug: slug, Name: name}, s.err

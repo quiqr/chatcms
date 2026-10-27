@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { useHere } from "../lib/whoami";
 import {
   beforeGoingBack,
   goBackTo,
@@ -164,7 +165,8 @@ function Entry({
   );
 }
 
-export function HistoryPage({ organisation }: { organisation: string }) {
+export function HistoryPage() {
+  const { organisation } = useHere();
   const { project = "" } = useParams();
   const [refresh, setRefresh] = useState(0);
   const [going, setGoing] = useState<{ version: string; warning: GoBackWarning } | null>(null);
