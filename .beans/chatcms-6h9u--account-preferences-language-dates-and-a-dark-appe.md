@@ -1,10 +1,11 @@
 ---
 # chatcms-6h9u
 title: 'Account preferences: language, dates, and a dark appearance'
-status: in-progress
+status: completed
 type: epic
 priority: normal
 created_at: 2026-10-27T13:06:37Z
+openspec-link: openspec/changes/archive/2026-10-27-add-preferences
 updated_at: 2026-10-27T14:25:42Z
 parent: chatcms-8vem
 ---
@@ -59,3 +60,41 @@ what it is for.
 - `web/src/index.css`, the tokens.
 - `web/scripts/check-interface.mjs`, which already refuses a hand written
   colour.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-27-add-preferences`.
+
+### Done
+
+- **A dark appearance.** A second set of the same token names, which is what
+  naming every colour bought: no screen changed, because no screen knows a
+  colour. `check-interface` still refuses a hand written one in either.
+- **Following the device is the default and not a choice.** Somebody who
+  never opens the screen gets what their machine asks for. Choosing light
+  wins over a dark machine, which is why the attribute is tested as well as
+  the query.
+- **The choice is kept with the account**, so it is in force wherever
+  somebody signs in. An acceptance test chooses dark and then signs in from
+  a browser that has never been used.
+- **Applied before the first paint**, from what the browser remembered, so
+  nobody sees the wrong appearance flash. The account is still where it is
+  kept; that copy only saves the flash.
+- **One way to write a date.** Four screens each decided for themselves and
+  produced three formats. There is one function now, in the style the design
+  asks for, and `check-interface` fails when a screen writes its own.
+
+### Not done: Dutch
+
+The bean also asks for the interface in Dutch. That is `chatcms-31tm`.
+
+The mechanical half is 62 files and some 350 distinct strings. The other
+half is the product's voice in a language this repository has a style guide
+about, following copy rules the English already follows. Generating 350
+Dutch strings wholesale would produce text that reads like a machine wrote
+it, in a product whose argument is that it speaks plainly to people who are
+not technical. The extraction and the copy belong together, done by somebody
+who can judge the result.
+
+The preferences screen says "English, for now. Dutch is being worked on",
+rather than offering a switch that half works.
