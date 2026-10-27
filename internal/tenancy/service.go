@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -482,9 +483,21 @@ func (s *Service) OrganisationPeople(ctx context.Context, who httpapi.Actor, slu
 			DisplayName:   person.DisplayName,
 			Role:          string(person.Role),
 			StillToAccept: person.StillToAccept,
+			LastSeen:      s.lastSeen(ctx, person.PersonID),
 		})
 	}
 	return views, nil
+}
+
+// lastSeen is when somebody was last here, or nothing when they never were.
+// A screen that says "never" about somebody who has not accepted yet is
+// saying the same thing twice; it says so only for somebody who has.
+func (s *Service) lastSeen(ctx context.Context, personID uuid.UUID) *time.Time {
+	when, ever, err := s.inviter.auth.People().LastSeen(ctx, personID)
+	if err != nil || !ever {
+		return nil
+	}
+	return &when
 }
 
 // ChangeProject gives a project a different name and a different address to
@@ -517,4 +530,85 @@ func (s *Service) RemoveProject(ctx context.Context, who httpapi.Actor, organisa
 		return err
 	}
 	return s.store.RemoveProject(ctx, found.ID)
+}
+
+// InviteToOrganisation brings somebody into an organisation, which its owner
+// manages rather than having to ask whoever runs the service.
+func (s *Service) InviteToOrganisation(ctx context.Context, who httpapi.Actor, slug, email, role string) (httpapi.MemberView, error) {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return httpapi.MemberView{}, err
+	}
+	if !policy.Can(actor, policy.ActionManagePeople, policy.Organisation(organisation.ID.String())) {
+		return httpapi.MemberView{}, httpapi.ErrNotAllowed
+	}
+
+	invitation, err := s.inviter.InviteToOrganisation(ctx, organisation.ID, email,
+		policy.OrganisationRole(role))
+	if err != nil {
+		return httpapi.MemberView{}, refusal(err)
+	}
+
+	return httpapi.MemberView{
+		PersonID:      invitation.PersonID.String(),
+		Email:         invitation.Email,
+		Role:          string(invitation.Role),
+		StillToAccept: invitation.LinkIssued,
+	}, nil
+}
+
+// ChangeOrganisationRole changes what somebody holds in an organisation.
+func (s *Service) ChangeOrganisationRole(ctx context.Context, who httpapi.Actor, slug, personID, role string) error {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return err
+	}
+	if !policy.Can(actor, policy.ActionManagePeople, policy.Organisation(organisation.ID.String())) {
+		return httpapi.ErrNotAllowed
+	}
+
+	asked := policy.OrganisationRole(role)
+	if asked != policy.OrganisationOwner && asked != policy.OrganisationMember {
+		return &httpapi.RefusedError{Reason: "that is not a role an organisation has"}
+	}
+
+	person, err := uuid.Parse(personID)
+	if err != nil {
+		return httpapi.ErrMissing
+	}
+	return refusal(s.store.SetOrganisationRole(ctx, organisation.ID, person, asked))
+}
+
+// RemoveFromOrganisation takes somebody out of one.
+func (s *Service) RemoveFromOrganisation(ctx context.Context, who httpapi.Actor, slug, personID string) error {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return err
+	}
+	if !policy.Can(actor, policy.ActionManagePeople, policy.Organisation(organisation.ID.String())) {
+		return httpapi.ErrNotAllowed
+	}
+
+	person, err := uuid.Parse(personID)
+	if err != nil {
+		return httpapi.ErrMissing
+	}
+	return refusal(s.store.RemoveFromOrganisation(ctx, organisation.ID, person))
+}
+
+// SendTheInvitationAgain issues a new way in and stops the previous one.
+func (s *Service) SendTheInvitationAgain(ctx context.Context, who httpapi.Actor, slug, personID string) error {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return err
+	}
+	if !policy.Can(actor, policy.ActionManagePeople, policy.Organisation(organisation.ID.String())) {
+		return httpapi.ErrNotAllowed
+	}
+
+	person, err := uuid.Parse(personID)
+	if err != nil {
+		return httpapi.ErrMissing
+	}
+	return s.inviter.SendAgain(ctx, person)
 }

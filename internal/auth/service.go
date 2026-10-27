@@ -309,3 +309,9 @@ func (s *Service) ChangeOwnPassword(ctx context.Context, who httpapi.Actor, curr
 		mail.PasswordChanged(""))
 	return nil
 }
+
+// StopEveryInvitationFor makes every unused invitation for somebody useless,
+// which is what sending a new one has to do first.
+func (s *Service) StopEveryInvitationFor(ctx context.Context, personID uuid.UUID) error {
+	return s.credentials.StopEveryLinkFor(ctx, KindInvitation, personID)
+}

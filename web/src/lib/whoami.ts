@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import { get, put } from "./api";
+import { get, post, put, remove } from "./api";
 
 export type Person = {
   id: string;
@@ -20,6 +20,7 @@ export type OrganisationMember = {
   displayName: string;
   role: string;
   stillToAccept: boolean;
+  lastSeen?: string;
 };
 
 export function whoAmI() {
@@ -56,4 +57,20 @@ export function useHere() {
     throw new Error("useHere was called outside the provider that loads it");
   }
   return here;
+}
+
+export function inviteToOrganisation(organisation: string, email: string, role: string) {
+  return post<OrganisationMember>(`/api/organisations/${organisation}/people`, { email, role });
+}
+
+export function changeOrganisationRole(organisation: string, personId: string, role: string) {
+  return put<void>(`/api/organisations/${organisation}/people/${personId}`, { role });
+}
+
+export function removeFromOrganisation(organisation: string, personId: string) {
+  return remove<void>(`/api/organisations/${organisation}/people/${personId}`);
+}
+
+export function sendTheInvitationAgain(organisation: string, personId: string) {
+  return post<void>(`/api/organisations/${organisation}/people/${personId}/invitation`);
 }

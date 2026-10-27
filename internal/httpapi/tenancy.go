@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 )
 
 // TenancyService is what the HTTP layer needs in order to serve
@@ -13,6 +14,10 @@ type TenancyService interface {
 	ListOrganisations(ctx context.Context, actor Actor) ([]OrganisationView, error)
 	Rename(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	OrganisationPeople(ctx context.Context, actor Actor, slug string) ([]MemberView, error)
+	InviteToOrganisation(ctx context.Context, actor Actor, slug, email, role string) (MemberView, error)
+	ChangeOrganisationRole(ctx context.Context, actor Actor, slug, personID, role string) error
+	RemoveFromOrganisation(ctx context.Context, actor Actor, slug, personID string) error
+	SendTheInvitationAgain(ctx context.Context, actor Actor, slug, personID string) error
 	ChangeProject(ctx context.Context, actor Actor, organisation, project, name, domain string) (ProjectView, error)
 	RemoveProject(ctx context.Context, actor Actor, organisation, project string) error
 	CreateOrganisation(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
@@ -63,6 +68,9 @@ type MemberView struct {
 	DisplayName   string `json:"displayName"`
 	Role          string `json:"role"`
 	StillToAccept bool   `json:"stillToAccept"`
+	// LastSeen is when they were last here, and nothing when they never
+	// were.
+	LastSeen *time.Time `json:"lastSeen,omitempty"`
 }
 
 type changeProjectRequest struct {
@@ -312,4 +320,63 @@ func removeProjectHandler(service TenancyService) http.Handler {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+}
+
+func organisationPeopleHandlers(mux *http.ServeMux, service TenancyService) {
+	const people = "/api/organisations/{organisation}/people"
+
+	mux.Handle("POST "+people, RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body inviteRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+
+			invited, err := service.InviteToOrganisation(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), body.Email, body.Role)
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusCreated, invited)
+		})))
+
+	mux.Handle("PUT "+people+"/{person}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body changeRoleRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+
+			if err := service.ChangeOrganisationRole(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("person"), body.Role); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("DELETE "+people+"/{person}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.RemoveFromOrganisation(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("person")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("POST "+people+"/{person}/invitation", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.SendTheInvitationAgain(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("person")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.HandleFunc(people+"/{person}", MethodNotAllowed)
 }

@@ -693,3 +693,104 @@ func TestRemovingAProjectForgetsItAndNothingElse(t *testing.T) {
 		t.Errorf("changing a removed project error = %v, want ErrMissing", err)
 	}
 }
+
+func TestAnOrganisationOwnerInvitesToIt(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	h.organisation(t, "bakery", owner)
+
+	invited, err := h.service.InviteToOrganisation(t.Context(), h.who(owner), "bakery",
+		"marieke@korenaar.example", string(policy.OrganisationMember))
+	if err != nil {
+		t.Fatalf("InviteToOrganisation() error = %v, want nil", err)
+	}
+
+	// An address nobody held gets an account and a way in.
+	if !invited.StillToAccept {
+		t.Error("somebody with no account was not sent a way in")
+	}
+
+	people, err := h.service.OrganisationPeople(t.Context(), h.who(owner), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(people) != 2 {
+		t.Errorf("%d people in the organisation, want the owner and the invited", len(people))
+	}
+}
+
+func TestInvitingSomebodyWhoAlreadyHasAnAccountSendsNothing(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	h.person(t, "marieke@example.org")
+	h.organisation(t, "bakery", owner)
+
+	invited, err := h.service.InviteToOrganisation(t.Context(), h.who(owner), "bakery",
+		"marieke@example.org", string(policy.OrganisationMember))
+	if err != nil {
+		t.Fatalf("InviteToOrganisation() error = %v, want nil", err)
+	}
+	if invited.StillToAccept {
+		t.Error("somebody who already has a password was sent a way in they do not need")
+	}
+}
+
+func TestOnlyAnOwnerManagesAnOrganisationsPeople(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	organisation := h.organisation(t, "bakery", owner)
+
+	member := h.person(t, "member@example.org")
+	if err := h.store.SetOrganisationRole(t.Context(), organisation.ID, member.ID, policy.OrganisationMember); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.service.InviteToOrganisation(t.Context(), h.who(member), "bakery",
+		"somebody@example.org", string(policy.OrganisationMember)); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("inviting as a member error = %v, want ErrNotAllowed", err)
+	}
+
+	if err := h.service.ChangeOrganisationRole(t.Context(), h.who(member), "bakery",
+		owner.ID.String(), string(policy.OrganisationMember)); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("changing a role as a member error = %v, want ErrNotAllowed", err)
+	}
+
+	if err := h.service.RemoveFromOrganisation(t.Context(), h.who(member), "bakery",
+		owner.ID.String()); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("removing as a member error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestTheLastOwnerOfAnOrganisationStays(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	h.organisation(t, "bakery", owner)
+
+	err := h.service.RemoveFromOrganisation(t.Context(), h.who(owner), "bakery", owner.ID.String())
+
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("removing the last owner error = %v, want a refusal with a reason", err)
+	}
+}
+
+func TestAnInvitationIsSentAgainAndTheOldOneStops(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	h.organisation(t, "bakery", owner)
+
+	invited, err := h.service.InviteToOrganisation(t.Context(), h.who(owner), "bakery",
+		"marieke@korenaar.example", string(policy.OrganisationMember))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.service.SendTheInvitationAgain(t.Context(), h.who(owner), "bakery", invited.PersonID); err != nil {
+		t.Fatalf("SendTheInvitationAgain() error = %v, want nil", err)
+	}
+
+	// Somebody who has accepted has nothing to send again.
+	if err := h.service.SendTheInvitationAgain(t.Context(), h.who(owner), "bakery", owner.ID.String()); err == nil {
+		t.Error("sending again to somebody who has accepted was allowed")
+	}
+}

@@ -114,3 +114,13 @@ func (c *Credentials) Spend(ctx context.Context, token, password string, people 
 	}
 	return personFrom(personRow), nil
 }
+
+// StopEveryLinkFor spends every unused link of a kind. Sending an invitation
+// again makes the previous one useless rather than leaving two live ways
+// into one account.
+func (c *Credentials) StopEveryLinkFor(ctx context.Context, kind TokenKind, personID uuid.UUID) error {
+	return c.db.Queries.SpendEveryTokenFor(ctx, store.SpendEveryTokenForParams{
+		PersonID: pgUUID(personID),
+		Kind:     string(kind),
+	})
+}

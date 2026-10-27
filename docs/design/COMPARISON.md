@@ -34,7 +34,6 @@ Last read: 23 October 2026, against the fixture site the seed makes.
 | Where       | The difference                                                                | What it needs                                      |
 | ----------- | ------------------------------------------------------------------------------ | -------------------------------------------------- |
 | Projects    | No "Edited by … · N people" line, and the status is a word rather than a badge  | Both need the project's people and its last edit    |
-| People      | No "This project / Organisation" switch and no "Last active" column             | Both need the organisation's membership, which milestone 02 adds |
 | Media       | No filter by collection                                                         | Needs where each picture is used, which is read but not yet filtered on |
 | Editor      | No overflow menu on a phone                                                     | Nothing in it yet that a phone cannot reach another way |
 | Onboarding  | "Push to" and "What to push" are not labelled as groups                         | Two headings |

@@ -72,3 +72,9 @@ RETURNING *;
 SELECT max(last_seen_at)::timestamptz AS last_seen
 FROM sessions
 WHERE person_id = $1 AND revoked_at IS NULL;
+
+-- name: SpendEveryTokenFor :exec
+-- Sending an invitation again stops the previous way in: two live links to
+-- one account is one more than anybody needs.
+UPDATE credential_tokens SET spent_at = now()
+WHERE person_id = $1 AND kind = $2 AND spent_at IS NULL;

@@ -1,11 +1,11 @@
 ---
 # chatcms-9lu6
 title: 'Organisation people: the owner invites, changes and removes'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-27T01:05:55Z
-updated_at: 2026-10-27T01:05:55Z
+updated_at: 2026-10-27T13:32:13Z
 parent: chatcms-8vem
 ---
 

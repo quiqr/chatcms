@@ -306,6 +306,23 @@ func (q *Queries) SpendCredentialToken(ctx context.Context, id pgtype.UUID) erro
 	return err
 }
 
+const spendEveryTokenFor = `-- name: SpendEveryTokenFor :exec
+UPDATE credential_tokens SET spent_at = now()
+WHERE person_id = $1 AND kind = $2 AND spent_at IS NULL
+`
+
+type SpendEveryTokenForParams struct {
+	PersonID pgtype.UUID `json:"person_id"`
+	Kind     string      `json:"kind"`
+}
+
+// Sending an invitation again stops the previous way in: two live links to
+// one account is one more than anybody needs.
+func (q *Queries) SpendEveryTokenFor(ctx context.Context, arg SpendEveryTokenForParams) error {
+	_, err := q.db.Exec(ctx, spendEveryTokenFor, arg.PersonID, arg.Kind)
+	return err
+}
+
 const touchSession = `-- name: TouchSession :exec
 UPDATE sessions SET last_seen_at = now() WHERE id = $1
 `

@@ -40,6 +40,26 @@ func (s *stubTenancy) RemoveProject(context.Context, Actor, string, string) erro
 	return s.err
 }
 
+func (s *stubTenancy) InviteToOrganisation(_ context.Context, _ Actor, _, email, role string) (MemberView, error) {
+	s.record("invite-to-organisation")
+	return MemberView{Email: email, Role: role, StillToAccept: true}, s.err
+}
+
+func (s *stubTenancy) ChangeOrganisationRole(context.Context, Actor, string, string, string) error {
+	s.record("change-organisation-role")
+	return s.err
+}
+
+func (s *stubTenancy) RemoveFromOrganisation(context.Context, Actor, string, string) error {
+	s.record("remove-from-organisation")
+	return s.err
+}
+
+func (s *stubTenancy) SendTheInvitationAgain(context.Context, Actor, string, string) error {
+	s.record("send-again")
+	return s.err
+}
+
 func (s *stubTenancy) Rename(_ context.Context, _ Actor, slug, name string) (OrganisationView, error) {
 	s.record("rename")
 	return OrganisationView{Slug: slug, Name: name}, s.err
@@ -323,5 +343,134 @@ func TestRefusedErrorWithNoReason(t *testing.T) {
 	}
 	if recorder.Body.Len() == 0 {
 		t.Error("a refusal with no reason has no message at all")
+	}
+}
+
+func TestAnOrganisationsPeopleAreManagedThroughTheirOwnEndpoints(t *testing.T) {
+	// An organisation's people are not a project's people, and each of these
+	// is a door that must ask before it opens.
+	service := &stubTenancy{}
+	handler := withTenancy(service, true)
+
+	const people = "/api/organisations/bakery/people"
+
+	invited := signedInCall(t, handler, http.MethodPost, people,
+		map[string]any{"email": "marieke@example.org", "role": "member"})
+	if invited.Code != http.StatusCreated {
+		t.Errorf("inviting = %d, want 201: %s", invited.Code, invited.Body)
+	}
+
+	changed := signedInCall(t, handler, http.MethodPut, people+"/person-1",
+		map[string]any{"role": "owner"})
+	if changed.Code != http.StatusNoContent {
+		t.Errorf("changing a role = %d, want 204: %s", changed.Code, changed.Body)
+	}
+
+	again := signedInCall(t, handler, http.MethodPost, people+"/person-1/invitation", nil)
+	if again.Code != http.StatusNoContent {
+		t.Errorf("sending again = %d, want 204: %s", again.Code, again.Body)
+	}
+
+	removed := signedInCall(t, handler, http.MethodDelete, people+"/person-1", nil)
+	if removed.Code != http.StatusNoContent {
+		t.Errorf("removing = %d, want 204: %s", removed.Code, removed.Body)
+	}
+
+	want := []string{
+		"invite-to-organisation",
+		"change-organisation-role",
+		"send-again",
+		"remove-from-organisation",
+	}
+	if len(service.calls) != len(want) {
+		t.Fatalf("the service was asked %v, want %v", service.calls, want)
+	}
+	for i, each := range want {
+		if service.calls[i] != each {
+			t.Errorf("asked[%d] = %q, want %q", i, service.calls[i], each)
+		}
+	}
+}
+
+func TestEveryOrganisationPeopleEndpointNeedsSomebody(t *testing.T) {
+	handler := withTenancy(&stubTenancy{}, true)
+
+	for _, each := range []struct {
+		method, path string
+		body         any
+	}{
+		{http.MethodPost, "/api/organisations/bakery/people", map[string]any{"email": "a@b.c"}},
+		{http.MethodPut, "/api/organisations/bakery/people/person-1", map[string]any{"role": "owner"}},
+		{http.MethodDelete, "/api/organisations/bakery/people/person-1", nil},
+		{http.MethodPost, "/api/organisations/bakery/people/person-1/invitation", nil},
+	} {
+		recorder := call(t, handler, each.method, each.path, each.body)
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("%s %s = %d, want 401", each.method, each.path, recorder.Code)
+		}
+	}
+}
+
+func TestManagingAnOrganisationsPeopleReportsARefusal(t *testing.T) {
+	handler := withTenancy(&stubTenancy{err: ErrNotAllowed}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost, "/api/organisations/bakery/people",
+		map[string]any{"email": "sneaky@example.org", "role": "owner"})
+
+	if recorder.Code != http.StatusForbidden {
+		t.Errorf("status = %d, want 403: %s", recorder.Code, recorder.Body)
+	}
+}
+
+func TestTheLastOwnerRefusalReachesTheScreen(t *testing.T) {
+	handler := withTenancy(&stubTenancy{
+		err: &RefusedError{Reason: "an organisation needs an owner"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodDelete,
+		"/api/organisations/bakery/people/person-1", nil)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), "needs an owner") {
+		t.Errorf("body = %s, want it to say why", recorder.Body)
+	}
+}
+
+func TestRenamingAndReadingAnOrganisation(t *testing.T) {
+	service := &stubTenancy{}
+	handler := withTenancy(service, true)
+
+	renamed := signedInCall(t, handler, http.MethodPut, "/api/organisations/bakery",
+		map[string]any{"name": "Bakery BV"})
+	if renamed.Code != http.StatusOK {
+		t.Errorf("renaming = %d, want 200: %s", renamed.Code, renamed.Body)
+	}
+	if !strings.Contains(renamed.Body.String(), "Bakery BV") {
+		t.Errorf("body = %s, want the new name", renamed.Body)
+	}
+
+	listed := signedInCall(t, handler, http.MethodGet, "/api/organisations/bakery/people", nil)
+	if listed.Code != http.StatusOK {
+		t.Errorf("reading the people = %d, want 200", listed.Code)
+	}
+}
+
+func TestChangingAndRemovingAProjectThroughItsEndpoints(t *testing.T) {
+	service := &stubTenancy{}
+	handler := withTenancy(service, true)
+
+	const project = "/api/organisations/bakery/projects/korenaar"
+
+	changed := signedInCall(t, handler, http.MethodPut, project,
+		map[string]any{"name": "Korenaar BV", "domain": "korenaar.nl"})
+	if changed.Code != http.StatusOK {
+		t.Errorf("changing = %d, want 200: %s", changed.Code, changed.Body)
+	}
+
+	removed := signedInCall(t, handler, http.MethodDelete, project, nil)
+	if removed.Code != http.StatusNoContent {
+		t.Errorf("removing = %d, want 204: %s", removed.Code, removed.Body)
 	}
 }

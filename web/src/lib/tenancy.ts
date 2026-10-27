@@ -20,6 +20,8 @@ export type Member = {
   displayName: string;
   role: string;
   stillToAccept: boolean;
+  /** lastSeen is when they were last here, and absent when they never were. */
+  lastSeen?: string;
 };
 
 export const roles = ["owner", "implementer", "editor", "viewer"] as const;

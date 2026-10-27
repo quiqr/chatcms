@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- An organisation's own owner manages who belongs to it: inviting, changing
+  what somebody holds there, and taking them out, rather than asking whoever
+  runs the service every time. An invitation that was never accepted can be
+  sent again, which stops the previous link, or withdrawn. The people screen
+  shows both levels and when each person was last here.
 - There is a way out. Every screen now has a person menu with your account
   and signing out, rather than a link on one screen and a picture that did
   nothing on the others; from inside a site there was no way out at all.

@@ -102,6 +102,7 @@ func New(opts Options) http.Handler {
 			RequireActor(renameOrganisationHandler(opts.Tenancy)))
 		mux.Handle("GET /api/organisations/{organisation}/people",
 			RequireActor(organisationPeopleHandler(opts.Tenancy)))
+		organisationPeopleHandlers(mux, opts.Tenancy)
 		mux.HandleFunc("/api/organisations/{organisation}/people", MethodNotAllowed)
 
 		mux.Handle("GET /api/organisations/{organisation}/projects",
