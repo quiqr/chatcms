@@ -1,10 +1,11 @@
 ---
 # chatcms-k1hf
 title: Signing out, and a way to yourself from every screen
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-27T13:05:56Z
+openspec-link: openspec/changes/archive/2026-10-27-add-signing-out
 updated_at: 2026-10-27T13:08:03Z
 parent: chatcms-8vem
 ---
@@ -55,3 +56,21 @@ there is no way to yourself and no way out.
 - `internal/httpapi/router.go`, the endpoint that exists.
 - `internal/auth/session.go`, `Revoke` and `RevokeAll`.
 - `web/src/shells/`, the four shells.
+
+## Summary of Changes
+
+Shipped as `openspec/changes/archive/2026-10-27-add-signing-out`.
+
+- **One person menu, in all four shells.** The defect was that one shell had
+  a link and three drew a picture that did nothing, so a shared component and
+  a test that walks all four is what stops it coming back.
+- **Signing out says so.** A session that merely ran out ends on the same
+  screen, and the two must not look alike: one is something somebody did.
+- **Signing out everywhere** ends every session the account holds, the one
+  asking included, and touches nobody else's.
+
+### Two things it turned up
+
+The projects screen drew its shell without a viewer at all, so even after the
+menu existed it had nobody to show. And the menu's target was 32 px, the size
+of the picture rather than of a thumb; the phone rule caught it.
