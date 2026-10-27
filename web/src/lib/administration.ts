@@ -66,3 +66,18 @@ export function turnAccountOff(email: string) {
 export function turnAccountOn(email: string) {
   return post<void>(`/api/administration/accounts/${encodeURIComponent(email)}/on`);
 }
+
+export type OrganisationWhole = {
+  slug: string;
+  name: string;
+  people: { personId: string; email: string; displayName: string; role: string; stillToAccept: boolean }[];
+  projects: { slug: string; name: string; domain: string }[];
+};
+
+export function readOrganisation(organisation: string) {
+  return get<OrganisationWhole>(`/api/administration/organisations/${organisation}`);
+}
+
+export function removeOrganisation(organisation: string) {
+  return remove<void>(`/api/administration/organisations/${organisation}`);
+}

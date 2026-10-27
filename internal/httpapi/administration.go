@@ -23,6 +23,8 @@ type AdministrationService interface {
 	// refusal.
 	TurnAccountOff(ctx context.Context, who Actor, email string) error
 	TurnAccountOn(ctx context.Context, who Actor, email string) error
+	Organisation(ctx context.Context, who Actor, slug string) (OrganisationWholeView, error)
+	RemoveOrganisation(ctx context.Context, who Actor, slug string) error
 	MayAdminister(ctx context.Context, who Actor) bool
 }
 
@@ -40,6 +42,15 @@ type AdministratorView struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName"`
 	Yourself    bool   `json:"yourself"`
+}
+
+// OrganisationWholeView is one organisation with everything about it, which
+// is what an administrator opens.
+type OrganisationWholeView struct {
+	Slug     string        `json:"slug"`
+	Name     string        `json:"name"`
+	People   []MemberView  `json:"people"`
+	Projects []ProjectView `json:"projects"`
 }
 
 // OrganisationSummaryView is one organisation as an administrator sees it,
@@ -125,6 +136,29 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 			}
 			w.WriteHeader(http.StatusNoContent)
 		})))
+
+	mux.Handle("GET /api/administration/organisations/{organisation}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			whole, err := service.Organisation(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"))
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusOK, whole)
+		})))
+
+	mux.Handle("DELETE /api/administration/organisations/{organisation}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.RemoveOrganisation(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.HandleFunc("/api/administration/organisations/{organisation}", MethodNotAllowed)
 
 	mux.Handle("GET /api/administration/administrators", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {

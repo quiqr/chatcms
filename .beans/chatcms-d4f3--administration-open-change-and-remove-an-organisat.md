@@ -1,11 +1,11 @@
 ---
 # chatcms-d4f3
 title: 'Administration: open, change and remove an organisation'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-27T15:17:16Z
-updated_at: 2026-10-27T15:17:16Z
+updated_at: 2026-10-27T18:33:22Z
 parent: chatcms-8vem
 ---
 

@@ -417,3 +417,13 @@ func (s *Store) RemoveProject(ctx context.Context, projectID uuid.UUID) error {
 	}
 	return nil
 }
+
+// RemoveOrganisation forgets one. Nothing in git is touched: what is there
+// is the customer's, and ChatCMS forgetting an organisation must never be a
+// way to lose a site.
+func (s *Store) RemoveOrganisation(ctx context.Context, organisationID uuid.UUID) error {
+	if err := s.db.Queries.RemoveOrganisation(ctx, pgUUID(organisationID)); err != nil {
+		return fmt.Errorf("removing the organisation failed: %w", err)
+	}
+	return nil
+}

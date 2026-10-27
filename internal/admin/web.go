@@ -44,6 +44,14 @@ func (w *Web) StandDown(ctx context.Context, who httpapi.Actor, email string) er
 	return w.service.StandDown(ctx, who, email)
 }
 
+func (w *Web) Organisation(ctx context.Context, who httpapi.Actor, slug string) (httpapi.OrganisationWholeView, error) {
+	return w.service.Organisation(ctx, who, slug)
+}
+
+func (w *Web) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slug string) error {
+	return w.service.RemoveOrganisation(ctx, who, slug)
+}
+
 func (w *Web) TurnAccountOff(ctx context.Context, who httpapi.Actor, email string) error {
 	return w.service.TurnAccountOff(ctx, who, email)
 }

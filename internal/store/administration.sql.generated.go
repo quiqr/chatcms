@@ -257,6 +257,44 @@ func (q *Queries) PersonByEmail(ctx context.Context, email string) (Person, erro
 	return i, err
 }
 
+const projectsInOrganisation = `-- name: ProjectsInOrganisation :many
+SELECT id, slug, name, domain FROM projects
+WHERE organisation_id = $1
+ORDER BY lower(name)
+`
+
+type ProjectsInOrganisationRow struct {
+	ID     pgtype.UUID `json:"id"`
+	Slug   string      `json:"slug"`
+	Name   string      `json:"name"`
+	Domain string      `json:"domain"`
+}
+
+func (q *Queries) ProjectsInOrganisation(ctx context.Context, organisationID pgtype.UUID) ([]ProjectsInOrganisationRow, error) {
+	rows, err := q.db.Query(ctx, projectsInOrganisation, organisationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ProjectsInOrganisationRow{}
+	for rows.Next() {
+		var i ProjectsInOrganisationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Slug,
+			&i.Name,
+			&i.Domain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recordAdministration = `-- name: RecordAdministration :one
 INSERT INTO administration_records (person_id, person_said, did, subject, subject_said, detail)
 VALUES ($1, $2, $3, $4, $5, $6)

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NavLink } from "react-router";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -313,14 +314,18 @@ export function AdministrationPage() {
         {organisations.state === "ready" && (
           <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
             {organisations.value.organisations.map((organisation) => (
-              <div key={organisation.slug} className="rounded-xl border border-border bg-card p-4">
+              <NavLink
+                key={organisation.slug}
+                to={`/administration/o/${organisation.slug}`}
+                className="rounded-xl border border-border bg-card p-4 hover:border-input"
+              >
                 <p className="text-[15px] font-semibold">{organisation.name}</p>
                 <p className="text-[13px] text-subtle-foreground">/o/{organisation.slug}</p>
                 <p className="mt-2 text-[13px] text-subtle-foreground">
                   {organisation.projects} {organisation.projects === 1 ? "site" : "sites"} ·{" "}
                   {organisation.people} {organisation.people === 1 ? "person" : "people"}
                 </p>
-              </div>
+              </NavLink>
             ))}
 
             {organisations.value.organisations.length === 0 && (

@@ -58,6 +58,21 @@ func (s *stubAdministration) Organisations(context.Context, Actor) ([]Organisati
 	return []OrganisationSummaryView{{Slug: "bakery", Name: "Bakery", Projects: 2, People: 3}}, s.err
 }
 
+func (s *stubAdministration) Organisation(_ context.Context, _ Actor, slug string) (OrganisationWholeView, error) {
+	s.note("read " + slug)
+	return OrganisationWholeView{
+		Slug:     slug,
+		Name:     "Bakery",
+		People:   []MemberView{{Email: "owner@example.org", Role: "owner"}},
+		Projects: []ProjectView{{Slug: "korenaar", Name: "Korenaar Bakery"}},
+	}, s.err
+}
+
+func (s *stubAdministration) RemoveOrganisation(_ context.Context, _ Actor, slug string) error {
+	s.note("remove " + slug)
+	return s.err
+}
+
 func (s *stubAdministration) TurnAccountOff(_ context.Context, _ Actor, email string) error {
 	s.note("turn off " + email)
 	return s.err
@@ -104,6 +119,8 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodPost, "/api/administration/administrators", map[string]any{"email": "a@b.c"}},
 		{http.MethodDelete, "/api/administration/administrators/a@b.c", nil},
 		{http.MethodGet, "/api/administration/records", nil},
+		{http.MethodGet, "/api/administration/organisations/bakery", nil},
+		{http.MethodDelete, "/api/administration/organisations/bakery", nil},
 		{http.MethodPost, "/api/administration/accounts/a@b.c/off", nil},
 		{http.MethodPost, "/api/administration/accounts/a@b.c/on", nil},
 	} {
@@ -264,6 +281,54 @@ func TestTurningOffYourOwnAccountSaysWhyNot(t *testing.T) {
 	}
 	if !strings.Contains(recorder.Body.String(), "your own account") {
 		t.Errorf("body = %s, want it to say why", recorder.Body)
+	}
+}
+
+func TestAnOrganisationIsOpenedWhole(t *testing.T) {
+	handler := withAdministration(&stubAdministration{}, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet, "/api/administration/organisations/bakery", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+
+	// Its people and its projects come in the one answer, because opening
+	// an organisation is one question.
+	for _, want := range []string{"owner@example.org", "Korenaar Bakery"} {
+		if !strings.Contains(recorder.Body.String(), want) {
+			t.Errorf("body = %s, want it to carry %q", recorder.Body, want)
+		}
+	}
+}
+
+func TestAnOrganisationIsRemoved(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodDelete,
+		"/api/administration/organisations/bakery", nil)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) != 1 || service.asked[0] != "remove bakery" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestRemovingOneThatStillHoldsProjectsSaysWhatIsInTheWay(t *testing.T) {
+	handler := withAdministration(&stubAdministration{
+		err: &RefusedError{Reason: "this organisation still holds Korenaar Bakery; remove them first"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodDelete,
+		"/api/administration/organisations/bakery", nil)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), "Korenaar Bakery") {
+		t.Errorf("body = %s, want it to name what is in the way", recorder.Body)
 	}
 }
 

@@ -64,3 +64,8 @@ RETURNING *;
 
 -- name: RemoveProject :exec
 DELETE FROM projects WHERE id = $1;
+
+-- name: ProjectsInOrganisation :many
+SELECT id, slug, name, domain FROM projects
+WHERE organisation_id = $1
+ORDER BY lower(name);

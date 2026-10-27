@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Administering an organisation. Whoever runs the installation opens an
+  organisation from the administration screen and sees everything in it at
+  once: its name, who is in it with what role, and the sites it holds. The
+  name can be changed, people can be put in or taken out, and an organisation
+  with no sites left can be removed after a confirmation that says what stays.
+  One that still holds sites is not removed; the refusal names them. Nothing in
+  git is ever touched by any of this.
+
 - Editing. A page opens as a form built from the site's own Quiqr model, every
   field type is drawn, and what is typed is saved by itself with no Save
   button anywhere. Saving writes the file back byte for byte apart from what

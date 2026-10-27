@@ -6,12 +6,18 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/quiqr/chatcms/internal/admin"
 	"github.com/quiqr/chatcms/internal/auth"
+	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
 	"github.com/quiqr/chatcms/internal/store"
@@ -365,4 +371,195 @@ func mustParse(t *testing.T, id string) uuid.UUID {
 		t.Fatal(err)
 	}
 	return parsed
+}
+
+func TestAnOrganisationIsOpenedWithEverythingInIt(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	organisation, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.tenancy.CreateProject(t.Context(), organisation.ID, "shop", "The shop", "bakery.example"); err != nil {
+		t.Fatal(err)
+	}
+
+	whole, err := h.web.Organisation(t.Context(), boss, "bakery")
+	if err != nil {
+		t.Fatalf("Organisation() error = %v, want nil", err)
+	}
+	if whole.Name != "Bakery" || whole.Slug != "bakery" {
+		t.Errorf("Organisation() = %q at %q, want Bakery at bakery", whole.Name, whole.Slug)
+	}
+	if len(whole.People) != 1 || whole.People[0].Email != owner.Email {
+		t.Errorf("Organisation() people = %+v, want only %s", whole.People, owner.Email)
+	}
+	if len(whole.Projects) != 1 || whole.Projects[0].Name != "The shop" {
+		t.Errorf("Organisation() sites = %+v, want The shop", whole.Projects)
+	}
+}
+
+func TestOpeningOneNeedsAdministering(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	// A screen that asks for the sites of an empty organisation gets a list
+	// with nothing in it, not nothing at all.
+	empty, err := h.web.Organisation(t.Context(), boss, "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if empty.Projects == nil || empty.People == nil {
+		t.Errorf("Organisation() = %+v, want empty lists rather than none", empty)
+	}
+
+	if _, err := h.web.Organisation(t.Context(), owner, "bakery"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("Organisation() as its own owner error = %v, want ErrNotAllowed", err)
+	}
+	if err := h.web.RemoveOrganisation(t.Context(), owner, "bakery"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("RemoveOrganisation() as its own owner error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestOneThatStillHoldsSitesStays(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	organisation, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.tenancy.CreateProject(t.Context(), organisation.ID, "shop", "The shop", "bakery.example"); err != nil {
+		t.Fatal(err)
+	}
+
+	err = h.web.RemoveOrganisation(t.Context(), boss, "bakery")
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("RemoveOrganisation() with a site still in it error = %v, want a refusal", err)
+	}
+	if !strings.Contains(refused.Reason, "The shop") {
+		t.Errorf("the refusal says %q, want it to name The shop", refused.Reason)
+	}
+
+	if _, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery"); err != nil {
+		t.Errorf("after the refusal the organisation is gone: %v", err)
+	}
+}
+
+func TestAnEmptyOneIsRemovedAndTheGitRemoteStays(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	remote := filepath.Join(t.TempDir(), "remote.git")
+	cfg := gitsync.Config{GitBin: gitBinary(t)}
+	if err := gitsync.InitBareForDevelopment(t.Context(), cfg, remote); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	organisation, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := h.tenancy.CreateProject(t.Context(), organisation.ID, "shop", "The shop", "bakery.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.db.Queries.SetProjectSource(t.Context(), store.SetProjectSourceParams{
+		ID:            pgUUID(project.ID),
+		Remote:        remote,
+		SourceKind:    "repository",
+		SourceAddress: remote,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.tenancy.RemoveProject(t.Context(), project.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.web.RemoveOrganisation(t.Context(), boss, "bakery"); err != nil {
+		t.Fatalf("RemoveOrganisation() error = %v, want nil", err)
+	}
+
+	if _, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery"); err == nil {
+		t.Error("the organisation is still there after it was removed")
+	}
+	if _, err := h.web.Organisation(t.Context(), boss, "bakery"); err == nil {
+		t.Error("Organisation() still answers for one that was removed")
+	}
+
+	// What is in git is nobody's to throw away from here.
+	if _, err := os.Stat(filepath.Join(remote, "HEAD")); err != nil {
+		t.Errorf("the git remote was touched: %v", err)
+	}
+
+	seen, err := h.web.Organisations(t.Context(), boss)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seen) != 0 {
+		t.Errorf("%d organisations left, want 0", len(seen))
+	}
+}
+
+func TestRemovingAnOrganisationIsRecorded(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.web.RemoveOrganisation(t.Context(), boss, "bakery"); err != nil {
+		t.Fatal(err)
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, record := range records {
+		if record.To == "Bakery" && record.Did == string(admin.RemovedAnOrganisation) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("removing is not in the history: %+v", records)
+	}
+}
+
+func gitBinary(t *testing.T) string {
+	t.Helper()
+
+	if bin := os.Getenv("CHATCMS_GIT_BIN"); bin != "" {
+		return bin
+	}
+	found, err := exec.LookPath("git")
+	if err != nil {
+		t.Skipf("git is not available: %v", err)
+	}
+	return found
+}
+
+func pgUUID(id uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{Bytes: id, Valid: true}
 }

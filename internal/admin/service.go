@@ -18,6 +18,9 @@ import (
 // database.
 type Tenancy interface {
 	ActorFor(ctx context.Context, personID uuid.UUID) (policy.Actor, error)
+	OrganisationMembers(ctx context.Context, organisationID uuid.UUID) ([]tenancy.OrganisationMember, error)
+	ProjectsIn(ctx context.Context, organisationID uuid.UUID) ([]tenancy.Project, error)
+	RemoveOrganisation(ctx context.Context, organisationID uuid.UUID) error
 	CreateOrganisation(ctx context.Context, slug, name string, ownerID uuid.UUID) (tenancy.Organisation, error)
 	OrganisationBySlug(ctx context.Context, slug string) (tenancy.Organisation, error)
 	SetOrganisationRole(ctx context.Context, organisationID, personID uuid.UUID, role policy.OrganisationRole) error
@@ -272,4 +275,86 @@ func refusal(err error) error {
 		return &httpapi.RefusedError{Reason: "that address is already taken"}
 	}
 	return err
+}
+
+// Organisation is one organisation with everything about it, which is what
+// an administrator opens.
+func (s *Service) Organisation(ctx context.Context, who httpapi.Actor, slug string) (httpapi.OrganisationWholeView, error) {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionSeeEveryOrganisation); err != nil {
+		return httpapi.OrganisationWholeView{}, err
+	}
+
+	organisation, err := s.tenancy.OrganisationBySlug(ctx, slug)
+	if err != nil {
+		return httpapi.OrganisationWholeView{}, err
+	}
+
+	people, err := s.tenancy.OrganisationMembers(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationWholeView{}, err
+	}
+	projects, err := s.tenancy.ProjectsIn(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationWholeView{}, err
+	}
+
+	whole := httpapi.OrganisationWholeView{
+		Slug:     organisation.Slug,
+		Name:     organisation.Name,
+		People:   make([]httpapi.MemberView, 0, len(people)),
+		Projects: make([]httpapi.ProjectView, 0, len(projects)),
+	}
+	for _, person := range people {
+		whole.People = append(whole.People, httpapi.MemberView{
+			PersonID:      person.PersonID.String(),
+			Email:         person.Email,
+			DisplayName:   person.DisplayName,
+			Role:          string(person.Role),
+			StillToAccept: person.StillToAccept,
+		})
+	}
+	for _, project := range projects {
+		whole.Projects = append(whole.Projects, httpapi.ProjectView{
+			Slug:   project.Slug,
+			Name:   project.Name,
+			Domain: project.Domain,
+		})
+	}
+	return whole, nil
+}
+
+// RemoveOrganisation forgets one. It is refused while the organisation still
+// holds projects: removing one with sites in it would make several
+// customers' work unreachable through a single confirmation.
+func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slug string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionRemoveOrganisation); err != nil {
+		return err
+	}
+
+	organisation, err := s.tenancy.OrganisationBySlug(ctx, slug)
+	if err != nil {
+		return err
+	}
+
+	projects, err := s.tenancy.ProjectsIn(ctx, organisation.ID)
+	if err != nil {
+		return err
+	}
+	if len(projects) > 0 {
+		names := make([]string, 0, len(projects))
+		for _, project := range projects {
+			names = append(names, project.Name)
+		}
+		return &httpapi.RefusedError{
+			Reason: "this organisation still holds " + strings.Join(names, ", ") +
+				"; remove them first",
+		}
+	}
+
+	if err := s.tenancy.RemoveOrganisation(ctx, organisation.ID); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, RemovedAnOrganisation, organisation.ID.String(), organisation.Name, nil)
+	return nil
 }

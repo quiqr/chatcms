@@ -15,6 +15,7 @@ import { SyncPage } from "./routes/SyncPage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
 import { AccountPage } from "./routes/AccountPage";
+import { AdministeredOrganisationPage } from "./routes/AdministeredOrganisationPage";
 import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { PreferencesPage } from "./routes/PreferencesPage";
@@ -51,6 +52,12 @@ export function App() {
           <Route
             path="/administration"
             element={<OrganisationPage title="Administration" body={<AdministrationPage />} />}
+          />
+          <Route
+            path="/administration/o/:organisation"
+            element={
+              <OrganisationPage title="Organisation" body={<AdministeredOrganisationPage />} />
+            }
           />
         </Route>
 
