@@ -106,6 +106,10 @@ func New(opts Options) http.Handler {
 
 		mux.Handle("GET /api/organisations/{organisation}/projects/{project}",
 			RequireActor(getProjectHandler(opts.Tenancy)))
+		mux.Handle("PUT /api/organisations/{organisation}/projects/{project}",
+			RequireActor(changeProjectHandler(opts.Tenancy)))
+		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}",
+			RequireActor(removeProjectHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}", MethodNotAllowed)
 
 		mux.Handle("GET /api/organisations/{organisation}/projects/{project}/people",

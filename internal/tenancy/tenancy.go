@@ -393,3 +393,27 @@ func (s *Store) OrganisationMembers(ctx context.Context, organisationID uuid.UUI
 	}
 	return out, nil
 }
+
+// UpdateProject changes what a project is called and the address shown to
+// customers. Its own address is not among them: links already sent are
+// written against it.
+func (s *Store) UpdateProject(ctx context.Context, projectID uuid.UUID, name, domain string) (Project, error) {
+	row, err := s.db.Queries.UpdateProject(ctx, store.UpdateProjectParams{
+		ID:     pgUUID(projectID),
+		Name:   name,
+		Domain: domain,
+	})
+	if err != nil {
+		return Project{}, fmt.Errorf("changing the project failed: %w", err)
+	}
+	return projectFrom(row), nil
+}
+
+// RemoveProject forgets a project. What is in git is the customer's and is
+// not touched.
+func (s *Store) RemoveProject(ctx context.Context, projectID uuid.UUID) error {
+	if err := s.db.Queries.RemoveProject(ctx, pgUUID(projectID)); err != nil {
+		return fmt.Errorf("removing the project failed: %w", err)
+	}
+	return nil
+}

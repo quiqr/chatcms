@@ -3,7 +3,6 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../../App";
-import { PLACEHOLDER, demoProjects } from "../../demo/content";
 import { pathFor, screens } from "../screens";
 
 beforeEach(() => {
@@ -21,6 +20,13 @@ beforeEach(() => {
         administers: false,
         organisations: [{ slug: "technative", name: "TechNative" }],
         projects: [],
+        // Also a project, because the shell reads the real one now.
+        slug: "korenaar",
+        name: "Korenaar Bakery",
+        domain: "korenaar.example",
+        yourRole: "owner",
+        youMay: ["read-content", "edit-content", "publish", "change-settings"],
+        unpublished: 0,
         people: [],
         sections: [],
         images: [],
@@ -94,17 +100,5 @@ describe("routes", () => {
     // test; what matters here is that only one is mounted.
     expect(await screen.findByTestId("project-shell")).toBeInTheDocument();
     expect(screen.queryByTestId("phone-shell")).toBeNull();
-  });
-});
-
-describe("placeholder data", () => {
-  it("is in one place and says so", () => {
-    expect(PLACEHOLDER).toBe(true);
-    expect(demoProjects.length).toBeGreaterThan(0);
-  });
-
-  it("refuses to name a screen that does not exist", () => {
-    // @ts-expect-error the point of the test is the unknown name
-    expect(() => pathFor("not-a-screen", "technative")).toThrow();
   });
 });

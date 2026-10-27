@@ -34,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- Project settings. What setting a project up decided once can be changed
+  afterwards: what it is called, where its site lives, and how it is
+  published, using the same panels the setup screen uses rather than copies
+  of them. A project can be removed, with a confirmation that says plainly
+  that the site itself is not touched.
+- The count on the Publish button is the real one. It was never filled in by
+  the server and the screens showed a fixed number from the scaffold, so it
+  could disagree with the publish screen beside it. Both now read one answer.
 - Organisations are real. The address says which one you are looking at, the
   switcher moves between them, and an organisation screen shows its name, its
   address and who is in it. Renaming one keeps its address, so links already

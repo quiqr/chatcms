@@ -1,25 +1,19 @@
-import { Check, Copy } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router";
 
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
-import { RadioCards } from "../components/ui/radio-cards";
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
+import { KeyPanel, PublishingPanel } from "./setup/Panels";
 import { useHere } from "../lib/whoami";
 import {
-  defaultPublishBranch,
   importSite,
-  makeKey,
   readKey,
   readPublishing,
   readSite,
-  setPublishing,
-  testConnection,
-  type Connection,
-  type Publishing,
   type SiteReport,
 } from "../lib/tenancy";
 
@@ -90,8 +84,9 @@ export function OnboardingPage() {
   const { project = "" } = useParams();
 
   const [site, reloadSite] = useAsync(() => readSite(organisation, project), [organisation, project]);
-  const [key, reloadKey] = useAsync(() => readKey(organisation, project), [organisation, project]);
-  const [publishing, reloadPublishing] = useAsync(
+  // Read here only to say which step is done; the panels load their own.
+  const [key] = useAsync(() => readKey(organisation, project), [organisation, project]);
+  const [publishing] = useAsync(
     () => readPublishing(organisation, project),
     [organisation, project],
   );
@@ -100,8 +95,6 @@ export function OnboardingPage() {
   const [address, setAddress] = useState("");
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
-  const [connection, setConnection] = useState<Connection | null>(null);
-  const [copied, setCopied] = useState(false);
 
   async function run(what: () => Promise<unknown>) {
     setProblem("");
@@ -125,9 +118,6 @@ export function OnboardingPage() {
     { key: "publishing", label: "How it is published", done: publishing.state === "ready" },
     { key: "people", label: "Invite people", done: false },
   ];
-
-  const settings: Publishing =
-    publishing.state === "ready" ? publishing.value : { to: "main-line", form: "source" };
 
   return (
     <div className="flex flex-wrap items-start gap-6">
@@ -192,117 +182,13 @@ export function OnboardingPage() {
         </Section>
 
         <Section title="Key for the git host" active={current === "key"}>
-          <p className="text-[15px] text-muted-foreground">
-            {key.state === "ready" ? key.value.advice : "Looking..."}
-          </p>
-
-          {hasKey && key.state === "ready" && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-border bg-muted px-3 py-2 font-mono text-xs">
-                {key.value.publicKey}
-              </code>
-              <Button
-                variant="outline"
-                size="compact"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(key.value.publicKey);
-                  setCopied(true);
-                }}
-              >
-                <Copy aria-hidden="true" className="size-4" />
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-          )}
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="compact"
-              disabled={busy}
-              onClick={() => void run(async () => {
-                await makeKey(organisation, project);
-                reloadKey();
-              })}
-            >
-              {hasKey ? "Make a new key" : "Make a key"}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="compact"
-              disabled={busy}
-              onClick={() => void run(async () => {
-                setConnection(await testConnection(organisation, project));
-              })}
-            >
-              Test the connection
-            </Button>
-          </div>
-
-          {connection && (
-            <p
-              role="status"
-              className={
-                "mt-3 rounded-md px-3 py-2 text-sm " +
-                (connection.good
-                  ? "bg-success-soft text-success-foreground"
-                  : "bg-warning-soft text-warning-foreground")
-              }
-            >
-              {connection.message}
-            </p>
-          )}
+          <KeyPanel organisation={organisation} project={project} onTrouble={setProblem} />
         </Section>
 
         <Section title="How it is published" active={current === "publishing"}>
-          <RadioCards
-            label="Where to publish"
-            value={settings.to}
-            onValueChange={(to) =>
-              void run(async () => {
-                await setPublishing(organisation, project, {
-                  ...settings,
-                  to: to as Publishing["to"],
-                  branch: to === "its-own-line" ? (settings.branch ?? defaultPublishBranch) : undefined,
-                });
-                reloadPublishing();
-              })
-            }
-            options={[
-              { value: "main-line", title: "The site's main line", description: "Work goes straight to where the site lives." },
-              {
-                value: "its-own-line",
-                title: "A line of its own",
-                description: `Work goes to ${settings.branch ?? defaultPublishBranch}, for review before it goes live.`,
-              },
-            ]}
-          />
-
-          <div className="mt-4">
-            <RadioCards
-              label="What to publish"
-              value={settings.form}
-              onValueChange={(form) =>
-                void run(async () => {
-                  await setPublishing(organisation, project, {
-                    ...settings,
-                    form: form as Publishing["form"],
-                  });
-                  reloadPublishing();
-                })
-              }
-              options={[
-                { value: "source", title: "The site's files", description: "Your own pipeline builds and puts it live." },
-                { value: "built", title: "The built site", description: "ChatCMS builds it with Hugo and publishes the result." },
-              ]}
-            />
-          </div>
-
-          <p className="mt-3 text-[13px] text-subtle-foreground">
-            Steps of your own will live in quiqr/workflows. An editor for them comes later.
-          </p>
+          <PublishingPanel organisation={organisation} project={project} onTrouble={setProblem} />
         </Section>
+
       </div>
     </div>
   );

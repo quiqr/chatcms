@@ -13,6 +13,8 @@ type TenancyService interface {
 	ListOrganisations(ctx context.Context, actor Actor) ([]OrganisationView, error)
 	Rename(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	OrganisationPeople(ctx context.Context, actor Actor, slug string) ([]MemberView, error)
+	ChangeProject(ctx context.Context, actor Actor, organisation, project, name, domain string) (ProjectView, error)
+	RemoveProject(ctx context.Context, actor Actor, organisation, project string) error
 	CreateOrganisation(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	ListProjects(ctx context.Context, actor Actor, organisationSlug string) ([]ProjectView, error)
 	CreateProject(ctx context.Context, actor Actor, organisationSlug, slug, name, domain string) (ProjectView, error)
@@ -61,6 +63,11 @@ type MemberView struct {
 	DisplayName   string `json:"displayName"`
 	Role          string `json:"role"`
 	StillToAccept bool   `json:"stillToAccept"`
+}
+
+type changeProjectRequest struct {
+	Name   string `json:"name"`
+	Domain string `json:"domain"`
 }
 
 type renameOrganisationRequest struct {
@@ -275,5 +282,34 @@ func organisationPeopleHandler(service TenancyService) http.Handler {
 			return
 		}
 		WriteJSON(w, http.StatusOK, map[string]any{"people": people})
+	})
+}
+
+func changeProjectHandler(service TenancyService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body changeProjectRequest
+		if err := Decode(w, r, &body); err != nil {
+			WriteDecodeError(w, err)
+			return
+		}
+
+		changed, err := service.ChangeProject(r.Context(), ActorFrom(r.Context()),
+			r.PathValue("organisation"), r.PathValue("project"), body.Name, body.Domain)
+		if err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, changed)
+	})
+}
+
+func removeProjectHandler(service TenancyService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := service.RemoveProject(r.Context(), ActorFrom(r.Context()),
+			r.PathValue("organisation"), r.PathValue("project")); err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 }

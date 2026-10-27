@@ -16,6 +16,7 @@ import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
 import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
+import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { ForgotPasswordPage } from "./routes/ForgotPasswordPage";
 import { SetPasswordPage } from "./routes/SetPasswordPage";
@@ -50,7 +51,10 @@ export function App() {
 
           <Route path="p/:project/setup" element={<ProjectPage title="Set up a project" body={<OnboardingPage />} />} />
           <Route path="p/:project/people" element={<ProjectPage title="People & roles" body={<PeoplePage />} />} />
-          <Route path="p/:project/settings" element={<ProjectPage title="Project settings" />} />
+          <Route
+            path="p/:project/settings"
+            element={<ProjectPage title="Project settings" body={<ProjectSettingsPage />} />}
+          />
           <Route path="p/:project/workflows" element={<ProjectPage title="Workflows" />} />
           <Route path="p/:project/content" element={<ProjectPage title="Content" body={<ContentPage />} />} />
           <Route path="p/:project/content/*" element={<EditorPage />} />

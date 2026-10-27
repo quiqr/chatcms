@@ -1,11 +1,11 @@
 ---
 # chatcms-1r7q
 title: 'Project settings: change after setup what setup decided once'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:24Z
-updated_at: 2026-10-26T16:46:24Z
+updated_at: 2026-10-27T00:07:56Z
 parent: chatcms-8vem
 ---
 

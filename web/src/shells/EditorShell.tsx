@@ -7,12 +7,12 @@ import { Segmented } from "../components/ui/segmented";
 import { AssistantSlot } from "./ProjectShell";
 import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
-import type { DemoProject } from "../demo/content";
+import type { Project } from "../lib/tenancy";
 
 export type EditorLayout = "form" | "split" | "preview";
 
 export type EditorShellProps = {
-  project: DemoProject;
+  project: Project;
   breadcrumb: string;
   layout: EditorLayout;
   onLayoutChange: (layout: EditorLayout) => void;

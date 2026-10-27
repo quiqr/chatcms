@@ -3,7 +3,8 @@ import { useParams } from "react-router";
 
 import { Button } from "../components/ui/button";
 import { Segmented } from "../components/ui/segmented";
-import { demoProjects, demoViewer } from "../demo/content";
+import { readProject } from "../lib/tenancy";
+import { useAsync } from "../lib/useAsync";
 import { EditorShell, type EditorLayout } from "../shells/EditorShell";
 import { PhoneShell } from "../shells/PhoneShell";
 import { AssistantSlot } from "../shells/ProjectShell";
@@ -13,16 +14,20 @@ import { PageEditor } from "./PageEditor";
 import { Preview } from "./Preview";
 
 export function EditorPage() {
-  const { organisation } = useHere();
+  const { organisation, who } = useHere();
   const { project: slug, "*": page = "" } = useParams();
-  const project =
-    demoProjects.find((candidate) => candidate.slug === slug) ??
-    demoProjects[0]!;
+  const [loaded] = useAsync(() => readProject(organisation, slug ?? ""), [organisation, slug]);
   const [layout, setLayout] = useState<EditorLayout>("split");
   const [saves, setSaves] = useState(0);
   const [showing, setShowing] = useState<"edit" | "preview">("edit");
   const [opened, setOpened] = useState<{ title: string; section: string } | null>(null);
   const onAPhone = useIsPhone();
+
+  if (loaded.state !== "ready") {
+    return <p className="p-6 text-[15px] text-muted-foreground">Looking...</p>;
+  }
+
+  const project = loaded.value;
 
   if (!onAPhone) {
     return (
@@ -49,7 +54,7 @@ export function EditorPage() {
   return (
     <PhoneShell
       project={project}
-      viewer={demoViewer}
+      viewer={{ name: who.person.displayName || who.person.email, role: project.yourRole }}
       bottomBar={
         <>
           <AssistantSlot />

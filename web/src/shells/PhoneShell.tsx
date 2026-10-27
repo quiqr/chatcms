@@ -6,11 +6,11 @@ import { cn } from "../lib/cn";
 import { siteNavigation } from "./navigation";
 import { useHere } from "../lib/whoami";
 import { SyncIndicator } from "./SyncIndicator";
-import type { DemoProject, Role } from "../demo/content";
+import type { Project } from "../lib/tenancy";
 
 export type PhoneShellProps = {
-  project: DemoProject;
-  viewer: { name: string; role: Role };
+  project: Project;
+  viewer: { name: string; role: string };
   chips?: ReactNode;
   bottomBar?: ReactNode;
   children: ReactNode;

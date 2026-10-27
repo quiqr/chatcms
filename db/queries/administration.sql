@@ -56,3 +56,11 @@ FROM organisation_members m
 JOIN people p ON p.id = m.person_id
 WHERE m.organisation_id = $1
 ORDER BY lower(p.email);
+
+-- name: UpdateProject :one
+UPDATE projects SET name = $2, domain = $3, updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: RemoveProject :exec
+DELETE FROM projects WHERE id = $1;

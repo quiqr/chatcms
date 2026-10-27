@@ -17,6 +17,34 @@ import (
 type Service struct {
 	store   *Store
 	inviter *Inviter
+	// waiting answers how much is waiting to be published. It is injected
+	// because tenancy is about who may reach what, and opening a site to
+	// count versions is somebody else's job. Without it the count is zero,
+	// which is what a project with no site has.
+	waiting Waiting
+}
+
+// Waiting is how much of a project is waiting to go out. One source, so that
+// the number on a button and the number on the publish screen cannot
+// disagree, which is how they came to.
+type Waiting interface {
+	UnpublishedIn(ctx context.Context, projectID string) (int, error)
+}
+
+// KnowsWhatIsWaiting gives the service somewhere to ask.
+func (s *Service) KnowsWhatIsWaiting(waiting Waiting) { s.waiting = waiting }
+
+func (s *Service) unpublishedIn(ctx context.Context, project Project) int {
+	if s.waiting == nil {
+		return 0
+	}
+	count, err := s.waiting.UnpublishedIn(ctx, project.ID.String())
+	if err != nil {
+		// A site that cannot be read is not a reason to refuse the screen
+		// that lists it; the publish screen says what is wrong.
+		return 0
+	}
+	return count
 }
 
 func NewService(store *Store, service *auth.Service) *Service {
@@ -96,7 +124,9 @@ func (s *Service) ListProjects(ctx context.Context, who httpapi.Actor, organisat
 		if !policy.Can(actor, policy.ActionReadContent, resource) {
 			continue
 		}
-		views = append(views, projectView(project, actor, resource))
+		view := projectView(project, actor, resource)
+		view.Unpublished = s.unpublishedIn(ctx, project)
+		views = append(views, view)
 	}
 	return views, nil
 }
@@ -135,7 +165,10 @@ func (s *Service) GetProject(ctx context.Context, who httpapi.Actor, organisatio
 	if err != nil {
 		return httpapi.ProjectView{}, err
 	}
-	return projectView(project, actor, resource), nil
+
+	view := projectView(project, actor, resource)
+	view.Unpublished = s.unpublishedIn(ctx, project)
+	return view, nil
 }
 
 func (s *Service) ListPeople(ctx context.Context, who httpapi.Actor, organisationSlug, projectSlug string) ([]httpapi.MemberView, error) {
@@ -452,4 +485,36 @@ func (s *Service) OrganisationPeople(ctx context.Context, who httpapi.Actor, slu
 		})
 	}
 	return views, nil
+}
+
+// ChangeProject gives a project a different name and a different address to
+// show customers. Its own address is not changed: every link already sent is
+// written against it, and milestone 01 has no way to keep an old one working.
+func (s *Service) ChangeProject(ctx context.Context, who httpapi.Actor, organisation, project, name, domain string) (httpapi.ProjectView, error) {
+	found, actor, resource, err := s.reachProject(ctx, who, organisation, project, policy.ActionChangeSettings)
+	if err != nil {
+		return httpapi.ProjectView{}, err
+	}
+
+	if strings.TrimSpace(name) == "" {
+		return httpapi.ProjectView{}, &httpapi.RefusedError{Reason: "a project needs a name"}
+	}
+
+	changed, err := s.store.UpdateProject(ctx, found.ID, strings.TrimSpace(name), strings.TrimSpace(domain))
+	if err != nil {
+		return httpapi.ProjectView{}, err
+	}
+	view := projectView(changed, actor, resource)
+	view.Unpublished = s.unpublishedIn(ctx, changed)
+	return view, nil
+}
+
+// RemoveProject forgets a project. What is in git is the customer's, and
+// ChatCMS forgetting a project must never be a way to lose it.
+func (s *Service) RemoveProject(ctx context.Context, who httpapi.Actor, organisation, project string) error {
+	found, _, _, err := s.reachProject(ctx, who, organisation, project, policy.ActionDeleteProject)
+	if err != nil {
+		return err
+	}
+	return s.store.RemoveProject(ctx, found.ID)
 }

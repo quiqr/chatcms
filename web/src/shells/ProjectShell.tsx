@@ -10,11 +10,11 @@ import { useHere } from "../lib/whoami";
 import { setupNavigation, siteNavigation, type NavEntry } from "./navigation";
 import { canSeeSetup } from "./roles";
 import { SyncIndicator, type SyncState } from "./SyncIndicator";
-import type { DemoProject, Role } from "../demo/content";
+import type { Project } from "../lib/tenancy";
 
 export type ProjectShellProps = {
-  project: DemoProject;
-  viewer: { name: string; role: Role };
+  project: Project;
+  viewer: { name: string; role: string };
   title: ReactNode;
   actions?: ReactNode;
   syncState?: SyncState;

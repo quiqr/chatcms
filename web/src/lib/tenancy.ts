@@ -421,3 +421,19 @@ export function answerChanges(organisation: string, name: string, answers: Answe
 export function abandonChanges(organisation: string, name: string) {
   return post<Standing>(`${project(organisation, name)}/standing/abandon`);
 }
+
+export function readProject(organisation: string, project: string) {
+  return get<Project>(`/api/organisations/${organisation}/projects/${project}`);
+}
+
+export function changeProject(
+  organisation: string,
+  project: string,
+  body: { name: string; domain: string },
+) {
+  return put<Project>(`/api/organisations/${organisation}/projects/${project}`, body);
+}
+
+export function removeProject(organisation: string, project: string) {
+  return remove<void>(`/api/organisations/${organisation}/projects/${project}`);
+}

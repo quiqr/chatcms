@@ -288,6 +288,15 @@ func (q *Queries) RemoveOrganisation(ctx context.Context, id pgtype.UUID) error 
 	return err
 }
 
+const removeProject = `-- name: RemoveProject :exec
+DELETE FROM projects WHERE id = $1
+`
+
+func (q *Queries) RemoveProject(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, removeProject, id)
+	return err
+}
+
 const renameOrganisation = `-- name: RenameOrganisation :one
 UPDATE organisations SET name = $2, updated_at = now()
 WHERE id = $1
@@ -334,6 +343,41 @@ func (q *Queries) StopAdministrating(ctx context.Context, id pgtype.UUID) (Perso
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+	)
+	return i, err
+}
+
+const updateProject = `-- name: UpdateProject :one
+UPDATE projects SET name = $2, domain = $3, updated_at = now()
+WHERE id = $1
+RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form
+`
+
+type UpdateProjectParams struct {
+	ID     pgtype.UUID `json:"id"`
+	Name   string      `json:"name"`
+	Domain string      `json:"domain"`
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error) {
+	row := q.db.QueryRow(ctx, updateProject, arg.ID, arg.Name, arg.Domain)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.OrganisationID,
+		&i.Slug,
+		&i.Name,
+		&i.Domain,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Remote,
+		&i.SourceKind,
+		&i.SourceAddress,
+		&i.DeployPublicKey,
+		&i.DeployPrivateKey,
+		&i.PublishTo,
+		&i.PublishBranch,
+		&i.PublishForm,
 	)
 	return i, err
 }

@@ -611,3 +611,85 @@ func TestInvitingWithNoAddress(t *testing.T) {
 		t.Errorf("inviting nobody gave %v, want a refusal", err)
 	}
 }
+
+func TestAProjectCanBeChangedAfterItIsSetUp(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	organisation := h.organisation(t, "bakery", owner)
+	h.project(t, organisation, "korenaar")
+
+	changed, err := h.service.ChangeProject(t.Context(), h.who(owner), "bakery", "korenaar",
+		"Korenaar BV", "korenaar.nl")
+	if err != nil {
+		t.Fatalf("ChangeProject() error = %v, want nil", err)
+	}
+
+	if changed.Name != "Korenaar BV" || changed.Domain != "korenaar.nl" {
+		t.Errorf("changed = %+v, want the new name and address", changed)
+	}
+	// The address it is reached at is what links already sent are written
+	// against, so it does not move with the name.
+	if changed.Slug != "korenaar" {
+		t.Errorf("slug = %q, want it unchanged", changed.Slug)
+	}
+}
+
+func TestAProjectNeedsAName(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	organisation := h.organisation(t, "bakery", owner)
+	h.project(t, organisation, "korenaar")
+
+	_, err := h.service.ChangeProject(t.Context(), h.who(owner), "bakery", "korenaar", "   ", "")
+
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("ChangeProject() with an empty name error = %v, want a refusal", err)
+	}
+}
+
+func TestOnlySomebodyAllowedChangesAProject(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	organisation := h.organisation(t, "bakery", owner)
+	project := h.project(t, organisation, "korenaar")
+
+	editor := h.person(t, "editor@example.org")
+	if err := h.store.SetProjectRole(t.Context(), project.ID, editor.ID, policy.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.service.ChangeProject(t.Context(), h.who(editor), "bakery", "korenaar", "Mine", ""); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("ChangeProject() as an editor error = %v, want ErrNotAllowed", err)
+	}
+
+	if err := h.service.RemoveProject(t.Context(), h.who(editor), "bakery", "korenaar"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("RemoveProject() as an editor error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestRemovingAProjectForgetsItAndNothingElse(t *testing.T) {
+	h := newHarness(t)
+	owner := h.person(t, "owner@example.org")
+	organisation := h.organisation(t, "bakery", owner)
+	h.project(t, organisation, "korenaar")
+	h.project(t, organisation, "studio")
+
+	if err := h.service.RemoveProject(t.Context(), h.who(owner), "bakery", "korenaar"); err != nil {
+		t.Fatalf("RemoveProject() error = %v, want nil", err)
+	}
+
+	left, err := h.service.ListProjects(t.Context(), h.who(owner), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 1 || left[0].Slug != "studio" {
+		t.Errorf("what is left = %+v, want only studio", left)
+	}
+
+	// Asking for the one that is gone says there is nothing there, rather
+	// than failing in some other way.
+	if _, err := h.service.ChangeProject(t.Context(), h.who(owner), "bakery", "korenaar", "Back", ""); !errors.Is(err, httpapi.ErrMissing) {
+		t.Errorf("changing a removed project error = %v, want ErrMissing", err)
+	}
+}
