@@ -14,6 +14,7 @@ import { PeoplePage } from "./routes/PeoplePage";
 import { SyncPage } from "./routes/SyncPage";
 import { PublishPage } from "./routes/PublishPage";
 import { ProjectPage } from "./routes/ProjectPage";
+import { AccountPage } from "./routes/AccountPage";
 import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
@@ -36,6 +37,10 @@ export function App() {
         <Route element={<Knowing><Outlet /></Knowing>}>
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/help" element={<OrganisationPage title="Help" />} />
+          <Route
+            path="/account"
+            element={<OrganisationPage title="Your account" body={<AccountPage />} />}
+          />
           <Route
             path="/administration"
             element={<OrganisationPage title="Administration" body={<AdministrationPage />} />}

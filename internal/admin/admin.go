@@ -40,6 +40,8 @@ const (
 	TookSomebodyOut       What = "took somebody out of an organisation"
 	AppointedAnAdmin      What = "appointed an administrator"
 	StoodDownAnAdmin      What = "removed an administrator"
+	TurnedAnAccountOff    What = "turned an account off"
+	TurnedAnAccountOn     What = "turned an account on again"
 )
 
 // Record is one act, with who did it and what it was done to. The names are

@@ -36,6 +36,8 @@ type Options struct {
 	Tenancy TenancyService
 	// WhoAmI serves what a screen needs before it can draw anything.
 	WhoAmI WhoAmIService
+	// Account serves what a person may change about themselves.
+	Account AccountService
 	// Administration serves what somebody who administers the installation
 	// may do: organisations, who is in them, and who administers.
 	Administration AdministrationService
@@ -123,6 +125,10 @@ func New(opts Options) http.Handler {
 		mux.Handle("DELETE /api/organisations/{organisation}/projects/{project}/people/{person}",
 			RequireActor(removePersonHandler(opts.Tenancy)))
 		mux.HandleFunc("/api/organisations/{organisation}/projects/{project}/people/{person}", MethodNotAllowed)
+	}
+
+	if opts.Account != nil {
+		accountHandlers(mux, opts.Account)
 	}
 
 	if opts.WhoAmI != nil {

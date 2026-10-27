@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- An account can be turned off when somebody leaves. They can no longer sign
+  in, and whatever they had open stops working at once rather than at its own
+  expiry. What they wrote stays attributed to them: history that renames its
+  author is history nobody can trust. Only whoever administers the
+  installation may do it, because an account is held by the installation and
+  somebody in two organisations would otherwise be locked out of one by the
+  other.
+- Your own account: change your name and your password. The password you have
+  is asked for even while you are signed in, so a screen left open on
+  somebody else's machine is not enough to take your account over.
 - Project settings. What setting a project up decided once can be changed
   afterwards: what it is called, where its site lives, and how it is
   published, using the same panels the setup screen uses rather than copies

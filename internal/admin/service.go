@@ -27,12 +27,21 @@ type Tenancy interface {
 // Service is every act that needs administration of the installation. Each
 // one asks the policy first and writes down what it did afterwards.
 type Service struct {
-	store   *Store
-	tenancy Tenancy
+	store    *Store
+	tenancy  Tenancy
+	accounts Accounts
 }
 
-func NewService(store *Store, tenancy Tenancy) *Service {
-	return &Service{store: store, tenancy: tenancy}
+// Accounts is what administering needs from identity: an account can be
+// stopped and started. Named here rather than imported whole so that admin
+// depends on the little of auth it uses.
+type Accounts interface {
+	TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error
+	TurnAccountOn(ctx context.Context, personID uuid.UUID) error
+}
+
+func NewService(store *Store, tenancy Tenancy, accounts Accounts) *Service {
+	return &Service{store: store, tenancy: tenancy, accounts: accounts}
 }
 
 // mayAdminister is the one gate. Every method here goes through it, and the
@@ -168,6 +177,45 @@ func (s *Service) StandDown(ctx context.Context, who httpapi.Actor, email string
 	}
 
 	s.record(ctx, who, StoodDownAnAdmin, person.id.String(), person.email, nil)
+	return nil
+}
+
+// TurnAccountOff stops an account being used anywhere on this installation.
+// It belongs here rather than with an organisation's people because an
+// account is held by the installation: somebody in two organisations would
+// otherwise be locked out of one by the other.
+func (s *Service) TurnAccountOff(ctx context.Context, who httpapi.Actor, email string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionAdministerInstallation); err != nil {
+		return err
+	}
+
+	person, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if err := s.accounts.TurnAccountOff(ctx, who, person.id); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, TurnedAnAccountOff, person.id.String(), person.email, nil)
+	return nil
+}
+
+// TurnAccountOn lets it be used again, with the password it had.
+func (s *Service) TurnAccountOn(ctx context.Context, who httpapi.Actor, email string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionAdministerInstallation); err != nil {
+		return err
+	}
+
+	person, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if err := s.accounts.TurnAccountOn(ctx, person.id); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, TurnedAnAccountOn, person.id.String(), person.email, nil)
 	return nil
 }
 

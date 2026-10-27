@@ -44,6 +44,14 @@ func (w *Web) StandDown(ctx context.Context, who httpapi.Actor, email string) er
 	return w.service.StandDown(ctx, who, email)
 }
 
+func (w *Web) TurnAccountOff(ctx context.Context, who httpapi.Actor, email string) error {
+	return w.service.TurnAccountOff(ctx, who, email)
+}
+
+func (w *Web) TurnAccountOn(ctx context.Context, who httpapi.Actor, email string) error {
+	return w.service.TurnAccountOn(ctx, who, email)
+}
+
 func (w *Web) Records(ctx context.Context, who httpapi.Actor, most int32) ([]httpapi.RecordView, error) {
 	records, err := w.service.Records(ctx, who, most)
 	if err != nil {

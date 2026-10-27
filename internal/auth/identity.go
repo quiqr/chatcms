@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -134,4 +135,49 @@ func (p *People) SetPassword(ctx context.Context, personID uuid.UUID, password s
 		ID:           pgUUID(personID),
 		PasswordHash: &encoded,
 	})
+}
+
+// TurnOff stops an account being used. What the person wrote stays theirs:
+// history that renames its author is history nobody can trust.
+func (p *People) TurnOff(ctx context.Context, personID uuid.UUID) error {
+	if _, err := p.db.Queries.TurnAccountOff(ctx, pgUUID(personID)); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Already off, which is what was asked for.
+			return nil
+		}
+		return fmt.Errorf("turning the account off failed: %w", err)
+	}
+	return nil
+}
+
+// TurnOn lets an account be used again, with the password it had.
+func (p *People) TurnOn(ctx context.Context, personID uuid.UUID) error {
+	if _, err := p.db.Queries.TurnAccountOn(ctx, pgUUID(personID)); err != nil {
+		return fmt.Errorf("turning the account on failed: %w", err)
+	}
+	return nil
+}
+
+// Rename changes what somebody is called.
+func (p *People) Rename(ctx context.Context, personID uuid.UUID, displayName string) (Person, error) {
+	row, err := p.db.Queries.SetDisplayName(ctx, store.SetDisplayNameParams{
+		ID:          pgUUID(personID),
+		DisplayName: strings.TrimSpace(displayName),
+	})
+	if err != nil {
+		return Person{}, fmt.Errorf("changing the name failed: %w", err)
+	}
+	return personFrom(row), nil
+}
+
+// LastSeen is when somebody was last here, and whether they ever were.
+func (p *People) LastSeen(ctx context.Context, personID uuid.UUID) (time.Time, bool, error) {
+	seen, err := p.db.Queries.LastSeenFor(ctx, pgUUID(personID))
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("reading when they were last here failed: %w", err)
+	}
+	if !seen.Valid {
+		return time.Time{}, false, nil
+	}
+	return seen.Time, true, nil
 }

@@ -12,6 +12,8 @@ import {
   listRecords,
   makeOrganisation,
   standDown,
+  turnAccountOff,
+  turnAccountOn,
 } from "../lib/administration";
 
 function slugFrom(name: string) {
@@ -174,6 +176,81 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
   );
 }
 
+/**
+ * Accounts is where somebody who has left is stopped. An account belongs to
+ * the installation rather than to an organisation, so this is the only place
+ * it can be done: an organisation's owner turning one off would lock that
+ * person out of every other organisation too.
+ */
+function Accounts({ onChanged }: { onChanged: () => void }) {
+  const [email, setEmail] = useState("");
+  const [said, setSaid] = useState("");
+  const [trouble, setTrouble] = useState("");
+
+  async function run(what: () => Promise<void>, done: string) {
+    setTrouble("");
+    setSaid("");
+    try {
+      await what();
+      setSaid(done);
+      onChanged();
+    } catch (error: unknown) {
+      setTrouble(error instanceof Error ? error.message : "That did not work.");
+    }
+  }
+
+  const asked = email.trim();
+
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="text-[15px] font-semibold">Somebody who has left</h2>
+
+      <p className="text-[15px] text-muted-foreground">
+        Turning an account off stops it being used anywhere here, and ends whatever it has open.
+        What that person wrote stays theirs.
+      </p>
+
+      {trouble && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+          {trouble}
+        </p>
+      )}
+      {said && (
+        <p role="status" className="text-[15px] text-muted-foreground">
+          {said}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-[240px] flex-1">
+          <Field
+            label="Their email address"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </div>
+
+        <Button
+          variant="outline"
+          disabled={asked === ""}
+          onClick={() => void run(() => turnAccountOff(asked), `${asked} can no longer sign in.`)}
+        >
+          Turn it off
+        </Button>
+
+        <Button
+          variant="outline"
+          disabled={asked === ""}
+          onClick={() => void run(() => turnAccountOn(asked), `${asked} can sign in again.`)}
+        >
+          Turn it on again
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 function What({ since }: { since: number }) {
   // since changes whenever something was done on this screen, so that what
   // you just did appears without reloading the page.
@@ -260,6 +337,8 @@ export function AdministrationPage() {
       />
 
       <Administrators onChanged={somethingWasDone} />
+
+      <Accounts onChanged={somethingWasDone} />
 
       <section className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold">What has been done</h2>

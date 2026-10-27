@@ -20,11 +20,12 @@ import (
 )
 
 type harness struct {
-	db      *store.DB
-	people  *auth.People
-	tenancy *tenancy.Store
-	store   *admin.Store
-	web     *admin.Web
+	db       *store.DB
+	identity *auth.Service
+	people   *auth.People
+	tenancy  *tenancy.Store
+	store    *admin.Store
+	web      *admin.Web
 }
 
 func newHarness(t *testing.T) *harness {
@@ -44,11 +45,12 @@ func newHarness(t *testing.T) *harness {
 	adminStore := admin.NewStore(db)
 
 	return &harness{
-		db:      db,
-		people:  identity.People(),
-		tenancy: tenancyStore,
-		store:   adminStore,
-		web:     admin.NewWeb(admin.NewService(adminStore, tenancyStore)),
+		db:       db,
+		identity: identity,
+		people:   identity.People(),
+		tenancy:  tenancyStore,
+		store:    adminStore,
+		web:      admin.NewWeb(admin.NewService(adminStore, tenancyStore, identity)),
 	}
 }
 
@@ -281,4 +283,86 @@ func (h *harness) organisation(t *testing.T, slug string) string {
 		t.Fatal(err)
 	}
 	return found.ID.String()
+}
+
+func TestAnAccountTurnedOffCannotSignInAndItsSessionsStop(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	leaving := h.person(t, "leaving@example.org")
+
+	// They are here and signed in before anything happens.
+	signedIn, _, _, err := h.identity.SignIn(t.Context(), "leaving@example.org",
+		"a long enough passphrase", "a-caller", false)
+	if err != nil {
+		t.Fatalf("signing in before error = %v, want nil", err)
+	}
+	if signedIn.Email != "leaving@example.org" {
+		t.Fatalf("signed in as %q", signedIn.Email)
+	}
+
+	if err := h.web.TurnAccountOff(t.Context(), boss, "leaving@example.org"); err != nil {
+		t.Fatalf("TurnAccountOff() error = %v, want nil", err)
+	}
+
+	if _, _, _, err := h.identity.SignIn(t.Context(), "leaving@example.org",
+		"a long enough passphrase", "a-caller", false); err == nil {
+		t.Error("an account that is off signed in")
+	}
+
+	// An account that is off whose session keeps working is not really off.
+	live, err := h.identity.Sessions().LiveCount(t.Context(), mustParse(t, leaving.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if live != 0 {
+		t.Errorf("%d sessions still live, want none", live)
+	}
+
+	// Turning it on again gives back the password it had.
+	if err := h.web.TurnAccountOn(t.Context(), boss, "leaving@example.org"); err != nil {
+		t.Fatalf("TurnAccountOn() error = %v, want nil", err)
+	}
+	if _, _, _, err := h.identity.SignIn(t.Context(), "leaving@example.org",
+		"a long enough passphrase", "a-caller", false); err != nil {
+		t.Errorf("signing in after it was turned on again error = %v, want nil", err)
+	}
+}
+
+func TestNobodyTurnsOffTheirOwnAccount(t *testing.T) {
+	// It cannot be undone by the person who did it.
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+
+	err := h.web.TurnAccountOff(t.Context(), boss, "boss@example.org")
+
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("TurnAccountOff() on your own error = %v, want a refusal", err)
+	}
+}
+
+func TestAnOrganisationOwnerCannotTurnAnAccountOff(t *testing.T) {
+	// An account belongs to the installation, not to an organisation:
+	// somebody in two would otherwise be locked out of one by the other.
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+	other := h.person(t, "other@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.web.TurnAccountOff(t.Context(), owner, other.Email); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("TurnAccountOff() as an organisation owner error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func mustParse(t *testing.T, id string) uuid.UUID {
+	t.Helper()
+	parsed, err := uuid.Parse(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
 }

@@ -63,7 +63,13 @@ export function OrganisationShell({
         <NavLink to="/help" className="flex h-11 items-center px-3 text-sm text-muted-foreground">
           Help
         </NavLink>
-        {viewer && <Avatar name={viewer.name} />}
+        <NavLink
+          to="/account"
+          aria-label="Your account"
+          className="flex min-h-11 items-center"
+        >
+          {viewer && <Avatar name={viewer.name} />}
+        </NavLink>
       </header>
 
       <main className="mx-auto w-full max-w-[1200px] p-6">{children}</main>

@@ -116,7 +116,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.tenancy = tenancy.NewService(tenancyStore, server.auth)
 
 	adminStore := admin.NewStore(db)
-	server.admin = admin.NewWeb(admin.NewService(adminStore, tenancyStore))
+	server.admin = admin.NewWeb(admin.NewService(adminStore, tenancyStore, server.auth))
 	appointTheFirstAdministrator(ctx, adminStore, cfg.FirstAdministrator, logger)
 
 	server.onboarding = onboarding.NewService(db, tenancyStore, server.keys,
@@ -158,6 +158,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 		Auth:           server.auth,
 		Tenancy:        server.tenancy,
 		WhoAmI:         server.tenancy,
+		Account:        server.auth,
 		Administration: server.admin,
 		Onboarding:     server.onboarding,
 		Publish:        server.publish,

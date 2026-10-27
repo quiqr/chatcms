@@ -33,6 +33,7 @@ beforeEach(() => {
         versions: [],
         changes: [],
         records: [],
+        groups: [],
         fields: [],
         body: "",
         title: "",

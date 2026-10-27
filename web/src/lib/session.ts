@@ -1,4 +1,4 @@
-import { get, post } from "./api";
+import { get, post, put } from "./api";
 
 export type Person = {
   id: string;
@@ -26,4 +26,12 @@ export function setPasswordWithToken(token: string, password: string) {
   // Answers with who you now are: setting a password signs you in, because
   // you have just proved everything signing in would ask for.
   return post<Person>("/api/set-password", { token, password });
+}
+
+export function changeOwnName(displayName: string) {
+  return put<Person>("/api/account/name", { displayName });
+}
+
+export function changeOwnPassword(current: string, next: string) {
+  return put<void>("/api/account/password", { current, next });
 }

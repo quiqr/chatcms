@@ -63,6 +63,36 @@ async function signIn(page, chatcms, who) {
 export { expect };
 
 /**
+ * signingIn asks the server to sign somebody in the way the application
+ * does, carrying the token every write needs. Without it the answer is a
+ * refusal about the request rather than about the password, which says
+ * nothing about what a test wanted to know.
+ */
+export async function signingIn(page, chatcms, email, password) {
+  // In a browser of its own, because signing in replaces the session of
+  // whoever asked: probing somebody else's password through your own screen
+  // signs you out of it.
+  const context = await page.context().browser().newContext();
+  try {
+    await context.request.get(`${chatcms.url}/api/health`);
+
+    const token = (await context.cookies())
+      .find((cookie) => cookie.name === "chatcms_request_token")?.value;
+
+    const answer = await context.request.post(`${chatcms.url}/api/sign-in`, {
+      headers: { "X-Chatcms-Request-Token": token ?? "" },
+      data: { email, password },
+      failOnStatusCode: false,
+    });
+    // Read before the context closes, so the caller gets a status rather
+    // than a closed connection.
+    return { status: () => answer.status() };
+  } finally {
+    await context.close();
+  }
+}
+
+/**
  * noSidewaysScrolling is half of what "works on a phone" means. The other
  * half is that everything can be hit with a thumb, which is checked by
  * everyThingIsBigEnoughToHit.

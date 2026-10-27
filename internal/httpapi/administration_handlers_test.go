@@ -58,6 +58,16 @@ func (s *stubAdministration) Organisations(context.Context, Actor) ([]Organisati
 	return []OrganisationSummaryView{{Slug: "bakery", Name: "Bakery", Projects: 2, People: 3}}, s.err
 }
 
+func (s *stubAdministration) TurnAccountOff(_ context.Context, _ Actor, email string) error {
+	s.note("turn off " + email)
+	return s.err
+}
+
+func (s *stubAdministration) TurnAccountOn(_ context.Context, _ Actor, email string) error {
+	s.note("turn on " + email)
+	return s.err
+}
+
 func (s *stubAdministration) MayAdminister(context.Context, Actor) bool {
 	s.note("may administer")
 	return s.administers
@@ -94,6 +104,8 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodPost, "/api/administration/administrators", map[string]any{"email": "a@b.c"}},
 		{http.MethodDelete, "/api/administration/administrators/a@b.c", nil},
 		{http.MethodGet, "/api/administration/records", nil},
+		{http.MethodPost, "/api/administration/accounts/a@b.c/off", nil},
+		{http.MethodPost, "/api/administration/accounts/a@b.c/on", nil},
 	} {
 		recorder := call(t, handler, each.method, each.path, each.body)
 		if recorder.Code != http.StatusUnauthorized {
@@ -215,6 +227,43 @@ func TestReadingWhatWasDone(t *testing.T) {
 	}
 	if !strings.Contains(recorder.Body.String(), "made an organisation") {
 		t.Errorf("body = %s, want the record in it", recorder.Body)
+	}
+}
+
+func TestAnAccountIsTurnedOffAndOnAgain(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	off := signedInCall(t, handler, http.MethodPost, "/api/administration/accounts/gone@example.org/off", nil)
+	if off.Code != http.StatusNoContent {
+		t.Errorf("turning off = %d, want 204: %s", off.Code, off.Body)
+	}
+
+	on := signedInCall(t, handler, http.MethodPost, "/api/administration/accounts/gone@example.org/on", nil)
+	if on.Code != http.StatusNoContent {
+		t.Errorf("turning on = %d, want 204: %s", on.Code, on.Body)
+	}
+
+	if len(service.asked) != 2 ||
+		service.asked[0] != "turn off gone@example.org" ||
+		service.asked[1] != "turn on gone@example.org" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestTurningOffYourOwnAccountSaysWhyNot(t *testing.T) {
+	handler := withAdministration(&stubAdministration{
+		err: &RefusedError{Reason: "you cannot turn off your own account"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPost,
+		"/api/administration/accounts/me@example.org/off", nil)
+
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), "your own account") {
+		t.Errorf("body = %s, want it to say why", recorder.Body)
 	}
 }
 

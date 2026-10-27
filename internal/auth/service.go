@@ -234,3 +234,67 @@ func actorOf(person Person) httpapi.Actor {
 		DisplayName: person.DisplayName,
 	}
 }
+
+// TurnAccountOff stops an account being used and ends every session it has.
+// An account that is off whose session keeps working until it expires is an
+// account that is not really off.
+func (s *Service) TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error {
+	if who.ID == personID.String() {
+		return &httpapi.RefusedError{
+			Reason: "you cannot turn off your own account; ask somebody else to",
+		}
+	}
+
+	if err := s.people.TurnOff(ctx, personID); err != nil {
+		return err
+	}
+	return s.sessions.RevokeAll(ctx, personID)
+}
+
+// TurnAccountOn lets it be used again, with the password it had.
+func (s *Service) TurnAccountOn(ctx context.Context, personID uuid.UUID) error {
+	return s.people.TurnOn(ctx, personID)
+}
+
+// ChangeOwnName changes what somebody is called. Only their own.
+func (s *Service) ChangeOwnName(ctx context.Context, who httpapi.Actor, displayName string) (httpapi.Actor, error) {
+	personID, err := uuid.Parse(who.ID)
+	if err != nil {
+		return httpapi.Anonymous(), httpapi.ErrNotAllowed
+	}
+	if strings.TrimSpace(displayName) == "" {
+		return httpapi.Anonymous(), &httpapi.RefusedError{Reason: "a name cannot be empty"}
+	}
+
+	person, err := s.people.Rename(ctx, personID, displayName)
+	if err != nil {
+		return httpapi.Anonymous(), err
+	}
+	return actorOf(person), nil
+}
+
+// ChangeOwnPassword changes somebody's password, asking for the one they
+// have first. A session left open on somebody else's machine should not be
+// enough to take an account over.
+func (s *Service) ChangeOwnPassword(ctx context.Context, who httpapi.Actor, current, next string) error {
+	personID, err := uuid.Parse(who.ID)
+	if err != nil {
+		return httpapi.ErrNotAllowed
+	}
+
+	if _, err := s.identity.Authenticate(ctx, Claim{Email: who.Email, Password: current}); err != nil {
+		return &httpapi.RefusedError{Reason: "that is not your current password"}
+	}
+
+	if err := s.people.SetPassword(ctx, personID, next); err != nil {
+		switch {
+		case errors.Is(err, ErrPasswordTooShort), errors.Is(err, ErrPasswordTooCommon):
+			return &httpapi.PasswordRejectedError{Reason: err.Error()}
+		}
+		return err
+	}
+
+	s.send(ctx, "password changed", Person{ID: personID, Email: who.Email}, "", time.Time{},
+		mail.PasswordChanged(""))
+	return nil
+}

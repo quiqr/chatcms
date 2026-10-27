@@ -21,6 +21,8 @@ type AdministrationService interface {
 	// MayAdminister answers the one question the interface needs in order to
 	// know whether to offer any of this, without making it guess from a
 	// refusal.
+	TurnAccountOff(ctx context.Context, who Actor, email string) error
+	TurnAccountOn(ctx context.Context, who Actor, email string) error
 	MayAdminister(ctx context.Context, who Actor) bool
 }
 
@@ -153,6 +155,24 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 	mux.Handle("DELETE /api/administration/administrators/{email}", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			if err := service.StandDown(r.Context(), ActorFrom(r.Context()), r.PathValue("email")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("POST /api/administration/accounts/{email}/off", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.TurnAccountOff(r.Context(), ActorFrom(r.Context()), r.PathValue("email")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("POST /api/administration/accounts/{email}/on", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.TurnAccountOn(r.Context(), ActorFrom(r.Context()), r.PathValue("email")); err != nil {
 				writeTenancyError(w, err)
 				return
 			}

@@ -52,3 +52,23 @@ SELECT * FROM credential_tokens WHERE token_hash = $1;
 
 -- name: SpendCredentialToken :exec
 UPDATE credential_tokens SET spent_at = now() WHERE id = $1 AND spent_at IS NULL;
+
+-- name: TurnAccountOff :one
+UPDATE people SET disabled_at = now(), updated_at = now()
+WHERE id = $1 AND disabled_at IS NULL
+RETURNING *;
+
+-- name: TurnAccountOn :one
+UPDATE people SET disabled_at = NULL, updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: SetDisplayName :one
+UPDATE people SET display_name = $2, updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: LastSeenFor :one
+SELECT max(last_seen_at)::timestamptz AS last_seen
+FROM sessions
+WHERE person_id = $1 AND revoked_at IS NULL;

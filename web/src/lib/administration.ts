@@ -58,3 +58,11 @@ export function listRecords() {
 export function mayAdminister() {
   return get<{ administers: boolean }>("/api/administration/me");
 }
+
+export function turnAccountOff(email: string) {
+  return post<void>(`/api/administration/accounts/${encodeURIComponent(email)}/off`);
+}
+
+export function turnAccountOn(email: string) {
+  return post<void>(`/api/administration/accounts/${encodeURIComponent(email)}/on`);
+}

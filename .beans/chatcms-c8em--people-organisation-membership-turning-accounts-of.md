@@ -1,11 +1,11 @@
 ---
 # chatcms-c8em
 title: 'People: organisation membership, turning accounts off, and your own account'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:03Z
-updated_at: 2026-10-26T21:01:51Z
+updated_at: 2026-10-27T00:40:05Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-8n4m

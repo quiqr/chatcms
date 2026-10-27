@@ -213,6 +213,19 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 	return i, err
 }
 
+const lastSeenFor = `-- name: LastSeenFor :one
+SELECT max(last_seen_at)::timestamptz AS last_seen
+FROM sessions
+WHERE person_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) LastSeenFor(ctx context.Context, personID pgtype.UUID) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, lastSeenFor, personID)
+	var last_seen pgtype.Timestamptz
+	err := row.Scan(&last_seen)
+	return last_seen, err
+}
+
 const revokeSession = `-- name: RevokeSession :exec
 UPDATE sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL
 `
@@ -238,6 +251,33 @@ UPDATE sessions SET revoked_at = now() WHERE person_id = $1 AND revoked_at IS NU
 func (q *Queries) RevokeSessionsForPerson(ctx context.Context, personID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, revokeSessionsForPerson, personID)
 	return err
+}
+
+const setDisplayName = `-- name: SetDisplayName :one
+UPDATE people SET display_name = $2, updated_at = now()
+WHERE id = $1
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+`
+
+type SetDisplayNameParams struct {
+	ID          pgtype.UUID `json:"id"`
+	DisplayName string      `json:"display_name"`
+}
+
+func (q *Queries) SetDisplayName(ctx context.Context, arg SetDisplayNameParams) (Person, error) {
+	row := q.db.QueryRow(ctx, setDisplayName, arg.ID, arg.DisplayName)
+	var i Person
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Administers,
+	)
+	return i, err
 }
 
 const setPersonPassword = `-- name: SetPersonPassword :exec
@@ -273,4 +313,48 @@ UPDATE sessions SET last_seen_at = now() WHERE id = $1
 func (q *Queries) TouchSession(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, touchSession, id)
 	return err
+}
+
+const turnAccountOff = `-- name: TurnAccountOff :one
+UPDATE people SET disabled_at = now(), updated_at = now()
+WHERE id = $1 AND disabled_at IS NULL
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+`
+
+func (q *Queries) TurnAccountOff(ctx context.Context, id pgtype.UUID) (Person, error) {
+	row := q.db.QueryRow(ctx, turnAccountOff, id)
+	var i Person
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Administers,
+	)
+	return i, err
+}
+
+const turnAccountOn = `-- name: TurnAccountOn :one
+UPDATE people SET disabled_at = NULL, updated_at = now()
+WHERE id = $1
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+`
+
+func (q *Queries) TurnAccountOn(ctx context.Context, id pgtype.UUID) (Person, error) {
+	row := q.db.QueryRow(ctx, turnAccountOn, id)
+	var i Person
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Administers,
+	)
+	return i, err
 }
