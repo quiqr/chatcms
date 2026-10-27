@@ -5,6 +5,7 @@ status: in-progress
 type: epic
 priority: high
 created_at: 2026-10-26T16:46:03Z
+openspec-link: openspec/changes/archive/2026-10-27-add-people
 updated_at: 2026-10-27T00:40:05Z
 parent: chatcms-8vem
 blocked_by:
@@ -52,3 +53,36 @@ writes it.
 - `docs/BRIEFING-M01.md` section 4, people and roles.
 - `docs/design/reference/screenshots/desktop/people.png`.
 - `docs/design/COMPARISON.md`, the People row.
+
+## Partly shipped
+
+`openspec/changes/archive/2026-10-27-add-people` covers the account half.
+
+### Done
+
+- **An account can be turned off**, and on again. Somebody turned off cannot
+  sign in, and whatever they had open stops working at once rather than at
+  its own expiry.
+- **What they wrote stays theirs.** Turning an account off changes nothing
+  about the versions they made, and a test says so.
+- **Nobody turns their own off**, because it cannot be undone by the person
+  who did it.
+- **Only an administrator may.** An account is held by the installation, so
+  an organisation's owner turning one off would lock that person out of every
+  other organisation too. There is a test for that refusal.
+- **A person's own name and password**, with the password they have asked for
+  even while signed in: a screen left open on somebody else's machine should
+  not be enough to take an account over.
+
+### Not done, and why
+
+- An organisation's own owner inviting people to it, changing what they hold
+  there, and taking them out. An administrator can already do all three,
+  which is enough to set a customer up, so this is a change of its own rather
+  than something half-built into that one.
+- Resending an invitation that was never accepted, and withdrawing one.
+- The project and organisation switch on the people screen, which waits on
+  the above.
+- Last active. The server can answer it; no screen asks yet.
+
+Those four are `chatcms-9lu6`.
