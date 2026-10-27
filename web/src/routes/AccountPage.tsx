@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Avatar } from "../components/ui/avatar";
 import { useAsync } from "../lib/useAsync";
+import { when } from "../lib/when";
 import {
   askForANewAddress,
   changeOwnName,
@@ -307,7 +308,7 @@ function WhereYouAreSignedIn() {
               <span className="flex-1 text-[15px]">
                 {place.thisOne ? "This screen" : "Another screen"}
                 <span className="block text-[13px] text-subtle-foreground">
-                  Last used {new Date(place.lastSeen).toLocaleString()}
+                  Last used {when(place.lastSeen)}
                 </span>
               </span>
 

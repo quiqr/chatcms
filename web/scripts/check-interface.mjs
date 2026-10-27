@@ -135,11 +135,21 @@ void MINIMUM_TOUCH;
 // docs/design/COMPARISON.md.
 const NAMED_ORGANISATIONS = ["technative"];
 
+// How a time is written is one rule and lives in one place. Four screens
+// each decided for themselves once, and produced three different formats.
+const FORMATS_ITS_OWN = /\.toLocale(String|DateString|TimeString)\s*\(/;
+
 for (const path of sources(sourceDir)) {
   const name = relative(root, path);
   if (name.includes("/demo/") || name.includes("__tests__")) continue;
 
   const text = readFileSync(path, "utf8");
+  if (!name.includes("/lib/when.ts") && FORMATS_ITS_OWN.test(text)) {
+    problems.push(
+      `${name} writes a date itself; every screen goes through lib/when.ts`,
+    );
+  }
+
   for (const named of NAMED_ORGANISATIONS) {
     if (new RegExp(`["'\`]${named}["'\`]`, "i").test(text)) {
       problems.push(

@@ -17,6 +17,7 @@ import { ProjectPage } from "./routes/ProjectPage";
 import { AccountPage } from "./routes/AccountPage";
 import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
+import { PreferencesPage } from "./routes/PreferencesPage";
 import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
 import { ConfirmAddressPage } from "./routes/ConfirmAddressPage";
@@ -42,6 +43,10 @@ export function App() {
           <Route
             path="/account"
             element={<OrganisationPage title="Your account" body={<AccountPage />} />}
+          />
+          <Route
+            path="/preferences"
+            element={<OrganisationPage title="Preferences" body={<PreferencesPage />} />}
           />
           <Route
             path="/administration"

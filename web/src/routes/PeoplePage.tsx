@@ -9,6 +9,7 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from "../components/ui/menu"
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
+import { when } from "../lib/when";
 import {
   changeOrganisationRole,
   inviteToOrganisation,
@@ -246,7 +247,7 @@ export function PeoplePage() {
                         {member.stillToAccept
                           ? "Not yet"
                           : member.lastSeen
-                            ? new Date(member.lastSeen).toLocaleString()
+                            ? when(member.lastSeen)
                             : "Never"}
                       </span>
                     </TableCell>

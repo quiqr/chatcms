@@ -65,6 +65,11 @@ func (s *stubAccount) SessionViews(context.Context, Actor, string) ([]SessionVie
 	}, s.err
 }
 
+func (s *stubAccount) SetAppearance(_ context.Context, _ Actor, chosen string) error {
+	s.note("appearance " + chosen)
+	return s.err
+}
+
 func (s *stubAccount) EndSession(_ context.Context, _ Actor, sessionID string) error {
 	s.note("end " + sessionID)
 	return s.err
@@ -128,6 +133,7 @@ func TestEveryAccountEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodGet, "/api/account/sessions", nil},
 		{http.MethodDelete, "/api/account/sessions/session-1", nil},
 		{http.MethodGet, "/api/people/person-1/picture", nil},
+		{http.MethodPut, "/api/account/appearance", map[string]any{"appearance": "dark"}},
 	} {
 		recorder := call(t, handler, each.method, each.path, each.body)
 		if recorder.Code != http.StatusUnauthorized {
@@ -243,6 +249,36 @@ func TestOneSessionIsEnded(t *testing.T) {
 	}
 }
 
+func TestAnAppearanceIsChosen(t *testing.T) {
+	service := &stubAccount{}
+	handler := withAccount(service, true)
+
+	for _, chosen := range []string{"dark", "light", ""} {
+		recorder := signedInCall(t, handler, http.MethodPut, "/api/account/appearance",
+			map[string]any{"appearance": chosen})
+		if recorder.Code != http.StatusNoContent {
+			t.Errorf("choosing %q = %d, want 204: %s", chosen, recorder.Code, recorder.Body)
+		}
+	}
+
+	if len(service.asked) != 3 || service.asked[0] != "appearance dark" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestAnAppearanceThatIsNotOneIsRefused(t *testing.T) {
+	handler := withAccount(&stubAccount{
+		err: &RefusedError{Reason: "that is not an appearance"},
+	}, true)
+
+	recorder := signedInCall(t, handler, http.MethodPut, "/api/account/appearance",
+		map[string]any{"appearance": "purple"})
+
+	if recorder.Code != http.StatusConflict {
+		t.Errorf("status = %d, want 409", recorder.Code)
+	}
+}
+
 func TestAccountEndpointsRefuseTheWrongMethod(t *testing.T) {
 	handler := withAccount(&stubAccount{}, true)
 
@@ -252,6 +288,7 @@ func TestAccountEndpointsRefuseTheWrongMethod(t *testing.T) {
 		"/api/account/picture",
 		"/api/account/address",
 		"/api/account/sessions",
+		"/api/account/appearance",
 	} {
 		recorder := signedInCall(t, handler, http.MethodPatch, path, map[string]any{})
 		if recorder.Code != http.StatusMethodNotAllowed {

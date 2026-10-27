@@ -672,3 +672,45 @@ func TestSomebodyCannotEndAnotherPersonsSession(t *testing.T) {
 		t.Error("one account ended another's session")
 	}
 }
+
+func TestAnAppearanceIsKeptWithTheAccount(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+	who := httpapi.Actor{ID: person.ID.String(), Email: person.Email}
+
+	// Nothing chosen is not a third appearance: it means the machine decides.
+	chosen, err := h.service.AppearanceFor(t.Context(), person.ID)
+	if err != nil || chosen != "" {
+		t.Fatalf("a new account has %q, %v; want nothing chosen", chosen, err)
+	}
+
+	if err := h.service.SetAppearance(t.Context(), who, "dark"); err != nil {
+		t.Fatalf("SetAppearance() error = %v, want nil", err)
+	}
+
+	chosen, err = h.service.AppearanceFor(t.Context(), person.ID)
+	if err != nil || chosen != "dark" {
+		t.Errorf("after choosing dark it is %q, %v", chosen, err)
+	}
+
+	// And it can be given back to the machine.
+	if err := h.service.SetAppearance(t.Context(), who, ""); err != nil {
+		t.Fatal(err)
+	}
+	if chosen, _ := h.service.AppearanceFor(t.Context(), person.ID); chosen != "" {
+		t.Errorf("after following the machine again it is %q", chosen)
+	}
+}
+
+func TestAnAppearanceThatIsNotOneIsRefused(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+
+	err := h.service.SetAppearance(t.Context(),
+		httpapi.Actor{ID: person.ID.String(), Email: person.Email}, "purple")
+
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("SetAppearance() with something that is not one error = %v, want a refusal", err)
+	}
+}

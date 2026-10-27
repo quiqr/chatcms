@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { when } from "../lib/when";
 import { useHere } from "../lib/whoami";
 import {
   beforeGoingBack,
@@ -18,18 +19,6 @@ import {
   type VersionTimeline,
   type WentBack,
 } from "../lib/tenancy";
-
-function when(moment?: string) {
-  if (!moment) return "";
-  const at = new Date(moment);
-  if (Number.isNaN(at.getTime())) return "";
-  return at.toLocaleString(undefined, {
-    day: "numeric",
-    month: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function changeCount(count: number) {
   if (count === 0) return "no changes";

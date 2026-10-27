@@ -64,6 +64,80 @@
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/*
+ * The dark appearance: the same names with different values, which is what
+ * naming every colour bought. No screen changes, because no screen knows a
+ * colour.
+ *
+ * It applies when the machine asks for it and nothing was chosen, and when
+ * somebody chose it. Choosing light wins over the machine, which is why the
+ * attribute is tested as well as the query.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-appearance="light"]) {
+    --background: #121214;
+    --foreground: #F4F4F5;
+    --card: #1C1C1F;
+    --card-foreground: #F4F4F5;
+    --popover: #232327;
+    --popover-foreground: #F4F4F5;
+    --muted: #27272B;
+    --muted-foreground: #A1A1AA;
+    --subtle-foreground: #8B8B94;
+    --border: #2E2E33;
+    --border-subtle: #27272B;
+    --input: #3A3A41;
+
+    --primary: #4AA8E0;
+    --primary-hover: #6FBCEA;
+    --primary-foreground: #0A1A24;
+    --primary-soft: #16303F;
+    --primary-soft-foreground: #BFE1F7;
+    --primary-tint: #15242E;
+    --ring: #4AA8E0;
+
+    --secondary: #F4F4F5;
+    --secondary-foreground: #18181B;
+
+    --success: #4ADE80;  --success-soft: #16301F;  --success-foreground: #B7F0CB;
+    --warning: #FBBF24;  --warning-soft: #352411;  --warning-foreground: #FCE2A9;
+    --info: #60A5FA;     --info-soft: #152542;     --info-foreground: #C3DBFD;
+    --destructive: #F87171; --destructive-soft: #3A1717; --destructive-foreground: #FBCBCB;
+  }
+}
+
+:root[data-appearance="dark"] {
+    --background: #121214;
+    --foreground: #F4F4F5;
+    --card: #1C1C1F;
+    --card-foreground: #F4F4F5;
+    --popover: #232327;
+    --popover-foreground: #F4F4F5;
+    --muted: #27272B;
+    --muted-foreground: #A1A1AA;
+    --subtle-foreground: #8B8B94;
+    --border: #2E2E33;
+    --border-subtle: #27272B;
+    --input: #3A3A41;
+
+    --primary: #4AA8E0;
+    --primary-hover: #6FBCEA;
+    --primary-foreground: #0A1A24;
+    --primary-soft: #16303F;
+    --primary-soft-foreground: #BFE1F7;
+    --primary-tint: #15242E;
+    --ring: #4AA8E0;
+
+    --secondary: #F4F4F5;
+    --secondary-foreground: #18181B;
+
+    --success: #4ADE80;  --success-soft: #16301F;  --success-foreground: #B7F0CB;
+    --warning: #FBBF24;  --warning-soft: #352411;  --warning-foreground: #FCE2A9;
+    --info: #60A5FA;     --info-soft: #152542;     --info-foreground: #C3DBFD;
+    --destructive: #F87171; --destructive-soft: #3A1717; --destructive-foreground: #FBCBCB;
+}
+
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

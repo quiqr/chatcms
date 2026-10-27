@@ -13,6 +13,10 @@ type WhoAmIView struct {
 	Person        PersonView         `json:"person"`
 	Administers   bool               `json:"administers"`
 	Organisations []OrganisationView `json:"organisations"`
+	// Appearance is what this person chose, or empty when they have chosen
+	// nothing and the machine decides. It rides along here because the
+	// interface needs it before it draws anything.
+	Appearance string `json:"appearance"`
 }
 
 // PersonView is somebody as a screen shows them.

@@ -26,6 +26,12 @@ type AccountService interface {
 
 	SessionViews(ctx context.Context, who Actor, thisToken string) ([]SessionView, error)
 	EndSession(ctx context.Context, who Actor, sessionID string) error
+
+	SetAppearance(ctx context.Context, who Actor, chosen string) error
+}
+
+type appearanceRequest struct {
+	Appearance string `json:"appearance"`
 }
 
 // SessionView is one place somebody is signed in.
@@ -167,6 +173,23 @@ func accountHandlers(mux *http.ServeMux, service AccountService) {
 		})))
 
 	mux.HandleFunc("/api/account/address", MethodNotAllowed)
+
+	mux.Handle("PUT /api/account/appearance", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body appearanceRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+
+			if err := service.SetAppearance(r.Context(), ActorFrom(r.Context()), body.Appearance); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.HandleFunc("/api/account/appearance", MethodNotAllowed)
 
 	mux.Handle("GET /api/account/sessions", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {

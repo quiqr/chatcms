@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { onADay } from "../lib/when";
 import { useHere } from "../lib/whoami";
 import {
   publishNow,
@@ -35,13 +36,6 @@ function iconFor(kind: ChangeKind) {
     return <Trash2 aria-hidden="true" className="size-4 text-muted-foreground" />;
   }
   return <FileText aria-hidden="true" className="size-4 text-muted-foreground" />;
-}
-
-function when(moment?: string) {
-  if (!moment) return "";
-  const at = new Date(moment);
-  if (Number.isNaN(at.getTime())) return "";
-  return at.toLocaleDateString(undefined, { day: "numeric", month: "long" });
 }
 
 function Words({ words }: { words: Word[] }) {
@@ -97,7 +91,7 @@ function ChangeRow({ change }: { change: Change }) {
         <span className="text-sm text-muted-foreground">
           {change.section}
           {change.by ? ` · ${change.by}` : ""}
-          {when(change.at) ? ` · ${when(change.at)}` : ""}
+          {onADay(change.at) ? ` · ${onADay(change.at)}` : ""}
         </span>
       </div>
 
@@ -253,7 +247,7 @@ export function PublishPage() {
         </h2>
         {review.value.lastPublished && (
           <p className="text-sm text-muted-foreground">
-            Last published {when(review.value.lastPublished)}
+            Last published {onADay(review.value.lastPublished)}
           </p>
         )}
       </header>

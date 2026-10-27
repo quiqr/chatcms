@@ -80,6 +80,7 @@ type Person struct {
 	Picture      []byte             `json:"picture"`
 	PictureKind  string             `json:"picture_kind"`
 	EmailWaiting *string            `json:"email_waiting"`
+	Appearance   string             `json:"appearance"`
 }
 
 type Project struct {

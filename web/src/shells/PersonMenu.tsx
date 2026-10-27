@@ -50,6 +50,7 @@ export function PersonMenu({ name, className }: { name: string; className?: stri
         <MenuSeparator />
 
         <MenuItem onSelect={() => goTo("/account")}>Your account</MenuItem>
+        <MenuItem onSelect={() => goTo("/preferences")}>Preferences</MenuItem>
 
         <MenuSeparator />
 

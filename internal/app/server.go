@@ -114,6 +114,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.auth = auth.NewService(db, logger, cfg.BaseURL)
 	tenancyStore := tenancy.NewStore(db)
 	server.tenancy = tenancy.NewService(tenancyStore, server.auth)
+	server.tenancy.KnowsWhatTheyChose(server.auth)
 
 	adminStore := admin.NewStore(db)
 	server.admin = admin.NewWeb(admin.NewService(adminStore, tenancyStore, server.auth))

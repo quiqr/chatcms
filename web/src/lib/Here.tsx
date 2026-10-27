@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { useParams } from "react-router";
 
 import { useAsync } from "./useAsync";
+import { applyAppearance } from "./appearance";
 import { HereContext, whoAmI, type WhoAmI } from "./whoami";
 
 /**
@@ -22,6 +23,13 @@ export function Knowing({ children }: { children: ReactNode }) {
   }, [who]);
 
   const known = who.state === "ready" ? who.value : last.current;
+
+  // What the account says wins over what this browser remembered, because
+  // the account is where the choice is kept and this machine may be a new
+  // one.
+  useEffect(() => {
+    if (who.state === "ready") applyAppearance(who.value.appearance ?? "");
+  }, [who]);
 
   if (!known && who.state === "loading") {
     return <p className="p-6 text-[15px] text-muted-foreground">Looking...</p>;

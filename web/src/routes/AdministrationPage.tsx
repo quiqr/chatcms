@@ -5,6 +5,7 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { useAsync } from "../lib/useAsync";
+import { when } from "../lib/when";
 import {
   appoint,
   listAdministrators,
@@ -279,7 +280,7 @@ function What({ since }: { since: number }) {
             {record.to && <span className="font-semibold"> {record.to}</span>}
           </p>
           <p className="text-[13px] text-subtle-foreground">
-            {new Date(record.at).toLocaleString()}
+            {when(record.at)}
             {record.detail?.ownedBy && ` · owned by ${record.detail.ownedBy}`}
             {record.detail?.person && ` · ${record.detail.person}`}
           </p>

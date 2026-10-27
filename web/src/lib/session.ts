@@ -72,3 +72,7 @@ export function endSession(id: string) {
 export function proveTheNewAddress(token: string) {
   return post<Person>("/api/confirm-address", { token });
 }
+
+export function chooseAppearance(appearance: string) {
+  return put<void>("/api/account/appearance", { appearance });
+}

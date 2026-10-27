@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- A dark appearance, and following whatever your device asks for, which is
+  what you get without choosing anything. The choice is kept with the
+  account, so it is the same wherever you sign in.
+- Every date and time in the interface is now written one way, in one place,
+  instead of four screens each deciding for themselves.
 - An account has a picture, which is shown wherever that person is. It is
   kept with the account rather than in any site, because it crosses
   organisations and must never be published with somebody's content; a test

@@ -1,11 +1,11 @@
 ---
 # chatcms-6h9u
 title: 'Account preferences: language, dates, and a dark appearance'
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-27T13:06:37Z
-updated_at: 2026-10-27T13:06:37Z
+updated_at: 2026-10-27T14:25:42Z
 parent: chatcms-8vem
 ---
 

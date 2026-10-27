@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { useAsync } from "../lib/useAsync";
+import { onADay } from "../lib/when";
 import { useHere } from "../lib/whoami";
 import {
   createPage,
@@ -17,13 +18,6 @@ import {
 } from "../lib/tenancy";
 
 const atATime = 20;
-
-function when(moment?: string) {
-  if (!moment) return "";
-  const at = new Date(moment);
-  if (Number.isNaN(at.getTime())) return "";
-  return at.toLocaleDateString(undefined, { day: "numeric", month: "long" });
-}
 
 type Asking =
   | { what: "new"; section: string; itemName: string }
@@ -134,7 +128,7 @@ function Row({
       {item.by && (
         <span className="text-sm text-subtle-foreground">
           {item.by}
-          {when(item.at) ? ` · ${when(item.at)}` : ""}
+          {onADay(item.at) ? ` · ${onADay(item.at)}` : ""}
         </span>
       )}
       {canChange && (

@@ -23,7 +23,18 @@ type Service struct {
 	// count versions is somebody else's job. Without it the count is zero,
 	// which is what a project with no site has.
 	waiting Waiting
+	// preferences answers what somebody chose about how the application
+	// behaves, which rides along in the one answer a screen asks for.
+	preferences Preferences
 }
+
+// Preferences is the little of identity that tenancy needs.
+type Preferences interface {
+	AppearanceFor(ctx context.Context, personID uuid.UUID) (string, error)
+}
+
+// KnowsWhatTheyChose gives the service somewhere to ask.
+func (s *Service) KnowsWhatTheyChose(preferences Preferences) { s.preferences = preferences }
 
 // Waiting is how much of a project is waiting to go out. One source, so that
 // the number on a button and the number on the publish screen cannot
@@ -426,7 +437,21 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 		},
 		Administers:   policy.Can(actor, policy.ActionAdministerInstallation, policy.Resource{}),
 		Organisations: views,
+		Appearance:    s.appearanceFor(ctx, personID),
 	}, nil
+}
+
+// appearanceFor is what this person chose. A preference that cannot be read
+// is not a reason to refuse a screen; the machine decides instead.
+func (s *Service) appearanceFor(ctx context.Context, personID uuid.UUID) string {
+	if s.preferences == nil {
+		return ""
+	}
+	chosen, err := s.preferences.AppearanceFor(ctx, personID)
+	if err != nil {
+		return ""
+	}
+	return chosen
 }
 
 // Rename gives an organisation a different name. Its address does not change
