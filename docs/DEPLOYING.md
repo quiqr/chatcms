@@ -51,11 +51,17 @@ database is worth nothing without it.
 | What | Why | How |
 | --- | --- | --- |
 | The master key | Without it every deploy key is unreadable | Wherever you keep secrets, separately from the database |
-| PostgreSQL | People, projects, roles, publishes, builds | `pg_dump`, as for any database |
+| PostgreSQL | People, projects, roles, publishes, builds, and the picture on each account | `pg_dump`, as for any database |
 | `stateDir` | Working copies and thumbnails | Not strictly needed: working copies are clones and thumbnails are a cache. Backing it up only saves a re-clone. |
 
-Content is never only here. Every page, picture and version is in the
-customer's own git remote, which is the point.
+Content is never only here. Every page, picture and version of a site is in
+the customer's own git remote, which is the point.
+
+A person's picture is the exception, and is deliberately in the database
+rather than in any site: it belongs to the account, it crosses
+organisations, and a customer's published site must never carry a picture of
+somebody from another tenant. It is the one thing a restore brings back that
+git cannot.
 
 ## Upgrading
 

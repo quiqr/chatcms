@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const confirmEmailWaiting = `-- name: ConfirmEmailWaiting :one
+UPDATE people
+SET email = email_waiting, email_waiting = NULL, updated_at = now()
+WHERE id = $1 AND email_waiting IS NOT NULL
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting
+`
+
+func (q *Queries) ConfirmEmailWaiting(ctx context.Context, id pgtype.UUID) (Person, error) {
+	row := q.db.QueryRow(ctx, confirmEmailWaiting, id)
+	var i Person
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
+	)
+	return i, err
+}
+
 const countLiveSessionsForPerson = `-- name: CountLiveSessionsForPerson :one
 SELECT count(*) FROM sessions
 WHERE person_id = $1 AND revoked_at IS NULL AND expires_at > now()
@@ -59,7 +85,7 @@ func (q *Queries) CreateCredentialToken(ctx context.Context, arg CreateCredentia
 const createPerson = `-- name: CreatePerson :one
 INSERT INTO people (email, display_name, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting
 `
 
 type CreatePersonParams struct {
@@ -80,6 +106,9 @@ func (q *Queries) CreatePerson(ctx context.Context, arg CreatePersonParams) (Per
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
 }
@@ -138,7 +167,7 @@ func (q *Queries) GetCredentialTokenByHash(ctx context.Context, tokenHash []byte
 }
 
 const getPerson = `-- name: GetPerson :one
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers FROM people WHERE id = $1
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting FROM people WHERE id = $1
 `
 
 func (q *Queries) GetPerson(ctx context.Context, id pgtype.UUID) (Person, error) {
@@ -153,12 +182,15 @@ func (q *Queries) GetPerson(ctx context.Context, id pgtype.UUID) (Person, error)
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
 }
 
 const getPersonByEmail = `-- name: GetPersonByEmail :one
-SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers FROM people WHERE lower(email) = lower($1)
+SELECT id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting FROM people WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetPersonByEmail(ctx context.Context, lower string) (Person, error) {
@@ -173,12 +205,15 @@ func (q *Queries) GetPersonByEmail(ctx context.Context, lower string) (Person, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
 }
 
 const getSessionByTokenHash = `-- name: GetSessionByTokenHash :one
-SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at, people.administers
+SELECT sessions.id, sessions.token_hash, sessions.person_id, sessions.remembered, sessions.expires_at, sessions.last_seen_at, sessions.revoked_at, sessions.created_at, people.id, people.email, people.display_name, people.password_hash, people.disabled_at, people.created_at, people.updated_at, people.administers, people.picture, people.picture_kind, people.email_waiting
 FROM sessions
 JOIN people ON people.id = sessions.person_id
 WHERE sessions.token_hash = $1
@@ -209,6 +244,9 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash []byte) (
 		&i.Person.CreatedAt,
 		&i.Person.UpdatedAt,
 		&i.Person.Administers,
+		&i.Person.Picture,
+		&i.Person.PictureKind,
+		&i.Person.EmailWaiting,
 	)
 	return i, err
 }
@@ -224,6 +262,22 @@ func (q *Queries) LastSeenFor(ctx context.Context, personID pgtype.UUID) (pgtype
 	var last_seen pgtype.Timestamptz
 	err := row.Scan(&last_seen)
 	return last_seen, err
+}
+
+const readPicture = `-- name: ReadPicture :one
+SELECT picture, picture_kind FROM people WHERE id = $1
+`
+
+type ReadPictureRow struct {
+	Picture     []byte `json:"picture"`
+	PictureKind string `json:"picture_kind"`
+}
+
+func (q *Queries) ReadPicture(ctx context.Context, id pgtype.UUID) (ReadPictureRow, error) {
+	row := q.db.QueryRow(ctx, readPicture, id)
+	var i ReadPictureRow
+	err := row.Scan(&i.Picture, &i.PictureKind)
+	return i, err
 }
 
 const revokeSession = `-- name: RevokeSession :exec
@@ -244,6 +298,21 @@ func (q *Queries) RevokeSessionByTokenHash(ctx context.Context, tokenHash []byte
 	return err
 }
 
+const revokeSessionForPerson = `-- name: RevokeSessionForPerson :exec
+UPDATE sessions SET revoked_at = now()
+WHERE id = $1 AND person_id = $2 AND revoked_at IS NULL
+`
+
+type RevokeSessionForPersonParams struct {
+	ID       pgtype.UUID `json:"id"`
+	PersonID pgtype.UUID `json:"person_id"`
+}
+
+func (q *Queries) RevokeSessionForPerson(ctx context.Context, arg RevokeSessionForPersonParams) error {
+	_, err := q.db.Exec(ctx, revokeSessionForPerson, arg.ID, arg.PersonID)
+	return err
+}
+
 const revokeSessionsForPerson = `-- name: RevokeSessionsForPerson :exec
 UPDATE sessions SET revoked_at = now() WHERE person_id = $1 AND revoked_at IS NULL
 `
@@ -253,10 +322,51 @@ func (q *Queries) RevokeSessionsForPerson(ctx context.Context, personID pgtype.U
 	return err
 }
 
+const sessionsForPerson = `-- name: SessionsForPerson :many
+SELECT id, last_seen_at, created_at, remembered, token_hash
+FROM sessions
+WHERE person_id = $1 AND revoked_at IS NULL AND expires_at > now()
+ORDER BY last_seen_at DESC
+`
+
+type SessionsForPersonRow struct {
+	ID         pgtype.UUID        `json:"id"`
+	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	Remembered bool               `json:"remembered"`
+	TokenHash  []byte             `json:"token_hash"`
+}
+
+func (q *Queries) SessionsForPerson(ctx context.Context, personID pgtype.UUID) ([]SessionsForPersonRow, error) {
+	rows, err := q.db.Query(ctx, sessionsForPerson, personID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SessionsForPersonRow{}
+	for rows.Next() {
+		var i SessionsForPersonRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.LastSeenAt,
+			&i.CreatedAt,
+			&i.Remembered,
+			&i.TokenHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setDisplayName = `-- name: SetDisplayName :one
 UPDATE people SET display_name = $2, updated_at = now()
 WHERE id = $1
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting
 `
 
 type SetDisplayNameParams struct {
@@ -276,8 +386,26 @@ func (q *Queries) SetDisplayName(ctx context.Context, arg SetDisplayNameParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
+}
+
+const setEmailWaiting = `-- name: SetEmailWaiting :exec
+UPDATE people SET email_waiting = $2, updated_at = now()
+WHERE id = $1
+`
+
+type SetEmailWaitingParams struct {
+	ID           pgtype.UUID `json:"id"`
+	EmailWaiting *string     `json:"email_waiting"`
+}
+
+func (q *Queries) SetEmailWaiting(ctx context.Context, arg SetEmailWaitingParams) error {
+	_, err := q.db.Exec(ctx, setEmailWaiting, arg.ID, arg.EmailWaiting)
+	return err
 }
 
 const setPersonPassword = `-- name: SetPersonPassword :exec
@@ -294,6 +422,22 @@ type SetPersonPasswordParams struct {
 
 func (q *Queries) SetPersonPassword(ctx context.Context, arg SetPersonPasswordParams) error {
 	_, err := q.db.Exec(ctx, setPersonPassword, arg.ID, arg.PasswordHash)
+	return err
+}
+
+const setPicture = `-- name: SetPicture :exec
+UPDATE people SET picture = $2, picture_kind = $3, updated_at = now()
+WHERE id = $1
+`
+
+type SetPictureParams struct {
+	ID          pgtype.UUID `json:"id"`
+	Picture     []byte      `json:"picture"`
+	PictureKind string      `json:"picture_kind"`
+}
+
+func (q *Queries) SetPicture(ctx context.Context, arg SetPictureParams) error {
+	_, err := q.db.Exec(ctx, setPicture, arg.ID, arg.Picture, arg.PictureKind)
 	return err
 }
 
@@ -335,7 +479,7 @@ func (q *Queries) TouchSession(ctx context.Context, id pgtype.UUID) error {
 const turnAccountOff = `-- name: TurnAccountOff :one
 UPDATE people SET disabled_at = now(), updated_at = now()
 WHERE id = $1 AND disabled_at IS NULL
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting
 `
 
 func (q *Queries) TurnAccountOff(ctx context.Context, id pgtype.UUID) (Person, error) {
@@ -350,6 +494,9 @@ func (q *Queries) TurnAccountOff(ctx context.Context, id pgtype.UUID) (Person, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
 }
@@ -357,7 +504,7 @@ func (q *Queries) TurnAccountOff(ctx context.Context, id pgtype.UUID) (Person, e
 const turnAccountOn = `-- name: TurnAccountOn :one
 UPDATE people SET disabled_at = NULL, updated_at = now()
 WHERE id = $1
-RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting
 `
 
 func (q *Queries) TurnAccountOn(ctx context.Context, id pgtype.UUID) (Person, error) {
@@ -372,6 +519,9 @@ func (q *Queries) TurnAccountOn(ctx context.Context, id pgtype.UUID) (Person, er
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
 	)
 	return i, err
 }

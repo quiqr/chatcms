@@ -204,6 +204,12 @@ func (s *Service) linkFor(token string) string {
 	return s.baseURL + "/set-password?token=" + url.QueryEscape(token)
 }
 
+// confirmLinkFor is where a link that proves a new address lands, which is
+// not where a link that sets a password lands.
+func (s *Service) confirmLinkFor(token string) string {
+	return s.baseURL + "/confirm-address?token=" + url.QueryEscape(token)
+}
+
 // send puts the message on its way. When there is nowhere to send, the post
 // writes the link to the log instead, which is what an install run by the
 // person who owns it needs: being made to set up SMTP before anybody can

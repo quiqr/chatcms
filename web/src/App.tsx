@@ -19,6 +19,7 @@ import { AdministrationPage } from "./routes/AdministrationPage";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
+import { ConfirmAddressPage } from "./routes/ConfirmAddressPage";
 import { ForgotPasswordPage } from "./routes/ForgotPasswordPage";
 import { SetPasswordPage } from "./routes/SetPasswordPage";
 import { SignInPage } from "./routes/SignInPage";
@@ -30,6 +31,7 @@ export function App() {
         <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/set-password" element={<SetPasswordPage />} />
+        <Route path="/confirm-address" element={<ConfirmAddressPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Everything below knows who is looking and which organisation the

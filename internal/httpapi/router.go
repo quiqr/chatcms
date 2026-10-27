@@ -79,6 +79,11 @@ func New(opts Options) http.Handler {
 		mux.Handle("POST /api/sign-out", signOutHandler(opts.Auth, opts.Secure))
 		mux.HandleFunc("/api/sign-out", MethodNotAllowed)
 
+		// Not behind RequireActor: the link is followed from a mail
+		// program, where the session that asked may not be.
+		mux.Handle("POST /api/confirm-address", confirmAddressHandler(opts.Auth))
+		mux.HandleFunc("/api/confirm-address", MethodNotAllowed)
+
 		mux.Handle("POST /api/sign-out/everywhere",
 			RequireActor(signOutEverywhereHandler(opts.Auth, opts.Secure)))
 		mux.HandleFunc("/api/sign-out/everywhere", MethodNotAllowed)

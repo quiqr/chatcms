@@ -124,3 +124,20 @@ func (c *Credentials) StopEveryLinkFor(ctx context.Context, kind TokenKind, pers
 		Kind:     string(kind),
 	})
 }
+
+// SpendWithoutAPassword spends a link that proves something other than a
+// password, such as a new email address, and says whose it was.
+func (c *Credentials) SpendWithoutAPassword(ctx context.Context, token string, kind TokenKind) (uuid.UUID, error) {
+	row, err := c.db.Queries.GetCredentialTokenByHash(ctx, hashToken(token))
+	if err != nil {
+		return uuid.Nil, ErrBadToken
+	}
+	if TokenKind(row.Kind) != kind || row.SpentAt.Valid || c.now().After(row.ExpiresAt.Time) {
+		return uuid.Nil, ErrBadToken
+	}
+
+	if err := c.db.Queries.SpendCredentialToken(ctx, row.ID); err != nil {
+		return uuid.Nil, fmt.Errorf("marking the link as used failed: %w", err)
+	}
+	return uuid.UUID(row.PersonID.Bytes), nil
+}

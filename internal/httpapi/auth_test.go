@@ -42,6 +42,14 @@ func (s *stubAuth) SignOut(_ context.Context, token string) error {
 	return s.signOutErr
 }
 
+func (s *stubAuth) ProveTheNewAddress(_ context.Context, token string) (Actor, error) {
+	s.setRequested = append(s.setRequested, [2]string{token, "confirm"})
+	if s.setErr != nil {
+		return Anonymous(), s.setErr
+	}
+	return Actor{ID: "person-1", Email: "new@example.org"}, nil
+}
+
 func (s *stubAuth) SignOutEverywhere(_ context.Context, who Actor) error {
 	s.signedOut = append(s.signedOut, "everywhere for "+who.ID)
 	return s.signOutErr
@@ -445,5 +453,34 @@ func TestSigningOutEverywhereNeedsSomebody(t *testing.T) {
 
 	if recorder.Code != http.StatusUnauthorized {
 		t.Errorf("status = %d, want 401", recorder.Code)
+	}
+}
+
+func TestAnAddressIsProvedByFollowingTheLink(t *testing.T) {
+	auth := &stubAuth{}
+	handler := withAuth(auth)
+
+	recorder := call(t, handler, http.MethodPost, "/api/confirm-address",
+		map[string]any{"token": "a-token"})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if !strings.Contains(recorder.Body.String(), "new@example.org") {
+		t.Errorf("body = %s, want the new address", recorder.Body)
+	}
+}
+
+func TestALinkThatCannotBeUsedSaysWhatToDo(t *testing.T) {
+	handler := withAuth(&stubAuth{setErr: ErrLinkUnusable})
+
+	recorder := call(t, handler, http.MethodPost, "/api/confirm-address",
+		map[string]any{"token": "used-already"})
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), "new one") {
+		t.Errorf("body = %s, want it to say what to do", recorder.Body)
 	}
 }

@@ -17,6 +17,7 @@ type AuthService interface {
 	RequestPasswordReset(ctx context.Context, email, caller string) error
 	SetPasswordWithToken(ctx context.Context, token, password string) (Actor, string, time.Time, error)
 	SignOutEverywhere(ctx context.Context, who Actor) error
+	ProveTheNewAddress(ctx context.Context, token string) (Actor, error)
 }
 
 // These are the failures the HTTP layer tells apart. Everything else is an
@@ -136,6 +137,27 @@ func signOutEverywhereHandler(auth AuthService, secure bool) http.Handler {
 		// cookie goes with them.
 		ClearSessionCookie(w, secure)
 		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+func confirmAddressHandler(auth AuthService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body setPasswordRequest
+		if err := Decode(w, r, &body); err != nil {
+			WriteDecodeError(w, err)
+			return
+		}
+
+		actor, err := auth.ProveTheNewAddress(r.Context(), body.Token)
+		switch {
+		case errors.Is(err, ErrLinkUnusable):
+			WriteError(w, http.StatusBadRequest, CodeBadRequest,
+				"This link cannot be used any more. Ask for a new one from your account.")
+		case err != nil:
+			writeTenancyError(w, err)
+		default:
+			WriteJSON(w, http.StatusOK, actorResponse(actor))
+		}
 	})
 }
 

@@ -114,3 +114,29 @@ func paragraphs(parts ...string) string {
 	out.WriteString("</div>")
 	return out.String()
 }
+
+// NewAddress is the message sent to an address somebody wants to start using,
+// because following the link is what proves they read it.
+func NewAddress(link string) Message {
+	text := join(
+		"You asked to use this address for your website account.",
+		"",
+		"Confirm it here:",
+		link,
+		"",
+		"Until you do, your account keeps the address it has.",
+		"",
+		"If you did not ask for this, you can ignore it. Nothing changes.",
+	)
+
+	return Message{
+		Subject: "Confirm this address",
+		Text:    text,
+		HTML: paragraphs(
+			"You asked to use this address for your website account.",
+			button(link, "Confirm this address"),
+			"Until you do, your account keeps the address it has.",
+			"If you did not ask for this, you can ignore it. Nothing changes.",
+		),
+	}
+}

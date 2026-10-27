@@ -4,7 +4,10 @@ package auth_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
+	"image"
+	_ "image/png"
 	"log/slog"
 	"strings"
 	"testing"
@@ -458,7 +461,6 @@ func TestSignInIsRateLimited(t *testing.T) {
 	}
 }
 
-
 // failureOf keeps only what a table of refusals is about, now that setting a
 // password also hands back a session.
 func failureOf(_ httpapi.Actor, _ string, _ time.Time, err error) error { return err }
@@ -507,5 +509,166 @@ func TestSigningOutEverywhereEndsEveryoneOfYours(t *testing.T) {
 	}
 	if theirs != 1 {
 		t.Errorf("somebody else has %d sessions, want 1 untouched", theirs)
+	}
+}
+
+// aTinyPicture is the smallest real PNG, so that what is stored is a picture
+// rather than bytes named like one.
+func aTinyPicture(t *testing.T) []byte {
+	t.Helper()
+	raw, err := base64.StdEncoding.DecodeString(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
+
+func TestAPictureIsStoredSmallAndSquare(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+
+	if err := h.service.People().SetPicture(t.Context(), person.ID, aTinyPicture(t)); err != nil {
+		t.Fatalf("SetPicture() error = %v, want nil", err)
+	}
+
+	picture, has, err := h.service.People().ReadPicture(t.Context(), person.ID)
+	if err != nil || !has {
+		t.Fatalf("ReadPicture() = %v, %v, want a picture", has, err)
+	}
+	if picture.Kind != "image/png" {
+		t.Errorf("kind = %q, want image/png", picture.Kind)
+	}
+
+	// It is kept at one size, so what somebody's phone produced is not what
+	// the database holds.
+	decoded, _, err := image.Decode(bytes.NewReader(picture.Content))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Bounds().Dx() != auth.PictureSize || decoded.Bounds().Dy() != auth.PictureSize {
+		t.Errorf("stored %dx%d, want %d square", decoded.Bounds().Dx(), decoded.Bounds().Dy(), auth.PictureSize)
+	}
+
+	if err := h.service.People().RemovePicture(t.Context(), person.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, has, _ := h.service.People().ReadPicture(t.Context(), person.ID); has {
+		t.Error("the picture is still there after being removed")
+	}
+}
+
+func TestWhatIsNotAPictureIsRefused(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+
+	for what, content := range map[string][]byte{
+		"a text file": []byte("this is not a picture, whatever it was called"),
+		"empty":       {},
+		"a drawing":   []byte(`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`),
+	} {
+		if err := h.service.People().SetPicture(t.Context(), person.ID, content); !errors.Is(err, auth.ErrNotAPicture) {
+			t.Errorf("SetPicture() with %s error = %v, want ErrNotAPicture", what, err)
+		}
+	}
+
+	if _, has, _ := h.service.People().ReadPicture(t.Context(), person.ID); has {
+		t.Error("something that is not a picture was stored")
+	}
+}
+
+func TestAnAddressChangesOnlyOnceItIsProven(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+	who := httpapi.Actor{ID: person.ID.String(), Email: person.Email}
+
+	if err := h.service.AskForANewAddress(t.Context(), who, "joris@korenaar.example"); err != nil {
+		t.Fatalf("AskForANewAddress() error = %v, want nil", err)
+	}
+
+	// Until the link is followed, the old address is the one that works.
+	if _, _, _, err := h.service.SignIn(t.Context(), "joris@example.org", password, "a-caller", false); err != nil {
+		t.Errorf("the old address stopped working before the new one was proven: %v", err)
+	}
+	if _, _, _, err := h.service.SignIn(t.Context(), "joris@korenaar.example", password, "a-caller", false); err == nil {
+		t.Error("the new address worked before it was proven")
+	}
+}
+
+func TestAnAddressSomebodyElseHoldsIsRefused(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+	h.person(t, "taken@example.org")
+
+	err := h.service.AskForANewAddress(t.Context(),
+		httpapi.Actor{ID: person.ID.String(), Email: person.Email}, "taken@example.org")
+
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("asking for an address somebody holds error = %v, want a refusal", err)
+	}
+}
+
+func TestOneSessionIsEndedAndTheOthersAreNot(t *testing.T) {
+	h := newHarness(t)
+	person := h.person(t, "joris@example.org")
+	who := httpapi.Actor{ID: person.ID.String(), Email: person.Email}
+
+	for range 3 {
+		if _, _, _, err := h.service.SignIn(t.Context(), "joris@example.org", password, "a-caller", false); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	places, err := h.service.SessionsFor(t.Context(), who, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(places) != 3 {
+		t.Fatalf("%d sessions, want 3", len(places))
+	}
+
+	if err := h.service.EndSession(t.Context(), who, places[0].ID.String()); err != nil {
+		t.Fatalf("EndSession() error = %v, want nil", err)
+	}
+
+	left, err := h.service.SessionsFor(t.Context(), who, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 2 {
+		t.Errorf("%d sessions left, want 2", len(left))
+	}
+}
+
+func TestSomebodyCannotEndAnotherPersonsSession(t *testing.T) {
+	h := newHarness(t)
+	mine := h.person(t, "joris@example.org")
+	theirs := h.person(t, "marieke@example.org")
+
+	if _, _, _, err := h.service.SignIn(t.Context(), "marieke@example.org", password, "a-caller", false); err != nil {
+		t.Fatal(err)
+	}
+
+	places, err := h.service.SessionsFor(t.Context(),
+		httpapi.Actor{ID: theirs.ID.String(), Email: theirs.Email}, "")
+	if err != nil || len(places) != 1 {
+		t.Fatalf("reading their sessions = %v, %v", len(places), err)
+	}
+
+	// Asked for by somebody else, naming their session: the person is part
+	// of the question, so this changes nothing.
+	if err := h.service.EndSession(t.Context(),
+		httpapi.Actor{ID: mine.ID.String(), Email: mine.Email}, places[0].ID.String()); err != nil {
+		t.Fatalf("EndSession() error = %v", err)
+	}
+
+	still, err := h.service.SessionsFor(t.Context(),
+		httpapi.Actor{ID: theirs.ID.String(), Email: theirs.Email}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(still) != 1 {
+		t.Error("one account ended another's session")
 	}
 }

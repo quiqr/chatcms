@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"path"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/quiqr/chatcms/internal/imagekind"
 )
 
 // Image is one picture in a site, as a person sees it.
@@ -32,7 +33,7 @@ func (i Image) Used() bool { return len(i.UsedOn) > 0 }
 
 var (
 	// ErrNotAnImage says the file is not a kind of picture ChatCMS will take.
-	ErrNotAnImage = errors.New("media: that is not a picture ChatCMS can use")
+	ErrNotAnImage = fmt.Errorf("media: %w", imagekind.ErrNotAnImage)
 	// ErrTooLarge says the file is bigger than a site should carry.
 	ErrTooLarge = errors.New("media: that picture is too large")
 	// ErrNoName says the file has no name anything could be made from.
@@ -44,36 +45,15 @@ var (
 // and git is a poor place to keep it.
 const MaxBytes = 25 << 20
 
-// kinds are the pictures ChatCMS will take, by what the bytes say they are.
-// The name is not trusted: a file called .png that is not one would be shown
-// as a broken picture on the live site.
-var kinds = map[string]string{
-	"image/png":     ".png",
-	"image/jpeg":    ".jpg",
-	"image/gif":     ".gif",
-	"image/webp":    ".webp",
-	"image/svg+xml": ".svg",
-}
-
-// KindOf says what a picture is from its own bytes, and what it should be
-// called. SVG is text, so it is recognised by its own opening rather than by
-// sniffing, which reports it as plain text or XML.
+// KindOf says what a picture is from its own bytes. The rule lives in
+// internal/imagekind because a person's picture needs the same answer and
+// neither package should depend on the other.
 func KindOf(content []byte) (string, string, error) {
-	if looksLikeSVG(content) {
-		return "image/svg+xml", ".svg", nil
-	}
-
-	kind, _, _ := strings.Cut(http.DetectContentType(content), ";")
-	extension, known := kinds[kind]
-	if !known {
-		return "", "", fmt.Errorf("%w: it looks like %s", ErrNotAnImage, kind)
+	kind, extension, err := imagekind.Of(content)
+	if err != nil {
+		return "", "", fmt.Errorf("media: %w", err)
 	}
 	return kind, extension, nil
-}
-
-func looksLikeSVG(content []byte) bool {
-	head := strings.ToLower(string(content[:min(len(content), 1024)]))
-	return strings.Contains(head, "<svg")
 }
 
 // Name turns what a file was called into a name a site can carry: small
@@ -133,7 +113,7 @@ func Pictures(fsys fs.FS, folder string) []string {
 		if entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
-		if _, known := kinds[kindByName(entry.Name())]; known {
+		if _, known := imagekind.Kinds[kindByName(entry.Name())]; known {
 			names = append(names, entry.Name())
 		}
 	}

@@ -77,6 +77,9 @@ type Person struct {
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 	Administers  bool               `json:"administers"`
+	Picture      []byte             `json:"picture"`
+	PictureKind  string             `json:"picture_kind"`
+	EmailWaiting *string            `json:"email_waiting"`
 }
 
 type Project struct {

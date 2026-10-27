@@ -61,9 +61,9 @@ async function ensureRequestToken(): Promise<string> {
  * sendForm sends a file the way a browser sends one, which is the only way to
  * send a picture without turning it into text first.
  */
-export async function sendForm<T>(path: string, body: FormData): Promise<T> {
+export async function sendForm<T>(path: string, body: FormData, method = "POST"): Promise<T> {
   const response = await fetch(path, {
-    method: "POST",
+    method,
     headers: {
       Accept: "application/json",
       [REQUEST_TOKEN_HEADER]: await ensureRequestToken(),

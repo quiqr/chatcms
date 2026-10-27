@@ -1,11 +1,11 @@
 ---
 # chatcms-clq4
 title: 'Account settings: a picture, an email address, and your sessions'
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-10-27T13:06:17Z
-updated_at: 2026-10-27T13:06:17Z
+updated_at: 2026-10-27T13:57:20Z
 parent: chatcms-8vem
 blocked_by:
     - chatcms-k1hf

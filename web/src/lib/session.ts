@@ -1,4 +1,4 @@
-import { get, post, put } from "./api";
+import { get, post, put, remove, sendForm } from "./api";
 
 export type Person = {
   id: string;
@@ -38,4 +38,37 @@ export function changeOwnPassword(current: string, next: string) {
 
 export function signOutEverywhere() {
   return post<void>("/api/sign-out/everywhere");
+}
+
+export type WhereSignedIn = {
+  id: string;
+  lastSeen: string;
+  started: string;
+  thisOne: boolean;
+};
+
+export function setPicture(file: File) {
+  const carried = new FormData();
+  carried.append("picture", file);
+  return sendForm<void>("/api/account/picture", carried, "PUT");
+}
+
+export function removePicture() {
+  return remove<void>("/api/account/picture");
+}
+
+export function askForANewAddress(email: string) {
+  return post<void>("/api/account/address", { email });
+}
+
+export function whereSignedIn() {
+  return get<{ sessions: WhereSignedIn[] }>("/api/account/sessions");
+}
+
+export function endSession(id: string) {
+  return remove<void>(`/api/account/sessions/${id}`);
+}
+
+export function proveTheNewAddress(token: string) {
+  return post<Person>("/api/confirm-address", { token });
 }

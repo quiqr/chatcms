@@ -34,6 +34,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A NixOS module and a virtual machine test that boots it, runs the migrations
   from an empty database, and asserts the master key never reaches the Nix
   store. See `docs/DEPLOYING.md`.
+- An account has a picture, which is shown wherever that person is. It is
+  kept with the account rather than in any site, because it crosses
+  organisations and must never be published with somebody's content; a test
+  enforces that nothing which writes into a site can read one.
+- An email address can be changed, once the link sent to the new address is
+  followed. Until then the old one keeps working, so a typo cannot lock
+  anybody out.
+- You can see where you are signed in and end one of those sessions, for the
+  laptop left at the office.
 - An organisation's own owner manages who belongs to it: inviting, changing
   what somebody holds there, and taking them out, rather than asking whoever
   runs the service every time. An invitation that was never accepted can be

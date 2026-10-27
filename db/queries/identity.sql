@@ -78,3 +78,30 @@ WHERE person_id = $1 AND revoked_at IS NULL;
 -- one account is one more than anybody needs.
 UPDATE credential_tokens SET spent_at = now()
 WHERE person_id = $1 AND kind = $2 AND spent_at IS NULL;
+
+-- name: SetPicture :exec
+UPDATE people SET picture = $2, picture_kind = $3, updated_at = now()
+WHERE id = $1;
+
+-- name: ReadPicture :one
+SELECT picture, picture_kind FROM people WHERE id = $1;
+
+-- name: SetEmailWaiting :exec
+UPDATE people SET email_waiting = $2, updated_at = now()
+WHERE id = $1;
+
+-- name: ConfirmEmailWaiting :one
+UPDATE people
+SET email = email_waiting, email_waiting = NULL, updated_at = now()
+WHERE id = $1 AND email_waiting IS NOT NULL
+RETURNING *;
+
+-- name: SessionsForPerson :many
+SELECT id, last_seen_at, created_at, remembered, token_hash
+FROM sessions
+WHERE person_id = $1 AND revoked_at IS NULL AND expires_at > now()
+ORDER BY last_seen_at DESC;
+
+-- name: RevokeSessionForPerson :exec
+UPDATE sessions SET revoked_at = now()
+WHERE id = $1 AND person_id = $2 AND revoked_at IS NULL;
