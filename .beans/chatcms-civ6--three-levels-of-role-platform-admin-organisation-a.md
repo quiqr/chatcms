@@ -1,11 +1,11 @@
 ---
 # chatcms-civ6
 title: 'Three levels of role: platform admin, organisation admin, project roles'
-status: todo
+status: in-progress
 type: epic
 priority: critical
 created_at: 2026-11-02T20:04:48Z
-updated_at: 2026-11-02T20:04:48Z
+updated_at: 2026-11-02T20:44:05Z
 parent: chatcms-7r0u
 ---
 

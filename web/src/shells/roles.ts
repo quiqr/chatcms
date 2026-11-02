@@ -2,8 +2,9 @@ import { maybe, type Key } from "../lib/say";
 
 // The roles a person may hold on a project, as the server names them. They
 // are compared as text here because the server is where a role is decided;
-// this only chooses what to draw.
-const seesSetup = new Set<string>(["owner", "implementer"]);
+// this only chooses what to draw. Somebody who administers the organisation
+// reaches a project as its implementer, so they are covered by the same set.
+const seesSetup = new Set<string>(["implementer"]);
 const seesTechnicalDetail = seesSetup;
 
 export function canSeeSetup(role: string) {

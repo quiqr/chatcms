@@ -63,6 +63,16 @@ func (d *DB) MigrateDown(ctx context.Context) error {
 	})
 }
 
+// MigrateUpTo applies migrations as far as a version and stops. It exists for
+// tests that have to put rows in the shape an older schema allowed before the
+// migration that changes them runs.
+func (d *DB) MigrateUpTo(ctx context.Context, version int64) error {
+	return d.withProvider(func(provider *goose.Provider) error {
+		_, err := provider.UpTo(ctx, version)
+		return err
+	})
+}
+
 // MigrateDownTo rolls back to a version, with zero meaning an empty schema.
 // It exists for tests that prove a migration is reversible.
 func (d *DB) MigrateDownTo(ctx context.Context, version int64) error {

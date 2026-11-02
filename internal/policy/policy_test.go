@@ -26,40 +26,31 @@ func here() Resource {
 // test's expectation as well.
 var expected = map[Action]map[Role]bool{
 	ActionReadContent: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: true, RoleViewer: true,
+		RoleImplementer: true, RoleEditor: true, RoleViewer: true,
 	},
 	ActionEditContent: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: true, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: true, RoleViewer: false,
 	},
 	ActionEditMedia: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: true, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: true, RoleViewer: false,
 	},
 	ActionPublish: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: true, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: true, RoleViewer: false,
 	},
 	ActionGoBackToAVersion: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: true, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: true, RoleViewer: false,
 	},
 	ActionManagePeople: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: false, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: false, RoleViewer: false,
 	},
 	ActionChangeSettings: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: false, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: false, RoleViewer: false,
 	},
 	ActionManageWorkflows: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: false, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: false, RoleViewer: false,
 	},
 	ActionSeeTechnicalDetail: {
-		RoleOwner: true, RoleImplementer: true, RoleEditor: false, RoleViewer: false,
-	},
-	ActionManageBilling: {
-		RoleOwner: true, RoleImplementer: false, RoleEditor: false, RoleViewer: false,
-	},
-	ActionDeleteProject: {
-		RoleOwner: true, RoleImplementer: false, RoleEditor: false, RoleViewer: false,
-	},
-	ActionCreateProject: {
-		RoleOwner: true, RoleImplementer: false, RoleEditor: false, RoleViewer: false,
+		RoleImplementer: true, RoleEditor: false, RoleViewer: false,
 	},
 }
 
@@ -70,6 +61,15 @@ func TestEveryRoleAgainstEveryAction(t *testing.T) {
 		if OverTheInstallation(action) {
 			if _, listed := expected[action]; listed {
 				t.Errorf("%s is held over the installation and should not be in the role table", action)
+			}
+			continue
+		}
+
+		// Nor is an action held over the organisation: no project role
+		// carries one, however large it is.
+		if OverTheOrganisation(action) {
+			if _, listed := expected[action]; listed {
+				t.Errorf("%s is held over the organisation and should not be in the role table", action)
 			}
 			continue
 		}
@@ -134,37 +134,39 @@ func TestNoRoleMeansNo(t *testing.T) {
 }
 
 func TestAnotherProjectIsNotThisOne(t *testing.T) {
-	actor := holder(RoleOwner)
+	actor := holder(RoleImplementer)
 
 	elsewhere := Project(anOrganisation, "another-project")
 	for _, action := range Actions {
 		if Can(actor, action, elsewhere) {
-			t.Errorf("an owner of one project may %s on another", action)
+			t.Errorf("an implementer of one project may %s on another", action)
 		}
 	}
 }
 
-func TestOrganisationOwnerOwnsItsProjects(t *testing.T) {
-	owner := Actor{
+func TestOrganisationAdminReachesItsProjects(t *testing.T) {
+	admin := Actor{
 		PersonID:      "person-1",
-		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationOwner},
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin},
 		Projects:      map[string]Role{},
 	}
 
-	role, held := EffectiveRole(owner, here())
-	if !held || role != RoleOwner {
-		t.Fatalf("EffectiveRole() = %q, %v, want owner", role, held)
+	// Implementer, because there is no owner of a project to raise to. What
+	// an organisation admin holds beyond that is held over the organisation.
+	role, held := EffectiveRole(admin, here())
+	if !held || role != RoleImplementer {
+		t.Fatalf("EffectiveRole() = %q, %v, want implementer", role, held)
 	}
 
 	for _, action := range Actions {
 		if OverTheInstallation(action) {
-			if Can(owner, action, here()) {
-				t.Errorf("owning an organisation granted %s, which is the installation's", action)
+			if Can(admin, action, here()) {
+				t.Errorf("administering an organisation granted %s, which is the installation's", action)
 			}
 			continue
 		}
-		if !Can(owner, action, here()) {
-			t.Errorf("an organisation's owner may not %s on its project", action)
+		if !Can(admin, action, here()) {
+			t.Errorf("an organisation's admin may not %s on its project", action)
 		}
 	}
 }
@@ -191,15 +193,46 @@ func TestAProjectRoleIsNotRaisedByOrganisationMembership(t *testing.T) {
 	}
 }
 
-func TestAnOrganisationOwnerKeepsOwnerEvenWithALesserProjectRole(t *testing.T) {
+func TestAnOrganisationAdminKeepsItEvenWithALesserProjectRole(t *testing.T) {
 	actor := Actor{
 		PersonID:      "person-1",
-		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationOwner},
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin},
 		Projects:      map[string]Role{aProject: RoleViewer},
 	}
 
 	if !Can(actor, ActionManageBilling, here()) {
-		t.Error("an organisation's owner lost ownership by being added as a viewer")
+		t.Error("an organisation's admin lost it by being added as a viewer")
+	}
+	if !Can(actor, ActionEditContent, here()) {
+		t.Error("being added as a viewer took away what administering reaches")
+	}
+}
+
+// TestARoleBelongsToAPlace holds the sentence the hierarchy board makes: a
+// role is held over a place, not by a person. Somebody can administer one
+// organisation and be an editor on a project in another, and neither reaches
+// into the other.
+func TestARoleBelongsToAPlace(t *testing.T) {
+	const elsewhere = "org-2"
+	const theirProject = "project-2"
+
+	actor := Actor{
+		PersonID:      "person-1",
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin, elsewhere: OrganisationMember},
+		Projects:      map[string]Role{theirProject: RoleEditor},
+	}
+
+	if !Can(actor, ActionDeleteProject, here()) {
+		t.Error("the admin of an organisation may not delete a project in it")
+	}
+	if Can(actor, ActionDeleteProject, Project(elsewhere, theirProject)) {
+		t.Error("administering one organisation deleted a project in another")
+	}
+	if !Can(actor, ActionEditContent, Project(elsewhere, theirProject)) {
+		t.Error("an editor elsewhere may not edit there")
+	}
+	if Can(actor, ActionManagePeople, Project(elsewhere, theirProject)) {
+		t.Error("an editor elsewhere manages people there")
 	}
 }
 
@@ -226,15 +259,34 @@ func TestAllowedListsWhatMayBeDone(t *testing.T) {
 	if cases[RoleViewer] != 1 {
 		t.Errorf("a viewer may do %d things, want only reading", cases[RoleViewer])
 	}
+	withARole := 0
+	for _, action := range Actions {
+		if !OverTheInstallation(action) && !OverTheOrganisation(action) {
+			withARole++
+		}
+	}
+	if cases[RoleImplementer] != withARole {
+		t.Errorf("an implementer may do %d of %d things a role carries", cases[RoleImplementer], withARole)
+	}
+
+	// An organisation's admin is offered what the organisation carries as
+	// well, because a screen asking what it may offer on a project has to
+	// know whether Delete belongs on it.
+	admin := Actor{
+		PersonID:      "person-1",
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin},
+	}
 	onAProject := 0
 	for _, action := range Actions {
 		if !OverTheInstallation(action) {
 			onAProject++
 		}
 	}
-	if cases[RoleOwner] != onAProject {
-		t.Errorf("an owner may do %d of %d things on a project", cases[RoleOwner], onAProject)
+	if len(Allowed(admin, here())) != onAProject {
+		t.Errorf("an organisation's admin is offered %d of %d things on a project",
+			len(Allowed(admin, here())), onAProject)
 	}
+
 	if cases[RoleEditor] >= cases[RoleImplementer] {
 		t.Error("an editor may do at least as much as an implementer")
 	}
@@ -246,21 +298,49 @@ func TestAllowedListsWhatMayBeDone(t *testing.T) {
 func TestOrganisationLevelActions(t *testing.T) {
 	owner := Actor{
 		PersonID:      "person-1",
-		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationOwner},
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin},
 	}
 	member := Actor{
 		PersonID:      "person-2",
 		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationMember},
 	}
 
-	if !Can(owner, ActionCreateProject, Organisation(anOrganisation)) {
-		t.Error("an organisation's owner may not create a project in it")
+	for _, action := range Actions {
+		if !OverTheOrganisation(action) {
+			continue
+		}
+		if !Can(owner, action, Organisation(anOrganisation)) {
+			t.Errorf("an organisation's admin may not %s in it", action)
+		}
+		if Can(member, action, Organisation(anOrganisation)) {
+			t.Errorf("an organisation's member may %s in it", action)
+		}
+		if Can(owner, action, Organisation("another-organisation")) {
+			t.Errorf("the admin of one organisation may %s in another", action)
+		}
+		if Can(holder(RoleImplementer), action, here()) {
+			t.Errorf("a project's implementer may %s, which belongs to the organisation", action)
+		}
 	}
-	if Can(member, ActionCreateProject, Organisation(anOrganisation)) {
-		t.Error("an organisation's member may create a project in it")
+}
+
+// TestSettingLimitsIsThePlatformAdmins holds the top of the hierarchy: a
+// limit is set from above the organisation it binds, so no organisation admin
+// can lift their own.
+func TestSettingLimitsIsThePlatformAdmins(t *testing.T) {
+	if !OverTheInstallation(ActionSetLimits) {
+		t.Fatal("setting limits is not held over the installation")
 	}
-	if Can(owner, ActionCreateProject, Organisation("another-organisation")) {
-		t.Error("an owner of one organisation may create a project in another")
+
+	admin := Actor{
+		PersonID:      "person-1",
+		Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin},
+	}
+	if Can(admin, ActionSetLimits, Organisation(anOrganisation)) {
+		t.Error("an organisation's admin may set its own limits")
+	}
+	if !Can(administrator(), ActionSetLimits, Resource{}) {
+		t.Error("a platform admin may not set limits")
 	}
 }
 
@@ -309,7 +389,7 @@ func TestAnAdministratorWhoJoinsHoldsWhatTheJoiningGrants(t *testing.T) {
 		t.Error("an administrator who joined as an editor may not edit")
 	}
 	if Can(joined, ActionDeleteProject, here()) {
-		t.Error("joining as an editor granted an owner's action")
+		t.Error("joining as an editor granted what the organisation holds")
 	}
 	if !Can(joined, ActionCreateOrganisation, Resource{}) {
 		t.Error("joining a project took away administering")
@@ -320,8 +400,8 @@ func TestWithoutAdministeringTheInstallationIsClosed(t *testing.T) {
 	for _, who := range []Actor{
 		Nobody(),
 		{PersonID: "person-1"},
-		holder(RoleOwner),
-		{PersonID: "person-2", Organisations: map[string]OrganisationRole{anOrganisation: OrganisationOwner}},
+		holder(RoleImplementer),
+		{PersonID: "person-2", Organisations: map[string]OrganisationRole{anOrganisation: OrganisationAdmin}},
 	} {
 		for _, action := range Actions {
 			if !OverTheInstallation(action) {
@@ -341,8 +421,8 @@ func TestTheResourceSaysNothingAboutInstallationActions(t *testing.T) {
 		if !Can(administrator(), ActionCreateOrganisation, resource) {
 			t.Error("an administrator was refused because of the resource named")
 		}
-		if Can(holder(RoleOwner), ActionCreateOrganisation, resource) {
-			t.Error("a project owner was allowed because of the resource named")
+		if Can(holder(RoleImplementer), ActionCreateOrganisation, resource) {
+			t.Error("a project implementer was allowed because of the resource named")
 		}
 	}
 }

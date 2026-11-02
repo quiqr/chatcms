@@ -215,3 +215,81 @@ func TestJobsRoundTrip(t *testing.T) {
 		t.Errorf("CountJobsByState(done) = %d, %v, want 1, nil", done, err)
 	}
 }
+
+// TestProjectOwnersBecomeImplementers holds what the migration to three
+// levels of role promises a customer: nobody who held a project loses the
+// work they did with it. The role is renamed under them, and the database
+// stops accepting the old word.
+func TestProjectOwnersBecomeImplementers(t *testing.T) {
+	db := open(t)
+	ctx := t.Context()
+
+	// Up to the schema that still had an owner of a project.
+	if err := db.MigrateUpTo(ctx, 12); err != nil {
+		t.Fatalf("MigrateUpTo(12) error = %v, want nil", err)
+	}
+
+	pool := db.Pool()
+	var personID, organisationID, projectID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO people (email, display_name) VALUES ('owner@example.org', 'An Owner') RETURNING id`,
+	).Scan(&personID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO organisations (slug, name) VALUES ('bakery', 'Bakery') RETURNING id`,
+	).Scan(&organisationID); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO projects (organisation_id, slug, name, domain)
+		 VALUES ($1, 'shop', 'The shop', '') RETURNING id`, organisationID,
+	).Scan(&projectID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO project_members (project_id, person_id, role) VALUES ($1, $2, 'owner')`,
+		projectID, personID); err != nil {
+		t.Fatalf("the old schema refused a project owner: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO organisation_members (organisation_id, person_id, role) VALUES ($1, $2, 'owner')`,
+		organisationID, personID); err != nil {
+		t.Fatalf("the old schema refused an organisation owner: %v", err)
+	}
+
+	if err := db.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate() error = %v, want nil", err)
+	}
+
+	var projectRole, organisationRole string
+	if err := pool.QueryRow(ctx,
+		`SELECT role FROM project_members WHERE project_id = $1 AND person_id = $2`,
+		projectID, personID).Scan(&projectRole); err != nil {
+		t.Fatal(err)
+	}
+	if projectRole != "implementer" {
+		t.Errorf("the project owner is now %q, want implementer", projectRole)
+	}
+
+	if err := pool.QueryRow(ctx,
+		`SELECT role FROM organisation_members WHERE organisation_id = $1 AND person_id = $2`,
+		organisationID, personID).Scan(&organisationRole); err != nil {
+		t.Fatal(err)
+	}
+	if organisationRole != "admin" {
+		t.Errorf("the organisation owner is now %q, want admin", organisationRole)
+	}
+
+	// And the word is gone for good.
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO project_members (project_id, person_id, role) VALUES ($1, $2, 'owner')`,
+		projectID, personID); err == nil {
+		t.Error("a project owner can still be written after the migration")
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO organisation_members (organisation_id, person_id, role) VALUES ($1, $2, 'owner')`,
+		organisationID, personID); err == nil {
+		t.Error("an organisation owner can still be written after the migration")
+	}
+}

@@ -64,7 +64,7 @@ func (s *stubAdministration) Organisation(_ context.Context, _ Actor, slug strin
 	return OrganisationWholeView{
 		Slug:     slug,
 		Name:     "Bakery",
-		People:   []MemberView{{Email: "owner@example.org", Role: "owner"}},
+		People:   []MemberView{{Email: "owner@example.org", Role: "admin"}},
 		Projects: []ProjectView{{Slug: "korenaar", Name: "Korenaar Bakery"}},
 	}, s.err
 }
@@ -203,7 +203,7 @@ func TestPuttingSomebodyInAndTakingThemOut(t *testing.T) {
 	handler := withAdministration(service, true)
 
 	put := signedInCall(t, handler, http.MethodPost, "/api/administration/organisations/bakery/people",
-		map[string]any{"email": "marieke@example.org", "role": "owner"})
+		map[string]any{"email": "marieke@example.org", "role": "admin"})
 	if put.Code != http.StatusNoContent {
 		t.Errorf("putting somebody in = %d, want 204: %s", put.Code, put.Body)
 	}
@@ -217,7 +217,7 @@ func TestPuttingSomebodyInAndTakingThemOut(t *testing.T) {
 	if len(service.asked) != 2 {
 		t.Fatalf("the service was asked %v", service.asked)
 	}
-	if service.asked[0] != "put marieke@example.org into bakery as owner" {
+	if service.asked[0] != "put marieke@example.org into bakery as admin" {
 		t.Errorf("putting in asked %q", service.asked[0])
 	}
 	if service.asked[1] != "take marieke@example.org out of bakery" {

@@ -9,7 +9,7 @@ test("an administrator starts a second organisation and the two stay apart", asy
   await test.step("a second organisation, owned by the same person", async () => {
     await page.goto(`${chatcms.url}/administration`);
     await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
-    await page.getByLabel("Who owns it").fill("owner@example.org");
+    await page.getByLabel("Who administers it").fill("owner@example.org");
     await page.getByRole("button", { name: "Start it" }).click();
 
     await expect(page.getByText("/o/bakkerij-zuid")).toBeVisible();
@@ -26,7 +26,7 @@ test("somebody in two organisations sees each one's own projects", async ({
   // The administrator makes the second one; the owner is put in it.
   await administering.goto(`${chatcms.url}/administration`);
   await administering.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
-  await administering.getByLabel("Who owns it").fill("owner@example.org");
+  await administering.getByLabel("Who administers it").fill("owner@example.org");
   await administering.getByRole("button", { name: "Start it" }).click();
   await expect(administering.getByText("/o/bakkerij-zuid")).toBeVisible();
 

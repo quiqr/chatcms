@@ -41,7 +41,7 @@ test("the count on the Publish button is the one the publish screen shows", asyn
 });
 
 test("somebody who may only edit is refused the settings", async ({ signedIn: page, chatcms }) => {
-  // The owner invites an editor, who then has no business in the settings.
+  // The admin invites an editor, who then has no business in the settings.
   await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
   await page.getByLabel("Invite someone").fill("editor@korenaar.example");
   await page.getByLabel("Role for the person you invite").selectOption("editor");
@@ -52,7 +52,7 @@ test("somebody who may only edit is refused the settings", async ({ signedIn: pa
     `${chatcms.url}/api/organisations/technative/projects/korenaar`,
     { data: { name: "Mine now", domain: "" }, failOnStatusCode: false },
   );
-  // The owner may, so this one succeeds; what matters is that the endpoint
+  // The admin may, so this one succeeds; what matters is that the endpoint
   // asks rather than assuming.
   expect([200, 403]).toContain(refused.status());
 });

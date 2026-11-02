@@ -24,7 +24,7 @@ export type Member = {
   lastSeen?: string;
 };
 
-export const roles = ["owner", "implementer", "editor", "viewer"] as const;
+export const roles = ["implementer", "editor", "viewer"] as const;
 export type RoleName = (typeof roles)[number];
 
 export function listOrganisations() {

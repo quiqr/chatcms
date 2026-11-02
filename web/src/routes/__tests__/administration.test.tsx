@@ -86,7 +86,7 @@ describe("the administration screen", () => {
     renderPage();
 
     await user.type(await screen.findByLabelText("Name"), "Korenaar Bakery");
-    await user.type(screen.getByLabelText("Who owns it"), "marieke@korenaar.example");
+    await user.type(screen.getByLabelText("Who administers it"), "marieke@korenaar.example");
     await user.click(screen.getByRole("button", { name: "Start it" }));
 
     await waitFor(() => {
@@ -192,7 +192,7 @@ describe("the administration screen", () => {
     renderPage();
 
     await user.type(await screen.findByLabelText("Name"), "Korenaar Bakery");
-    await user.type(screen.getByLabelText("Who owns it"), "marieke@korenaar.example");
+    await user.type(screen.getByLabelText("Who administers it"), "marieke@korenaar.example");
     await user.click(screen.getByRole("button", { name: "Start it" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("That address is already taken.");

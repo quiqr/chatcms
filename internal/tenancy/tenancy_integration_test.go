@@ -93,7 +93,7 @@ func TestCreatingAnOrganisationMakesItsCreatorAnOwner(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if actor.Organisations[organisation.ID.String()] != policy.OrganisationOwner {
+	if actor.Organisations[organisation.ID.String()] != policy.OrganisationAdmin {
 		t.Errorf("the creator holds %q, want owner", actor.Organisations[organisation.ID.String()])
 	}
 }
@@ -324,7 +324,7 @@ func TestChangingARoleAndRemovingAPerson(t *testing.T) {
 	organisation := h.organisation(t, "technative", owner)
 	project := h.project(t, organisation, "korenaar")
 
-	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleOwner); err != nil {
+	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleImplementer); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,7 +362,7 @@ func TestLastAdministratorCannotBeRemoved(t *testing.T) {
 	organisation := h.organisation(t, "technative", owner)
 	project := h.project(t, organisation, "korenaar")
 
-	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleOwner); err != nil {
+	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleImplementer); err != nil {
 		t.Fatal(err)
 	}
 
@@ -372,7 +372,7 @@ func TestLastAdministratorCannotBeRemoved(t *testing.T) {
 	}
 }
 
-func TestLastOrganisationOwnerCannotBeRemoved(t *testing.T) {
+func TestLastOrganisationAdminCannotBeRemoved(t *testing.T) {
 	h := newHarness(t)
 	owner := h.person(t, "owner@example.org")
 	organisation := h.organisation(t, "technative", owner)
@@ -464,7 +464,7 @@ func TestOrganisationMembershipCanBeGivenAndTaken(t *testing.T) {
 
 	organisation := h.organisation(t, "technative", owner)
 
-	if err := h.store.SetOrganisationRole(t.Context(), organisation.ID, second.ID, policy.OrganisationOwner); err != nil {
+	if err := h.store.SetOrganisationRole(t.Context(), organisation.ID, second.ID, policy.OrganisationAdmin); err != nil {
 		t.Fatal(err)
 	}
 
@@ -472,7 +472,7 @@ func TestOrganisationMembershipCanBeGivenAndTaken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if actor.Organisations[organisation.ID.String()] != policy.OrganisationOwner {
+	if actor.Organisations[organisation.ID.String()] != policy.OrganisationAdmin {
 		t.Errorf("the second person holds %q", actor.Organisations[organisation.ID.String()])
 	}
 
@@ -538,7 +538,7 @@ func TestCreatingAProjectThroughTheService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateProject() error = %v, want nil", err)
 	}
-	if view.Slug != "korenaar" || view.YourRole != "owner" {
+	if view.Slug != "korenaar" || view.YourRole != "implementer" {
 		t.Errorf("view = %+v", view)
 	}
 
@@ -559,7 +559,7 @@ func TestChangingToSomethingThatIsNotARole(t *testing.T) {
 	organisation := h.organisation(t, "technative", owner)
 	project := h.project(t, organisation, "korenaar")
 
-	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleOwner); err != nil {
+	if err := h.store.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleImplementer); err != nil {
 		t.Fatal(err)
 	}
 
@@ -585,7 +585,7 @@ func TestChangingToSomethingThatIsNotARole(t *testing.T) {
 	}
 }
 
-func TestAnOrganisationOwnerReachesAProjectTheyWereNeverAddedTo(t *testing.T) {
+func TestAnOrganisationAdminReachesAProjectTheyWereNeverAddedTo(t *testing.T) {
 	h := newHarness(t)
 	owner := h.person(t, "owner@example.org")
 	organisation := h.organisation(t, "technative", owner)
@@ -595,8 +595,41 @@ func TestAnOrganisationOwnerReachesAProjectTheyWereNeverAddedTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetProject() error = %v, want nil", err)
 	}
-	if view.YourRole != "owner" {
-		t.Errorf("yourRole = %q, want owner through the organisation", view.YourRole)
+	if view.YourRole != "implementer" {
+		t.Errorf("yourRole = %q, want implementer through the organisation", view.YourRole)
+	}
+
+	// What they hold beyond an implementer is held over the organisation, so
+	// the screen is still offered the acts that belong to it.
+	may := map[string]bool{}
+	for _, action := range view.YouMay {
+		may[action] = true
+	}
+	if !may["delete-project"] {
+		t.Error("the organisation's admin is not offered deleting a project in it")
+	}
+	if !may["change-settings"] {
+		t.Error("the organisation's admin is not offered the project's settings")
+	}
+}
+
+// TestAnOrganisationMemberReachesNothingTheyWereNotGiven is the other half:
+// administering an organisation reaches its projects, and being a member of
+// one reaches nothing at all.
+func TestAnOrganisationMemberReachesNothingTheyWereNotGiven(t *testing.T) {
+	h := newHarness(t)
+	admin := h.person(t, "admin@example.org")
+	organisation := h.organisation(t, "technative", admin)
+	h.project(t, organisation, "korenaar")
+
+	member := h.person(t, "member@example.org")
+	if err := h.store.SetOrganisationRole(t.Context(), organisation.ID, member.ID,
+		policy.OrganisationMember); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.service.GetProject(t.Context(), h.who(member), "technative", "korenaar"); err == nil {
+		t.Error("an organisation's member opened a project nobody gave them")
 	}
 }
 
@@ -694,7 +727,7 @@ func TestRemovingAProjectForgetsItAndNothingElse(t *testing.T) {
 	}
 }
 
-func TestAnOrganisationOwnerInvitesToIt(t *testing.T) {
+func TestAnOrganisationAdminInvitesToIt(t *testing.T) {
 	h := newHarness(t)
 	owner := h.person(t, "owner@example.org")
 	h.organisation(t, "bakery", owner)

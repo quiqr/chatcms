@@ -159,9 +159,9 @@ func (s *Service) CreateProject(ctx context.Context, who httpapi.Actor, organisa
 		return httpapi.ProjectView{}, refusal(err)
 	}
 
-	// The creator holds the owner role through the organisation; giving the
-	// row as well keeps the project's own list of people honest.
-	if err := s.store.SetProjectRole(ctx, project.ID, mustParse(who.ID), policy.RoleOwner); err != nil {
+	// Whoever made it reaches it through the organisation they administer;
+	// giving the row as well keeps the project's own list of people honest.
+	if err := s.store.SetProjectRole(ctx, project.ID, mustParse(who.ID), policy.RoleImplementer); err != nil {
 		return httpapi.ProjectView{}, err
 	}
 
@@ -618,7 +618,7 @@ func (s *Service) ChangeOrganisationRole(ctx context.Context, who httpapi.Actor,
 	}
 
 	asked := policy.OrganisationRole(role)
-	if asked != policy.OrganisationOwner && asked != policy.OrganisationMember {
+	if asked != policy.OrganisationAdmin && asked != policy.OrganisationMember {
 		return &httpapi.RefusedError{Key: "refused.not-role-organisation-has", Reason: "that is not a role an organisation has"}
 	}
 

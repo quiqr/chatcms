@@ -7,25 +7,27 @@
 // answers written out rather than worked out.
 package policy
 
-// Role is what someone holds on a project.
+// Role is what someone holds on a project. There is no owner of a project:
+// what that role held belongs to whoever administers the organisation.
 type Role string
 
 const (
-	RoleOwner       Role = "owner"
 	RoleImplementer Role = "implementer"
 	RoleEditor      Role = "editor"
 	RoleViewer      Role = "viewer"
 )
 
 // Roles is every role, in the order the designs list them.
-var Roles = []Role{RoleOwner, RoleImplementer, RoleEditor, RoleViewer}
+var Roles = []Role{RoleImplementer, RoleEditor, RoleViewer}
 
-// OrganisationRole is what someone holds on an organisation. Owning one
-// carries the owner role on every project in it.
+// OrganisationRole is what someone holds on an organisation. Administering
+// one carries the implementer role on every project in it, and carries what
+// belongs to the organisation itself: billing, and making or removing a
+// project.
 type OrganisationRole string
 
 const (
-	OrganisationOwner  OrganisationRole = "owner"
+	OrganisationAdmin  OrganisationRole = "admin"
 	OrganisationMember OrganisationRole = "member"
 )
 
@@ -45,10 +47,12 @@ const (
 	ActionManageBilling      Action = "manage-billing"
 	ActionDeleteProject      Action = "delete-project"
 	ActionCreateProject      Action = "create-project"
+	ActionMoveProject        Action = "move-project"
 
 	// These are held over the installation rather than over anything in it.
 	// They are answered from whether the actor administers it, and the
 	// resource says nothing about them.
+	ActionSetLimits                Action = "set-limits"
 	ActionCreateOrganisation       Action = "create-organisation"
 	ActionRenameOrganisation       Action = "rename-organisation"
 	ActionRemoveOrganisation       Action = "remove-organisation"
@@ -64,6 +68,7 @@ const (
 // administrator may do these and nothing else follows from it: administering
 // is not editing, so none of these appears in the table of roles below.
 var overTheInstallation = map[Action]bool{
+	ActionSetLimits:                true,
 	ActionCreateOrganisation:       true,
 	ActionRenameOrganisation:       true,
 	ActionRemoveOrganisation:       true,
@@ -103,6 +108,8 @@ var Actions = []Action{
 	ActionManageBilling,
 	ActionDeleteProject,
 	ActionCreateProject,
+	ActionMoveProject,
+	ActionSetLimits,
 	ActionCreateOrganisation,
 	ActionRenameOrganisation,
 	ActionRemoveOrganisation,
@@ -117,20 +124,6 @@ var Actions = []Action{
 // allowed is the table from docs/design/DESIGN.md section 6. A role allows
 // exactly the actions listed against it.
 var allowed = map[Role]map[Action]bool{
-	RoleOwner: {
-		ActionReadContent:        true,
-		ActionEditContent:        true,
-		ActionEditMedia:          true,
-		ActionPublish:            true,
-		ActionGoBackToAVersion:   true,
-		ActionManagePeople:       true,
-		ActionChangeSettings:     true,
-		ActionManageWorkflows:    true,
-		ActionSeeTechnicalDetail: true,
-		ActionManageBilling:      true,
-		ActionDeleteProject:      true,
-		ActionCreateProject:      true,
-	},
 	RoleImplementer: {
 		ActionReadContent:        true,
 		ActionEditContent:        true,
@@ -202,6 +195,23 @@ func Organisation(organisationID string) Resource {
 	return Resource{OrganisationID: organisationID}
 }
 
+// overTheOrganisation is every action held over an organisation rather than
+// over a project inside it. Whoever administers the organisation may do them
+// on anything in it; no project role carries any of them, which is what makes
+// "the level above manages the level below" true rather than a diagram.
+var overTheOrganisation = map[Action]bool{
+	ActionManageBilling: true,
+	ActionDeleteProject: true,
+	ActionCreateProject: true,
+	ActionMoveProject:   true,
+}
+
+// OverTheOrganisation says whether an action belongs to whoever administers
+// the organisation rather than to a role on a project.
+func OverTheOrganisation(action Action) bool {
+	return overTheOrganisation[action]
+}
+
 // Can is the only place a role is compared.
 func Can(actor Actor, action Action, resource Resource) bool {
 	if actor.PersonID == "" {
@@ -216,6 +226,13 @@ func Can(actor Actor, action Action, resource Resource) bool {
 		return actor.Administers
 	}
 
+	// An action held over the organisation is answered from the role held
+	// there. A project role never carries one, however large it is.
+	if overTheOrganisation[action] {
+		return resource.OrganisationID != "" &&
+			actor.Organisations[resource.OrganisationID] == OrganisationAdmin
+	}
+
 	role, held := EffectiveRole(actor, resource)
 	if !held {
 		return false
@@ -224,15 +241,18 @@ func Can(actor Actor, action Action, resource Resource) bool {
 }
 
 // EffectiveRole is the role an actor holds on a resource: the role they hold
-// on the project, raised to owner when they own the organisation it is in.
+// on the project, raised to implementer when they administer the organisation
+// it is in. There is no higher role to raise to; what an organisation admin
+// holds beyond an implementer is held over the organisation, not over the
+// project, and Can answers that separately.
 func EffectiveRole(actor Actor, resource Resource) (Role, bool) {
 	if actor.PersonID == "" {
 		return "", false
 	}
 
 	if resource.OrganisationID != "" {
-		if actor.Organisations[resource.OrganisationID] == OrganisationOwner {
-			return RoleOwner, true
+		if actor.Organisations[resource.OrganisationID] == OrganisationAdmin {
+			return RoleImplementer, true
 		}
 	}
 

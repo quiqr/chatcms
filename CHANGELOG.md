@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Three levels of role, from the design hand-off of 2 November. A platform
+  admin holds the installation, an organisation admin holds one organisation,
+  and a project has implementers, editors and viewers. The project role owner
+  is gone: billing, deleting a project and making one belong to whoever
+  administers the organisation, and an organisation admin reaches every
+  project in theirs as its implementer. A migration moves every project owner
+  to implementer and every organisation owner to admin, so nobody loses the
+  work they were doing.
+
 ### Fixed
 
 - Switching organisation. The switcher in the header listed every

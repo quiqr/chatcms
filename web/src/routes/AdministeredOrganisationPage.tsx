@@ -20,7 +20,7 @@ import { named } from "../shells/roles";
 /**
  * One organisation as whoever runs the installation sees it: everything
  * about it in one place. It is for an organisation with nobody left to run
- * it, or one being set up; its own owner manages it day to day.
+ * it, or one being set up; its own admin manages it day to day.
  */
 export function AdministeredOrganisationPage() {
   const { organisation = "" } = useParams();
@@ -167,7 +167,7 @@ export function AdministeredOrganisationPage() {
             className="h-11 rounded-md border border-input bg-card px-2 text-[15px] capitalize"
           >
             <option value="member">{say("common.role-member")}</option>
-            <option value="owner">{say("common.role-owner")}</option>
+            <option value="admin">{say("common.role-admin")}</option>
           </select>
 
           <Button type="submit" variant="outline" disabled={busy || email.trim() === ""}>

@@ -233,8 +233,9 @@ describe("EditorShell", () => {
 
 describe("roles", () => {
   it("decides who sees setup and technical detail", () => {
+    // There is no owner of a project; somebody who administers the
+    // organisation reaches it as its implementer.
     const expected: Record<string, boolean> = {
-      owner: true,
       implementer: true,
       editor: false,
       viewer: false,

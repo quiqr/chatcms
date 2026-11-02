@@ -1,8 +1,8 @@
-// An organisation's own owner manages who belongs to it, rather than asking
-// whoever runs the service every time somebody joins.
+// An organisation's own admin manages who belongs to it, rather than asking
+// whoever runs the platform every time somebody joins.
 import { test, expect, worksOnAPhone } from "./fixtures.mjs";
 
-test("an owner invites somebody to the organisation and then withdraws it", async ({
+test("an organisation admin invites somebody and then withdraws it", async ({
   signedIn: page,
   chatcms,
 }, testInfo) => {
@@ -57,10 +57,10 @@ test("somebody who merely belongs cannot manage the organisation", async ({
 }) => {
   const refused = await page.request.post(
     `${chatcms.url}/api/organisations/studio-noord/people`,
-    { data: { email: "sneaky@example.org", role: "owner" }, failOnStatusCode: false },
+    { data: { email: "sneaky@example.org", role: "admin" }, failOnStatusCode: false },
   );
 
-  // The owner of technative has no part in studio-noord beyond the seed, so
-  // the answer is either a refusal or nothing there; never a new owner.
+  // The admin of technative has no part in studio-noord beyond the seed, so
+  // the answer is either a refusal or nothing there; never a new admin.
   expect([403, 404]).toContain(refused.status());
 });

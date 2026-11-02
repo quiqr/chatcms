@@ -253,9 +253,35 @@ testable with the answers written out rather than worked out, which is how the
 table from `docs/design/DESIGN.md` section 6 is checked.
 
 Per-document permissions are out of scope for milestone 1, so `Can` takes a
-resource argument it mostly ignores today. Keep the argument. Owning an
-organisation carries the owner role on every project in it, so a project
-cannot end up with nobody who can administer it.
+resource argument it mostly ignores today. Keep the argument.
+
+There are three levels of role, each managing the one below it, and nothing
+reaching upward (the picture is
+`docs/design/reference/html/hierarchy.html`; the table is
+`docs/design/DESIGN.md` section 6):
+
+| Level | Who | Over what |
+| ----- | --- | --------- |
+| 1 | Platform admin | The whole installation: organisations, every account, and the limits on each organisation |
+| 2 | Organisation admin | One organisation: its members, its projects, and billing |
+| 3 | Implementer, editor, viewer | One project |
+
+`Can` answers each level from a different place, which is why none of them
+leaks into another:
+
+- an action over the installation is answered from `Actor.Administers` alone,
+  and grants nothing on a resource;
+- an action over an organisation, which is billing and making, moving or
+  removing a project, is answered from the role held in that organisation. No
+  project role carries one, however large it is;
+- everything else is answered from the role held on the project, raised to
+  implementer when the actor administers the organisation it is in. There is
+  no owner of a project to raise to: what that role held in milestone 01 is
+  now held over the organisation.
+
+A role belongs to a place and not to a person. Somebody can administer one
+organisation and be an editor on a project in another, and neither answer
+reaches into the other.
 
 **`internal/secrets`** seals everything that must not be readable in the
 database, with AES-256-GCM under one master key read from the file

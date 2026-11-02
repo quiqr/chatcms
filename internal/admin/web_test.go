@@ -22,7 +22,7 @@ func TestARoleAnOrganisationDoesNotHaveIsRefused(t *testing.T) {
 		string(policy.RoleEditor),
 		"administrator",
 		"superuser",
-		strings.ToUpper(string(policy.OrganisationOwner)),
+		strings.ToUpper(string(policy.OrganisationAdmin)),
 	} {
 		err := web.PutSomebodyInto(t.Context(), httpapi.Actor{ID: "someone"}, "bakery", "a@b.c", asked)
 

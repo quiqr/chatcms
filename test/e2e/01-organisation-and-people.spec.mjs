@@ -15,7 +15,7 @@ test("an administrator starts an organisation and somebody is invited to it", as
     await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
     await expect(page.getByText("Its address will be /o/bakkerij-zuid")).toBeVisible();
 
-    await page.getByLabel("Who owns it").fill("owner@example.org");
+    await page.getByLabel("Who administers it").fill("owner@example.org");
     await page.getByRole("button", { name: "Start it" }).click();
 
     // The card for it, not the line about it in the record below.

@@ -93,3 +93,19 @@ test("a wrong current password changes nothing", async ({ signedIn: page, chatcm
   const still = await signingIn(page, chatcms, "owner@example.org", "a long enough passphrase");
   expect(still.status(), "the password changed anyway").toBe(200);
 });
+
+test("the roles a project offers are the three it has", async ({ signedIn: page, chatcms }) => {
+  await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
+
+  const choosing = page.getByLabel("Role for the person you invite");
+  await expect(choosing).toBeVisible();
+
+  const offered = await choosing.locator("option").allTextContents();
+  expect(offered).toEqual(["Implementer", "Editor", "Viewer"]);
+
+  // What an organisation admin holds is not a role on a project, so it is
+  // described beside the table rather than offered in it.
+  const describing = page.getByRole("heading", { name: "What each role can do" });
+  await expect(describing).toBeVisible();
+  await expect(page.getByText("Organisation admin").first()).toBeVisible();
+});

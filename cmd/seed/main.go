@@ -80,7 +80,7 @@ func main() {
 		if err != nil {
 			fail(err)
 		}
-		if err := tenancyStore.SetProjectRole(ctx, project.ID, owner.ID, policy.RoleOwner); err != nil {
+		if err := tenancyStore.SetProjectRole(ctx, project.ID, owner.ID, policy.RoleImplementer); err != nil {
 			fail(err)
 		}
 		if site.withASite {

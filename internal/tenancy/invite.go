@@ -91,7 +91,7 @@ func (i *Inviter) InviteToOrganisation(ctx context.Context, organisationID uuid.
 	if address == "" {
 		return Invitation{}, ErrNoAddress
 	}
-	if role != policy.OrganisationOwner && role != policy.OrganisationMember {
+	if role != policy.OrganisationAdmin && role != policy.OrganisationMember {
 		return Invitation{}, fmt.Errorf("%w: %q", ErrNotARole, role)
 	}
 

@@ -11,12 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const countOrganisationOwners = `-- name: CountOrganisationOwners :one
-SELECT count(*) FROM organisation_members WHERE organisation_id = $1 AND role = 'owner'
+const countOrganisationAdmins = `-- name: CountOrganisationAdmins :one
+SELECT count(*) FROM organisation_members WHERE organisation_id = $1 AND role = 'admin'
 `
 
-func (q *Queries) CountOrganisationOwners(ctx context.Context, organisationID pgtype.UUID) (int64, error) {
-	row := q.db.QueryRow(ctx, countOrganisationOwners, organisationID)
+func (q *Queries) CountOrganisationAdmins(ctx context.Context, organisationID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countOrganisationAdmins, organisationID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

@@ -158,7 +158,7 @@ func TestTenancyEndpointsNeedAPerson(t *testing.T) {
 func TestListingOrganisationsAndProjects(t *testing.T) {
 	service := &stubTenancy{
 		organisations: []OrganisationView{{Slug: "technative", Name: "TechNative"}},
-		projects:      []ProjectView{{Slug: "korenaar", Name: "Korenaar", YourRole: "owner"}},
+		projects:      []ProjectView{{Slug: "korenaar", Name: "Korenaar", YourRole: "implementer"}},
 	}
 	handler := withTenancy(service, true)
 
@@ -181,7 +181,7 @@ func TestListingOrganisationsAndProjects(t *testing.T) {
 	if err := json.Unmarshal(projects.Body.Bytes(), &payload); err != nil {
 		t.Fatal(err)
 	}
-	if len(payload.Projects) != 1 || payload.Projects[0].YourRole != "owner" {
+	if len(payload.Projects) != 1 || payload.Projects[0].YourRole != "implementer" {
 		t.Errorf("projects = %+v", payload.Projects)
 	}
 }
@@ -361,7 +361,7 @@ func TestAnOrganisationsPeopleAreManagedThroughTheirOwnEndpoints(t *testing.T) {
 	}
 
 	changed := signedInCall(t, handler, http.MethodPut, people+"/person-1",
-		map[string]any{"role": "owner"})
+		map[string]any{"role": "admin"})
 	if changed.Code != http.StatusNoContent {
 		t.Errorf("changing a role = %d, want 204: %s", changed.Code, changed.Body)
 	}
@@ -400,7 +400,7 @@ func TestEveryOrganisationPeopleEndpointNeedsSomebody(t *testing.T) {
 		body         any
 	}{
 		{http.MethodPost, "/api/organisations/bakery/people", map[string]any{"email": "a@b.c"}},
-		{http.MethodPut, "/api/organisations/bakery/people/person-1", map[string]any{"role": "owner"}},
+		{http.MethodPut, "/api/organisations/bakery/people/person-1", map[string]any{"role": "admin"}},
 		{http.MethodDelete, "/api/organisations/bakery/people/person-1", nil},
 		{http.MethodPost, "/api/organisations/bakery/people/person-1/invitation", nil},
 	} {
@@ -415,7 +415,7 @@ func TestManagingAnOrganisationsPeopleReportsARefusal(t *testing.T) {
 	handler := withTenancy(&stubTenancy{err: ErrNotAllowed}, true)
 
 	recorder := signedInCall(t, handler, http.MethodPost, "/api/organisations/bakery/people",
-		map[string]any{"email": "sneaky@example.org", "role": "owner"})
+		map[string]any{"email": "sneaky@example.org", "role": "admin"})
 
 	if recorder.Code != http.StatusForbidden {
 		t.Errorf("status = %d, want 403: %s", recorder.Code, recorder.Body)

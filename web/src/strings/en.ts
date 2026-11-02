@@ -35,7 +35,7 @@ export const en = {
   "administered-organisation.actions": "Actions",
   "administered-organisation.it-still-holds-sites": "It still holds {sites}. Remove them first, so that this is a decision taken once per site rather than once for all of them.",
   "administered-organisation.its-sites": "Its sites",
-  "administered-organisation.nobody-give-it-an-owner-so": "Nobody. Give it an owner so that somebody can run it.",
+  "administered-organisation.nobody-give-it-an-owner-so": "Nobody. Give it an admin so that somebody can run it.",
   "administered-organisation.none": "None.",
   "administered-organisation.nothing-in-git-is-touched-every": "Nothing in git is touched. Every site that was ever in it stays exactly where it is.",
   "administered-organisation.put-somebody-in": "Put somebody in",
@@ -52,7 +52,7 @@ export const en = {
   "administered-person.a-role-on-none": "A role on none.",
   "administered-person.account-off": "Account off",
   "administered-person.act-as": "Act as",
-  "administered-person.administers-this-installation": "Administers this installation",
+  "administered-person.administers-this-installation": "Platform admin",
   "administered-person.has-never-been-here": "Has never been here",
   "administered-person.in-none": "In none.",
   "administered-person.organisations": "Organisations",
@@ -66,7 +66,7 @@ export const en = {
 
   // administration
   "administration.account-off": "Account off",
-  "administration.administers": "Administers",
+  "administration.administers": "Platform admin",
   "administration.appoint": "Appoint",
   "administration.appoint-somebody": "Appoint somebody",
   "administration.everybody": "Everybody",
@@ -95,8 +95,8 @@ export const en = {
   "administration.they-choose-their-own-password-from": "They choose their own password from the link they are sent. Nobody else ever sets it.",
   "administration.what-has-been-done": "What has been done",
   "administration.where-they-belong": "Where they belong",
-  "administration.who-administers-this-installation": "Who administers this installation",
-  "administration.who-owns-it": "Who owns it",
+  "administration.who-administers-this-installation": "Who administers this platform",
+  "administration.who-owns-it": "Who administers it",
   "administration.you": "You",
   "administration.you-will-not-be-in-it": "You will not be in it. To work inside an organisation, somebody there has to invite you.",
 
@@ -138,8 +138,8 @@ export const en = {
   "common.person-one": "{count} person",
   "common.publish": "Publish",
   "common.quiqr": "Quiqr",
+  "common.role-admin": "organisation admin",
   "common.role-member": "member",
-  "common.role-owner": "owner",
   "common.save-the-name": "Save the name",
   "common.saved": "Saved.",
   "common.saving": "Saving...",
@@ -323,7 +323,7 @@ export const en = {
   // people
   "people.actions": "Actions",
   "people.edits-pages-and-media-and-publishes-the-site": "Edits pages and media, and publishes the site.",
-  "people.everything-including-billing-and-deleting-the-pr": "Everything, including billing and deleting the project.",
+  "people.everything-including-billing-and-deleting-the-pr": "Has every project in the organisation, and bills and deletes them.",
   "people.invite-someone": "Invite someone",
   "people.last-active": "Last active",
   "people.looking-up-who-is-here": "Looking up who is here...",
@@ -460,7 +460,7 @@ export const en = {
   "refused.file-empty": "That file is empty.",
   "refused.file-needs-name-with-some": "That file needs a name with some letters or numbers in it.",
   "refused.import-failed": "The site could not be brought in: {why}",
-  "refused.last-administrator": "This is the last administrator, so there would be nobody left to appoint another.",
+  "refused.last-administrator": "This is the last platform admin, so there would be nobody left to appoint another.",
   "refused.model-cannot-be-read": "This site's model cannot be read: {why}",
   "refused.name-cannot-empty": "A name cannot be empty.",
   "refused.no-address-waiting": "There is no address waiting to be confirmed.",
@@ -487,14 +487,14 @@ export const en = {
   "refused.site-already-being-published-wait": "This site is already being published; wait for that to finish.",
   "refused.site-already-exactly-as-version": "Your site is already exactly as that version left it.",
   "refused.site-has-no-quiqr-model": "This site has no Quiqr model yet, so there are no forms to fill in.",
-  "refused.somebody-who-administers-installation-cannot": "Somebody who administers this installation cannot be acted as.",
+  "refused.somebody-who-administers-installation-cannot": "Somebody who administers this platform cannot be acted as.",
   "refused.too-many-sites-being-previewed": "Too many sites are being previewed at once; try again in a few minutes.",
 
   // role
+  "role.admin": "Organisation admin",
   "role.editor": "Editor",
   "role.implementer": "Implementer",
   "role.member": "Member",
-  "role.owner": "Owner",
   "role.viewer": "Viewer",
 
   // set-password

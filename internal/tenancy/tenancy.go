@@ -89,7 +89,7 @@ func (s *Store) CreateOrganisation(ctx context.Context, slug, name string, owner
 	if err := s.db.Queries.SetOrganisationMember(ctx, store.SetOrganisationMemberParams{
 		OrganisationID: row.ID,
 		PersonID:       pgUUID(ownerID),
-		Role:           string(policy.OrganisationOwner),
+		Role:           string(policy.OrganisationAdmin),
 	}); err != nil {
 		return Organisation{}, fmt.Errorf("making the creator an owner failed: %w", err)
 	}
@@ -231,7 +231,7 @@ func (s *Store) RemoveFromProject(ctx context.Context, projectID, personID uuid.
 		if member.PersonID == personID {
 			continue
 		}
-		if member.Role == policy.RoleOwner || member.Role == policy.RoleImplementer {
+		if member.Role == policy.RoleImplementer {
 			remaining++
 		}
 	}
@@ -245,12 +245,12 @@ func (s *Store) RemoveFromProject(ctx context.Context, projectID, personID uuid.
 	})
 }
 
-// RemoveFromOrganisation takes someone out, refusing when it would leave no
-// owner.
+// RemoveFromOrganisation takes someone out, refusing when it would leave the
+// organisation with nobody to administer it.
 func (s *Store) RemoveFromOrganisation(ctx context.Context, organisationID, personID uuid.UUID) error {
-	owners, err := s.db.Queries.CountOrganisationOwners(ctx, pgUUID(organisationID))
+	admins, err := s.db.Queries.CountOrganisationAdmins(ctx, pgUUID(organisationID))
 	if err != nil {
-		return fmt.Errorf("counting the owners failed: %w", err)
+		return fmt.Errorf("counting the admins failed: %w", err)
 	}
 
 	memberships, err := s.db.Queries.ListOrganisationMembershipsForPerson(ctx, pgUUID(personID))
@@ -262,7 +262,7 @@ func (s *Store) RemoveFromOrganisation(ctx context.Context, organisationID, pers
 		if uuid.UUID(membership.OrganisationID.Bytes) != organisationID {
 			continue
 		}
-		if policy.OrganisationRole(membership.Role) == policy.OrganisationOwner && owners <= 1 {
+		if policy.OrganisationRole(membership.Role) == policy.OrganisationAdmin && admins <= 1 {
 			return ErrWouldLeaveNobodyInCharge
 		}
 	}

@@ -76,11 +76,11 @@ test("somebody who does not administer is refused the people", async ({
   const list = await page.request.get(`${chatcms.url}/api/administration/people`, {
     failOnStatusCode: false,
   });
-  expect(list.status(), "an owner listed every person on the installation").toBe(403);
+  expect(list.status(), "an organisation admin listed every person on the platform").toBe(403);
 
   const one = await page.request.get(
     `${chatcms.url}/api/administration/people/owner%40example.org`,
     { failOnStatusCode: false },
   );
-  expect(one.status(), "an owner read a person through administration").toBe(403);
+  expect(one.status(), "an organisation admin read a person through administration").toBe(403);
 });

@@ -29,8 +29,8 @@ ON CONFLICT (organisation_id, person_id) DO UPDATE SET role = EXCLUDED.role;
 -- name: RemoveOrganisationMember :exec
 DELETE FROM organisation_members WHERE organisation_id = $1 AND person_id = $2;
 
--- name: CountOrganisationOwners :one
-SELECT count(*) FROM organisation_members WHERE organisation_id = $1 AND role = 'owner';
+-- name: CountOrganisationAdmins :one
+SELECT count(*) FROM organisation_members WHERE organisation_id = $1 AND role = 'admin';
 
 -- name: SetProjectMember :exec
 INSERT INTO project_members (project_id, person_id, role)

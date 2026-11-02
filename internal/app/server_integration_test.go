@@ -892,7 +892,7 @@ func TestAViewerCannotChangeAnything(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := tenancyStore.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleOwner); err != nil {
+	if err := tenancyStore.SetProjectRole(t.Context(), project.ID, owner.ID, policy.RoleImplementer); err != nil {
 		t.Fatal(err)
 	}
 	if err := tenancyStore.SetProjectRole(t.Context(), project.ID, viewer.ID, policy.RoleViewer); err != nil {

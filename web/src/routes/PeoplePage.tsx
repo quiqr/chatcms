@@ -31,7 +31,7 @@ import {
 } from "../lib/tenancy";
 
 const whatEachRoleCanDo: { role: string; says: string }[] = [
-  { role: "owner", says: say("people.everything-including-billing-and-deleting-the-pr") },
+  { role: "admin", says: say("people.everything-including-billing-and-deleting-the-pr") },
   {
     role: "implementer",
     says: say("people.sets-up-where-the-site-lives-how-it-is-published"),
@@ -41,7 +41,7 @@ const whatEachRoleCanDo: { role: string; says: string }[] = [
 ];
 
 // The roles an organisation has, which are not the roles a project has.
-const organisationRoles = ["owner", "member"] as const;
+const organisationRoles = ["admin", "member"] as const;
 
 function RoleSelect({
   value,

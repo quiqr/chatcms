@@ -46,7 +46,7 @@ describe("the projects screen", () => {
 
   it("lists the projects it is given", async () => {
     setUp([
-      { slug: "korenaar", name: "Korenaar Bakery", domain: "korenaar.example", yourRole: "owner", youMay: [], unpublished: 4 },
+      { slug: "korenaar", name: "Korenaar Bakery", domain: "korenaar.example", yourRole: "implementer", youMay: [], unpublished: 4 },
       { slug: "studio-noord", name: "Studio Noord", domain: "studionoord.example", yourRole: "editor", youMay: [], unpublished: 0 },
     ]);
 
@@ -66,8 +66,8 @@ describe("the projects screen", () => {
   it("narrows the list as you search", async () => {
     const user = userEvent.setup();
     setUp([
-      { slug: "korenaar", name: "Korenaar Bakery", domain: "korenaar.example", yourRole: "owner", youMay: [], unpublished: 0 },
-      { slug: "studio-noord", name: "Studio Noord", domain: "studionoord.example", yourRole: "owner", youMay: [], unpublished: 0 },
+      { slug: "korenaar", name: "Korenaar Bakery", domain: "korenaar.example", yourRole: "implementer", youMay: [], unpublished: 0 },
+      { slug: "studio-noord", name: "Studio Noord", domain: "studionoord.example", yourRole: "implementer", youMay: [], unpublished: 0 },
     ]);
 
     await screen.findByRole("link", { name: /Korenaar Bakery/ });
@@ -102,7 +102,7 @@ describe("the projects screen", () => {
 
 describe("the people and roles screen", () => {
   const people = [
-    { personId: "1", email: "joris@example.org", displayName: "Joris Bakker", role: "owner", stillToAccept: false },
+    { personId: "1", email: "joris@example.org", displayName: "Joris Bakker", role: "implementer", stillToAccept: false },
     { personId: "2", email: "sam@example.org", displayName: "", role: "viewer", stillToAccept: true },
   ];
 
@@ -130,7 +130,7 @@ describe("the people and roles screen", () => {
     expect(screen.getByText("Still to accept")).toBeInTheDocument();
 
     const explanations = screen.getByRole("complementary");
-    for (const role of ["Owner", "Implementer", "Editor", "Viewer"]) {
+    for (const role of ["Organisation admin", "Implementer", "Editor", "Viewer"]) {
       expect(within(explanations).getByText(role)).toBeInTheDocument();
     }
   });
@@ -214,7 +214,7 @@ describe("making a new project", () => {
           return Promise.resolve({
             ok: true,
             status: 201,
-            json: async () => ({ slug: "korenaar", name: "Korenaar", domain: "", yourRole: "owner", youMay: [], unpublished: 0 }),
+            json: async () => ({ slug: "korenaar", name: "Korenaar", domain: "", yourRole: "implementer", youMay: [], unpublished: 0 }),
           });
         }
         return Promise.resolve({ ok: true, status: 200, json: async () => ({ projects: [] }) });

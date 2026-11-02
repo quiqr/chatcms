@@ -38,7 +38,7 @@ export const nl: Strings = {
   "administered-organisation.actions": "Acties",
   "administered-organisation.it-still-holds-sites": "Er zit nog {sites} in. Haal die er eerst uit, zodat dit een beslissing per site is en niet één beslissing voor alles tegelijk.",
   "administered-organisation.its-sites": "De sites erin",
-  "administered-organisation.nobody-give-it-an-owner-so": "Niemand. Geef er een eigenaar aan, zodat iemand hem kan runnen.",
+  "administered-organisation.nobody-give-it-an-owner-so": "Niemand. Geef er een beheerder aan, zodat iemand hem kan runnen.",
   "administered-organisation.none": "Geen.",
   "administered-organisation.nothing-in-git-is-touched-every": "In git blijft alles zoals het is. Elke site die er ooit in zat blijft precies waar hij staat.",
   "administered-organisation.put-somebody-in": "Iemand toevoegen",
@@ -55,7 +55,7 @@ export const nl: Strings = {
   "administered-person.a-role-on-none": "Op geen enkele een rol.",
   "administered-person.account-off": "Account uit",
   "administered-person.act-as": "Werken als",
-  "administered-person.administers-this-installation": "Beheert deze installatie",
+  "administered-person.administers-this-installation": "Platformbeheerder",
   "administered-person.has-never-been-here": "Is hier nooit geweest",
   "administered-person.in-none": "In geen enkele.",
   "administered-person.organisations": "Organisaties",
@@ -69,7 +69,7 @@ export const nl: Strings = {
 
   // administration
   "administration.account-off": "Account uit",
-  "administration.administers": "Beheert",
+  "administration.administers": "Platformbeheerder",
   "administration.appoint": "Aanwijzen",
   "administration.appoint-somebody": "Iemand aanwijzen",
   "administration.everybody": "Iedereen",
@@ -98,8 +98,8 @@ export const nl: Strings = {
   "administration.they-choose-their-own-password-from": "Ze kiezen zelf hun wachtwoord via de link die ze krijgen. Niemand anders stelt die ooit in.",
   "administration.what-has-been-done": "Wat er gedaan is",
   "administration.where-they-belong": "Waar ze bij horen",
-  "administration.who-administers-this-installation": "Wie deze installatie beheren",
-  "administration.who-owns-it": "Wie de eigenaar is",
+  "administration.who-administers-this-installation": "Wie dit platform beheren",
+  "administration.who-owns-it": "Wie hem beheert",
   "administration.you": "Jij",
   "administration.you-will-not-be-in-it": "Je zit er zelf niet in. Om binnen een organisatie te werken moet iemand daar je uitnodigen.",
 
@@ -141,8 +141,8 @@ export const nl: Strings = {
   "common.person-one": "{count} persoon",
   "common.publish": "Publiceren",
   "common.quiqr": "Quiqr",
+  "common.role-admin": "organisatiebeheerder",
   "common.role-member": "lid",
-  "common.role-owner": "eigenaar",
   "common.save-the-name": "Naam opslaan",
   "common.saved": "Opgeslagen.",
   "common.saving": "Opslaan...",
@@ -326,7 +326,7 @@ export const nl: Strings = {
   // people
   "people.actions": "Acties",
   "people.edits-pages-and-media-and-publishes-the-site": "Bewerkt pagina's en afbeeldingen, en publiceert de site.",
-  "people.everything-including-billing-and-deleting-the-pr": "Alles, ook facturatie en het verwijderen van het project.",
+  "people.everything-including-billing-and-deleting-the-pr": "Heeft elk project in de organisatie, en regelt facturatie en verwijderen.",
   "people.invite-someone": "Iemand uitnodigen",
   "people.last-active": "Laatst actief",
   "people.looking-up-who-is-here": "Opzoeken wie hier zijn...",
@@ -463,7 +463,7 @@ export const nl: Strings = {
   "refused.file-empty": "Dat bestand is leeg.",
   "refused.file-needs-name-with-some": "Dat bestand heeft een naam nodig met letters of cijfers erin.",
   "refused.import-failed": "De site kon niet binnengehaald worden: {why}",
-  "refused.last-administrator": "Dit is de laatste beheerder, dus er zou niemand overblijven om een volgende aan te wijzen.",
+  "refused.last-administrator": "Dit is de laatste platformbeheerder, dus er zou niemand overblijven om een volgende aan te wijzen.",
   "refused.model-cannot-be-read": "Het model van deze site kan niet gelezen worden: {why}",
   "refused.name-cannot-empty": "Een naam kan niet leeg zijn.",
   "refused.no-address-waiting": "Er wacht geen adres op bevestiging.",
@@ -490,14 +490,14 @@ export const nl: Strings = {
   "refused.site-already-being-published-wait": "Deze site wordt al gepubliceerd; wacht tot dat klaar is.",
   "refused.site-already-exactly-as-version": "Je site is al precies zoals die versie hem achterliet.",
   "refused.site-has-no-quiqr-model": "Deze site heeft nog geen Quiqr-model, dus er zijn geen formulieren om in te vullen.",
-  "refused.somebody-who-administers-installation-cannot": "Iemand die deze installatie beheert kan niet nagespeeld worden.",
+  "refused.somebody-who-administers-installation-cannot": "Iemand die dit platform beheert kan niet nagespeeld worden.",
   "refused.too-many-sites-being-previewed": "Er staan te veel sites tegelijk in voorbeeld; probeer het over een paar minuten opnieuw.",
 
   // role
+  "role.admin": "Organisatiebeheerder",
   "role.editor": "Redacteur",
   "role.implementer": "Inrichter",
   "role.member": "Lid",
-  "role.owner": "Eigenaar",
   "role.viewer": "Lezer",
 
   // set-password

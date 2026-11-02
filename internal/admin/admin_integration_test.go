@@ -117,7 +117,7 @@ func TestMakingAnOrganisationDoesNotPutTheAdministratorInIt(t *testing.T) {
 	bossActor := h.actorFor(t, boss)
 	organisation := h.organisation(t, "bakery")
 
-	if role, held := customerActor.Organisations[organisation]; !held || role != policy.OrganisationOwner {
+	if role, held := customerActor.Organisations[organisation]; !held || role != policy.OrganisationAdmin {
 		t.Errorf("the named owner holds %q, %v; want owner", role, held)
 	}
 	if _, held := bossActor.Organisations[organisation]; held {
@@ -349,7 +349,7 @@ func TestNobodyTurnsOffTheirOwnAccount(t *testing.T) {
 	}
 }
 
-func TestAnOrganisationOwnerCannotTurnAnAccountOff(t *testing.T) {
+func TestAnOrganisationAdminCannotTurnAnAccountOff(t *testing.T) {
 	// An account belongs to the installation, not to an organisation:
 	// somebody in two would otherwise be locked out of one by the other.
 	h := newHarness(t)
@@ -610,7 +610,7 @@ func TestEverybodyIsListedWithWhereTheyBelong(t *testing.T) {
 	}
 
 	if places := by[owner.Email].Organisations; len(places) != 1 || places[0].Slug != "bakery" ||
-		places[0].Role != string(policy.OrganisationOwner) {
+		places[0].Role != string(policy.OrganisationAdmin) {
 		t.Errorf("the owner belongs to %+v, want owner of bakery", places)
 	}
 	if sites := by[editor.Email].Projects; len(sites) != 1 || sites[0].Slug != "shop" ||

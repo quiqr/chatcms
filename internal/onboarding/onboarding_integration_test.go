@@ -109,7 +109,7 @@ func (h *harness) project(t *testing.T, slug string) tenancy.Project {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := h.store.SetProjectRole(t.Context(), project.ID, h.owner.ID, policy.RoleOwner); err != nil {
+	if err := h.store.SetProjectRole(t.Context(), project.ID, h.owner.ID, policy.RoleImplementer); err != nil {
 		t.Fatal(err)
 	}
 	return project
@@ -601,8 +601,9 @@ func TestOnlyThoseWhoMayChangeSettingsMay(t *testing.T) {
 	service, _, actors := serviceFor(t, h)
 
 	mayChange := map[policy.Role]bool{
-		policy.RoleOwner: true, policy.RoleImplementer: true,
-		policy.RoleEditor: false, policy.RoleViewer: false,
+		policy.RoleImplementer: true,
+		policy.RoleEditor:      false,
+		policy.RoleViewer:      false,
 	}
 
 	for role, allowed := range mayChange {
@@ -645,11 +646,11 @@ func TestSeeingTheKeyIsForImplementersOnly(t *testing.T) {
 	h := newHarness(t)
 	service, _, actors := serviceFor(t, h)
 
-	if _, err := service.GenerateKey(t.Context(), actors[policy.RoleOwner], "technative", "korenaar"); err != nil {
+	if _, err := service.GenerateKey(t.Context(), actors[policy.RoleImplementer], "technative", "korenaar"); err != nil {
 		t.Fatal(err)
 	}
 
-	owner, err := service.ReadKey(t.Context(), actors[policy.RoleOwner], "technative", "korenaar")
+	owner, err := service.ReadKey(t.Context(), actors[policy.RoleImplementer], "technative", "korenaar")
 	if err != nil {
 		t.Fatalf("an owner cannot read the key: %v", err)
 	}
@@ -763,7 +764,7 @@ func TestReadingAKeyBeforeThereIsOne(t *testing.T) {
 	h := newHarness(t)
 	service, _, actors := serviceFor(t, h)
 
-	key, err := service.ReadKey(t.Context(), actors[policy.RoleOwner], "technative", "korenaar")
+	key, err := service.ReadKey(t.Context(), actors[policy.RoleImplementer], "technative", "korenaar")
 	if err != nil {
 		t.Fatalf("ReadKey() error = %v, want nil", err)
 	}
