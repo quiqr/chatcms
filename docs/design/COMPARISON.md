@@ -16,6 +16,13 @@ CHATCMS_BIN=... CHATCMS_SEED=... CHATCMS_SHOTS=../../shots \
 
 Last read: 23 October 2026, against the fixture site the seed makes.
 
+The hand-off of 2 November 2026 adds eleven screens for the three levels of
+administration and the limits that come with them. None of them is built, so
+none of them is read here; what they ask for is in milestone
+`chatcms-7r0u` and the epics under it. The screens milestone 01 shipped are
+unchanged by that hand-off apart from the words for a role, which
+`chatcms-civ6` covers.
+
 ## Decided as differences to keep
 
 | Where       | The drawing                                     | The product                                        | Why                                                                |

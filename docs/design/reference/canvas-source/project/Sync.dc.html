@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quiqr ChatCMS — Sync status</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B6BAA}a:hover{color:#08578C}
+</style>
+</helmet>
+<div style="width: 1440px; height: 760px; box-sizing: border-box; padding: 56px 64px; background: #F7F7F5; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; display: flex; flex-direction: column; gap: 32px">
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <h1 style="margin: 0; font-size: 28px; font-weight: 650; letter-spacing: -0.025em">Sync status</h1>
+    <p style="margin: 0; font-size: 15px; color: #52525B; max-width: 720px">One quiet indicator in the top bar. It only asks for attention when someone has to act.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Saved</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: #52525B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5z"/><path d="M9.5 13l2 2 3.5-3.5"/></svg>All changes saved</span>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Default. Saved a second after you stop typing.</span>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Saving</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: #52525B"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>Saving…</span>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Brief. Never blocks typing.</span>
+    </div>
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Offline</span>
+      <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; font-size: 14px; color: #713F12; background: #FEF3E2; border-radius: 999px; padding: 4px 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96M18 8.5a4.5 4.5 0 0 1-.5 9.5H11"/><path d="M3 3l18 18"/></svg>Offline · saved on this device</span>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Keeps working. Saves automatically once you’re back online.</span>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Updates from others</span>
+      <div role="status" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #18181B; color: #FAFAFA; font-size: 14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7CCBFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></svg>
+        <span style="flex: 1">Joris updated “About us”</span>
+        <button type="button" style="border: 0; background: transparent; padding: 0; font: inherit; font-size: 14px; font-weight: 600; color: #7CCBFF; cursor: pointer">Show</button>
+      </div>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Brought in automatically, with a short toast. Disappears after a few seconds.</span>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Edited by two people at once</span>
+      <div role="alert" style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid #E8C891; background: #FFFCF6; font-size: 14px; line-height: 1.5">
+        <span><strong>Joris also changed this summary.</strong> Which one should we keep?</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button type="button" style="height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: #18181B; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Keep mine</button>
+          <button type="button" style="height: 34px; padding: 0 12px; border: 1px solid #E5E5E2; border-radius: 7px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Use Joris’s</button>
+          <button type="button" style="height: 34px; padding: 0 12px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #0B6BAA; cursor: pointer">Compare</button>
+        </div>
+      </div>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Shown on the field itself. Only when the same field changed on both sides.</span>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <span style="font-size: 12px; font-weight: 500; color: #6B6B73">Implementer details (on hover or tap)</span>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 10px; background: #F7F7F5; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; line-height: 1.6; color: #3F3F46">
+        <span>branch  quiqr/publish</span>
+        <span>head    a41f9c2 · 12 s ago</span>
+        <span>remote  in sync · pulled 10:41</span>
+      </div>
+      <span style="font-size: 13px; line-height: 1.5; color: #6B6B73">Only shown to implementers and owners. Editors never see this.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

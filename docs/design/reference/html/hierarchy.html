@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quiqr ChatCMS — Roles &amp; hierarchy</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+
+<style>
+html,body{background:#F7F7F5}
+.qp-screens{position:fixed;right:calc(12px + env(safe-area-inset-right, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:50;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:#18181B;color:#FAFAFA;font:500 13px Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.qp-screens:hover{color:#FFFFFF;background:#27272A}
+.qp-screens:focus-visible{outline:2px solid #37B6FF;outline-offset:2px}
+</style>
+</head>
+<body>
+
+<div style="min-height: 100vh; box-sizing: border-box; padding: clamp(24px, 5vw, 56px) clamp(16px, 5vw, 64px); background: #F7F7F5; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; display: flex; flex-direction: column; gap: 36px">
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <h1 style="margin: 0; font-size: 28px; font-weight: 650; letter-spacing: -0.025em">Who manages what</h1>
+    <p style="margin: 0; font-size: 15px; color: #52525B; max-width: 760px">Three levels. Each level manages the one below it, within the limits set from above.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; align-items: stretch">
+    <section style="background: #18181B; color: #FAFAFA; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #A1A1AA">Level 1 · whole platform</span>
+        <span style="font-size: 22px; font-weight: 650; letter-spacing: -0.015em">Platform admin</span>
+      </div>
+      <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.45; color: #E4E4E7">
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #7CCBFF">•</span>Create, edit and delete organisations</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #7CCBFF">•</span>Change the members of any organisation</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #7CCBFF">•</span>Manage all user accounts</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #7CCBFF">•</span>Optionally limit members and projects per organisation</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #7CCBFF">•</span>Move any project to any organisation</li>
+      </ul>
+      <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid #3F3F46; font-size: 13px; color: #A1A1AA">Screens 12–14</div>
+    </section>
+
+    
+
+    <section style="background: #FFFFFF; border: 1.5px solid #0B6BAA; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #0A5A8F">Level 2 · one organisation</span>
+        <span style="font-size: 22px; font-weight: 650; letter-spacing: -0.015em">Organisation admin</span>
+      </div>
+      <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.45; color: #3F3F46">
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Invite and remove members</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Create, import, archive and delete projects</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Give members a role per project</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Duplicate projects (with a new name) and download them as zip</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Move projects to other organisations they also manage</li>
+        <li style="display: flex; gap: 10px"><span aria-hidden="true" style="color: #0B6BAA">•</span>Works within the limits, if any are set</li>
+      </ul>
+      <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid #EDEDEA; font-size: 13px; color: #6B6B73">Screens 15–16</div>
+    </section>
+
+    
+
+    <section style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: #6B6B73">Level 3 · one project</span>
+        <span style="font-size: 22px; font-weight: 650; letter-spacing: -0.015em">Project roles</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.45">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">Implementer</span><span style="color: #52525B">Repository, publishing, technical details</span></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">Editor</span><span style="color: #52525B">Edits content and media, publishes</span></div>
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">Viewer</span><span style="color: #52525B">Reads and previews only</span></div>
+      </div>
+      <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid #EDEDEA; font-size: 13px; color: #6B6B73">Screen 4</div>
+    </section>
+  </div>
+
+  <p style="margin: 0; font-size: 14px; color: #52525B">Roles belong to a place, not to a person: someone can be organisation admin in one organisation and editor on a project in another. An organisation admin can open every project in their organisation.</p>
+  <p style="margin: 0; display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 10px; border: 1px solid #F1C9C4; background: #FDF3F2; font-size: 14px; line-height: 1.5; color: #3F3F46"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span><strong>Limits are hard.</strong> Any action that would take an organisation over a limit is refused before it runs: inviting, adding a member, a new project, duplicating, moving. The message names the limit and the numbers, and says how to fix it.</span></p>
+</div>
+
+<a class="qp-screens" href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>All screens</a>
+</body>
+</html>

@@ -27,15 +27,15 @@ section { display: flex; flex-direction: column; gap: 12px; }
 h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
 .card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; color: inherit; text-decoration: none; min-width: 0; }
-.card:hover { border-color: var(--accent); }
-.card:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.card-title { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+a.card:hover { border-color: var(--accent); }
+.card:focus-visible, .chip:focus-visible, .card-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card-title { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
 .card-title svg { margin-left: auto; color: var(--muted); flex: none; }
 .card p { margin: 0; color: var(--muted); font-size: 14px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; background: var(--chip); color: var(--fg); font-size: 13px; font-weight: 500; text-decoration: none; }
 .chip:hover { background: var(--accent-soft); color: var(--accent); }
-.tag { font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 8px; }
+.tag { font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 2px 8px; text-transform: none; letter-spacing: 0; }
 .note { margin: 0; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 20px; }
 </style>
 
@@ -43,14 +43,15 @@ h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-t
   <header class="intro">
     <div class="brand"><img class="brand-logo" src="logo.svg" alt="Quiqr"><span>ChatCMS</span></div>
     <h1>Milestone 1 prototype</h1>
-    <p class="lede">Every screen from the design, as real pages. Buttons that matter are linked, so you can sign in, edit a page, publish and roll back. The desktop screens fold into one column on a phone; the phone screens show the dedicated mobile layout.</p>
+    <p class="lede">Every screen from the design, as real pages. Buttons that matter are linked, so you can sign in, edit a page, publish, roll back and try the admin flows. The desktop screens fold into one column on a phone; the phone screens show the dedicated mobile layout.</p>
   </header>
 
   <section aria-labelledby="g1">
     <h2 id="g1">Start here</h2>
     <div class="grid">
       <a class="card" href="login.html"><span class="card-title">Sign in<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Email and password. “Sign in” takes you to the project overview.</p></a>
-      <a class="card" href="projects.html"><span class="card-title">Organisation &amp; projects<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Switch organisation, see each site’s publish status.</p></a>
+      <a class="card" href="projects.html"><span class="card-title">Organisation &amp; projects<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Switch organisation, see each site’s publish status, reach the admin areas.</p></a>
+      <a class="card" href="hierarchy.html"><span class="card-title">Who manages what<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Platform admin, organisation admin and project roles, and how limits work.</p></a>
     </div>
   </section>
 
@@ -58,7 +59,7 @@ h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-t
     <h2 id="g2">Editing content <span class="tag">as editor</span></h2>
     <div class="grid">
       <a class="card" href="content.html"><span class="card-title">Content browser<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Pages and collections from the model; rename, duplicate, delete.</p></a>
-      <div class="card"><a class="card-title" href="editor.html" style="color: inherit; text-decoration: none">Form editor + live preview<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Fields generated from the model, Markdown body, side-by-side preview.</p><div class="chips"><a class="chip" href="editor.html">Editor</a><a class="chip" href="editor-assistant.html">With assistant (later)</a></div></div>
+      <div class="card"><a class="card-title" href="editor.html">Form editor + live preview<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Fields generated from the model, Markdown body, side-by-side preview.</p><div class="chips"><a class="chip" href="editor.html">Editor</a><a class="chip" href="editor-assistant.html">With assistant (later)</a></div></div>
       <a class="card" href="media.html"><span class="card-title">Media library<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Upload, browse and pick images, with alt text and where-used.</p></a>
     </div>
   </section>
@@ -66,17 +67,34 @@ h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-t
   <section aria-labelledby="g3">
     <h2 id="g3">Publishing &amp; history</h2>
     <div class="grid">
-      <div class="card"><a class="card-title" href="publish.html" style="color: inherit; text-decoration: none">Publish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Review changes, then publish. Progress moves on to “done” by itself.</p><div class="chips"><a class="chip" href="publish.html">Review</a><a class="chip" href="publish-building.html">In progress</a><a class="chip" href="publish-done.html">Done</a><a class="chip" href="publish-error.html">Error</a></div></div>
-      <div class="card"><a class="card-title" href="history.html" style="color: inherit; text-decoration: none">History &amp; rollback<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Versions in plain language; going back asks for confirmation.</p><div class="chips"><a class="chip" href="history.html">History</a><a class="chip" href="history-rollback.html">Confirm rollback</a></div></div>
+      <div class="card"><a class="card-title" href="publish.html">Publish<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Review changes, then publish. Progress moves on to “done” by itself.</p><div class="chips"><a class="chip" href="publish.html">Review</a><a class="chip" href="publish-building.html">In progress</a><a class="chip" href="publish-done.html">Done</a><a class="chip" href="publish-error.html">Error</a></div></div>
+      <div class="card"><a class="card-title" href="history.html">History &amp; rollback<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Versions in plain language; going back asks for confirmation.</p><div class="chips"><a class="chip" href="history.html">History</a><a class="chip" href="history-rollback.html">Confirm rollback</a></div></div>
       <a class="card" href="sync.html"><span class="card-title">Sync status states<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Saved, saving, offline, updates from others, conflicts.</p></a>
     </div>
   </section>
 
   <section aria-labelledby="g4">
-    <h2 id="g4">Setup <span class="tag">as implementer</span></h2>
+    <h2 id="g4">Project setup <span class="tag">as implementer</span></h2>
     <div class="grid">
       <a class="card" href="onboarding.html"><span class="card-title">Project onboarding<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Import a Hugo repo, copy the deploy key, choose where to publish.</p></a>
-      <a class="card" href="people.html"><span class="card-title">People &amp; roles<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Invite people and set owner, implementer, editor or viewer.</p></a>
+      <a class="card" href="people.html"><span class="card-title">People &amp; roles<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>Invite people to a project as implementer, editor or viewer.</p></a>
+    </div>
+  </section>
+
+  <section aria-labelledby="g6">
+    <h2 id="g6">Organisation admin</h2>
+    <div class="grid">
+      <div class="card"><a class="card-title" href="org-members.html">Members<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Invite and remove members, set project access, see seat usage.</p><div class="chips"><a class="chip" href="org-members.html">Members</a><a class="chip" href="org-members-full.html">At member limit</a></div></div>
+      <div class="card"><a class="card-title" href="org-projects.html">Projects<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Duplicate (new name required), move to another organisation, download as zip, archive, delete.</p><div class="chips"><a class="chip" href="org-projects-duplicate.html">Duplicate</a><a class="chip" href="org-projects-duplicate-at-limit.html">Duplicate · at limit</a><a class="chip" href="org-projects-move.html">Move</a><a class="chip" href="org-projects-move-at-limit.html">Move · at limit</a></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="g7">
+    <h2 id="g7">Platform admin</h2>
+    <div class="grid">
+      <a class="card" href="admin-organisations.html"><span class="card-title">Organisations<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>All organisations with member and project usage against their (optional) limits.</p></a>
+      <div class="card"><a class="card-title" href="admin-organisation.html">Organisation detail<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a><p>Name, optional limits, projects, members, delete.</p><div class="chips"><a class="chip" href="admin-organisation.html">Detail</a><a class="chip" href="admin-organisation-delete.html">Confirm delete</a></div></div>
+      <a class="card" href="admin-users.html"><span class="card-title">Users<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span><p>All accounts, their organisations and status; reset, block, make platform admin.</p></a>
     </div>
   </section>
 
@@ -89,5 +107,5 @@ h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-t
     </div>
   </section>
 
-  <p class="note">Sample content only: Korenaar Bakery, its people and pages are made up. Fields and buttons that aren’t linked don’t save anything. Every screen has an “All screens” button to come back here.</p>
+  <p class="note">Sample content only: Korenaar Bakery, Studio Noord, its people and pages are made up. Fields and buttons that aren’t linked don’t save anything. Every screen has an “All screens” button to come back here.</p>
 </div>

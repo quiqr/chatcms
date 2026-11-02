@@ -14,7 +14,6 @@ a{color:#0B6BAA}a:hover{color:#08578C}
 
 <style>
 html,body{background:#F7F7F5}
-*{-webkit-tap-highlight-color:transparent}
 .qp-screens{position:fixed;right:calc(12px + env(safe-area-inset-right, 0px));bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:50;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:#18181B;color:#FAFAFA;font:500 13px Geist,ui-sans-serif,system-ui,sans-serif;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .qp-screens:hover{color:#FFFFFF;background:#27272A}
 .qp-screens:focus-visible{outline:2px solid #37B6FF;outline-offset:2px}
@@ -73,8 +72,7 @@ html,body{background:#F7F7F5}
             <input id="inv" type="email" placeholder="name@example.com" style="flex: 1 1 240px; height: 42px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 14px">
             <label for="invrole" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Role</label>
             <select id="invrole" style="flex: 0 1 160px; height: 42px; padding: 0 10px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 14px; background: #FFFFFF">
-              <option>Editor</option><option>Viewer</option><option>Implementer</option><option>Owner</option>
-            </select>
+              <option>Editor</option><option>Viewer</option><option>Implementer</option>            </select>
             <button type="submit" style="height: 42px; padding: 0 18px; border: 0; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Send invite</button>
           </div>
         </form>
@@ -92,7 +90,7 @@ html,body{background:#F7F7F5}
             <tbody>
               <tr>
                 <td style="padding: 12px 20px; border-bottom: 1px solid #F1F1EE"><div style="display: flex; align-items: center; gap: 12px"><span style="width: 34px; height: 34px; border-radius: 50%; background: #E6F2FB; color: #0A5A8F; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">PS</span><span style="display: flex; flex-direction: column"><span style="font-weight: 500">Pim Snel <span style="font-weight: 400; color: #6B6B73">(you)</span></span><span style="font-size: 13px; color: #6B6B73">pim@studionoord.nl</span></span></div></td>
-                <td style="padding: 12px; border-bottom: 1px solid #F1F1EE"><span style="font-size: 13px; font-weight: 500; color: #3F3F46; background: #F1F1EE; border-radius: 6px; padding: 4px 8px">Owner</span></td>
+                <td style="padding: 12px; border-bottom: 1px solid #F1F1EE"><span style="font-size: 13px; font-weight: 500; color: #0A5A8F; background: #E6F2FB; border-radius: 6px; padding: 4px 8px; white-space: nowrap">Organisation admin</span></td>
                 <td style="padding: 12px; border-bottom: 1px solid #F1F1EE; color: #52525B">Now</td>
                 <td style="padding: 12px 20px; border-bottom: 1px solid #F1F1EE"></td>
               </tr>
@@ -121,7 +119,7 @@ html,body{background:#F7F7F5}
 
       <section aria-label="What each role can do" style="flex: 1 1 260px; background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
         <span style="font-size: 15px; font-weight: 600">What each role can do</span>
-        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Owner</span><span style="font-size: 13px; line-height: 1.5; color: #52525B">Everything, including billing and deleting the project.</span></div>
+        <div style="display: flex; flex-direction: column; gap: 3px; padding-bottom: 12px; border-bottom: 1px solid #EDEDEA"><span style="font-size: 14px; font-weight: 500">Organisation admin</span><span style="font-size: 13px; line-height: 1.5; color: #52525B">Has access to every project in Studio Noord. Managed under <a href="org-members.html">organisation members</a>.</span></div>
         <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Implementer</span><span style="font-size: 13px; line-height: 1.5; color: #52525B">Sets up the repository, publishing and people. Sees technical details.</span></div>
         <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Editor</span><span style="font-size: 13px; line-height: 1.5; color: #52525B">Edits pages and media, and publishes the site.</span></div>
         <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Viewer</span><span style="font-size: 13px; line-height: 1.5; color: #52525B">Reads content and previews. Can’t change anything.</span></div>

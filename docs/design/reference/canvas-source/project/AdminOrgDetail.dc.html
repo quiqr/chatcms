@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quiqr ChatCMS — Platform admin · Studio Noord</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F7F7F5}
+a{color:#0B6BAA}a:hover{color:#08578C}
+</style>
+</helmet>
+<div style="position: relative; min-height: 100vh; display: flex; flex-wrap: wrap; font-family: Geist, ui-sans-serif, system-ui, sans-serif; color: #18181B; background: #F7F7F5">
+  <aside aria-label="Platform admin navigation" style="flex: 1 1 240px; box-sizing: border-box; background: #18181B; color: #FAFAFA; padding: 14px 12px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 4px 8px">
+      <img src="quiqr-logo.svg" alt="Quiqr" style="height: 24px; width: auto; display: block;">
+      <span style="font-size: 15px; color: #A1A1AA">ChatCMS</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #27272A">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7CCBFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/></svg>
+      <span style="display: flex; flex-direction: column"><span style="font-size: 12px; color: #A1A1AA">You’re in</span><span style="font-size: 14px; font-weight: 600">Platform admin</span></span>
+    </div>
+    <nav aria-label="Platform admin" style="display: flex; flex-direction: column; gap: 2px">
+      <a href="AdminOrgs.dc.html" aria-current="page" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; font-weight: 600; color: #FFFFFF; background: #3F3F46; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M16 9h2a2 2 0 0 1 2 2v10"/><path d="M8 7h4M8 11h4M8 15h4M2 21h20"/></svg><span style="flex: 1">Organisations</span><span style="font-size: 12px; color: #D4D4D8">6</span></a>
+      <a href="AdminUsers.dc.html" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #D4D4D8; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg><span style="flex: 1">Users</span><span style="font-size: 12px; color: #A1A1AA">46</span></a>
+    </nav>
+    <div style="flex: 1"></div>
+    <a href="Projects.dc.html" style="height: 40px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 8px; font-size: 14px; color: #D4D4D8; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Back to my projects</a>
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-top: 1px solid #3F3F46">
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: #E6F2FB; color: #0A5A8F; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center">PS</span>
+      <span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 500">Pim Snel</span><span style="font-size: 12px; color: #A1A1AA">Platform admin</span></span>
+    </div>
+  </aside>
+
+  <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 32px; border-bottom: 1px solid #E5E5E2; background: #FFFFFF">
+      <a href="AdminOrgs.dc.html" aria-label="Back to organisations" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #E5E5E2; display: flex; align-items: center; justify-content: center; color: #3F3F46"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+      <span style="width: 36px; height: 36px; border-radius: 8px; background: #1E3A8A; color: #FFFFFF; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">SN</span>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+        <span style="font-size: 12px; color: #6B6B73">Organisations</span>
+        <h1 style="margin: 0; font-size: 18px; font-weight: 600">Studio Noord</h1>
+      </div>
+      <button type="button" style="height: 38px; padding: 0 16px; border: 0; border-radius: 8px; background: #0B6BAA; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Save changes</button>
+    </header>
+
+    <main style="padding: 24px 32px 56px; display: flex; flex-direction: column; gap: 20px; max-width: 1100px; box-sizing: border-box">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 20px">
+        <section aria-labelledby="det" style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+          <h2 id="det" style="margin: 0; font-size: 15px; font-weight: 600">Details</h2>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="oname" style="font-size: 14px; font-weight: 500">Name</label>
+            <input id="oname" type="text" value="Studio Noord" style="height: 42px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 15px">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <label for="oslug" style="font-size: 14px; font-weight: 500">Address</label>
+            <div style="display: flex; align-items: stretch; border: 1px solid #D9D9D5; border-radius: 8px; overflow: hidden">
+              <span style="display: flex; align-items: center; padding: 0 10px; background: #F7F7F5; border-right: 1px solid #E5E5E2; font-size: 14px; color: #52525B">chatcms.eu/</span>
+              <input id="oslug" type="text" value="studio-noord" style="flex: 1; min-width: 0; height: 40px; padding: 0 10px; border: 0; font: inherit; font-size: 15px">
+            </div>
+          </div>
+          <span style="font-size: 13px; color: #6B6B73">Created 21 October 2026 by Pim Snel</span>
+        </section>
+
+        <section aria-labelledby="lim" style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 18px">
+          <h2 id="lim" style="margin: 0; font-size: 15px; font-weight: 600">Limits</h2>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><label style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; min-height: 24px"><input type="checkbox" checked style="width: 16px; height: 16px; margin: 0; accent-color: #0B6BAA">Limit members</label><span style="font-size: 13px; color: #6B6B73; padding-left: 24px">7 in use</span></span>
+              <div style="display: flex; align-items: stretch; border: 1px solid #D9D9D5; border-radius: 8px; overflow: hidden">
+                <button type="button" aria-label="Decrease max members" style="width: 40px; height: 40px; border: 0; background: #FFFFFF; font: inherit; font-size: 18px; color: #3F3F46; cursor: pointer">−</button>
+                <input id="maxm" aria-label="Max members" type="text" inputmode="numeric" value="10" style="width: 52px; border: 0; border-left: 1px solid #E5E5E2; border-right: 1px solid #E5E5E2; text-align: center; font: inherit; font-size: 15px; font-variant-numeric: tabular-nums">
+                <button type="button" aria-label="Increase max members" style="width: 40px; height: 40px; border: 0; background: #FFFFFF; font: inherit; font-size: 18px; color: #3F3F46; cursor: pointer">+</button>
+              </div>
+            </div>
+            <span style="height: 6px; border-radius: 3px; background: #EDEDEA; display: flex; overflow: hidden"><span style="width: 70%; background: #0B6BAA; border-radius: 3px"></span></span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><label style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; min-height: 24px"><input type="checkbox" checked style="width: 16px; height: 16px; margin: 0; accent-color: #0B6BAA">Limit projects</label><span style="font-size: 13px; color: #92400E; padding-left: 24px">4 in use · almost full</span></span>
+              <div style="display: flex; align-items: stretch; border: 1px solid #D9D9D5; border-radius: 8px; overflow: hidden">
+                <button type="button" aria-label="Decrease max projects" style="width: 40px; height: 40px; border: 0; background: #FFFFFF; font: inherit; font-size: 18px; color: #3F3F46; cursor: pointer">−</button>
+                <input id="maxp" aria-label="Max projects" type="text" inputmode="numeric" value="5" style="width: 52px; border: 0; border-left: 1px solid #E5E5E2; border-right: 1px solid #E5E5E2; text-align: center; font: inherit; font-size: 15px; font-variant-numeric: tabular-nums">
+                <button type="button" aria-label="Increase max projects" style="width: 40px; height: 40px; border: 0; background: #FFFFFF; font: inherit; font-size: 18px; color: #3F3F46; cursor: pointer">+</button>
+              </div>
+            </div>
+            <span style="height: 6px; border-radius: 3px; background: #EDEDEA; display: flex; overflow: hidden"><span style="width: 80%; background: #D97706; border-radius: 3px"></span></span>
+          </div>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #52525B">Limits are optional. Untick one to allow any number. A lower limit never removes anyone or anything; it only stops new invites or projects.</p>
+        </section>
+      </div>
+
+      <section aria-labelledby="prj" style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; display: flex; flex-direction: column">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #EDEDEA">
+          <h2 id="prj" style="margin: 0; font-size: 15px; font-weight: 600; flex: 1">Projects <span style="font-weight: 400; color: #6B6B73">· 4 of 5</span></h2>
+          <span style="font-size: 13px; color: #6B6B73">As platform admin you can move projects to any organisation.</span>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0">
+          <sc-for list="{{projects}}" as="p" hint-placeholder-count="4">
+            <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #F1F1EE">
+              <span style="width: 34px; height: 34px; border-radius: 8px; background: {{p.bg}}; color: {{p.fg}}; font-weight: 650; display: flex; align-items: center; justify-content: center; flex: none">{{p.init}}</span>
+              <span style="flex: 1 1 200px; display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">{{p.name}}</span><span style="font-size: 13px; color: #6B6B73">{{p.domain}} · {{p.people}}</span></span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                <button type="button" style="height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg>Duplicate</button>
+                <button type="button" style="height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move</button>
+                <button type="button" aria-label="Download {{p.name}} as zip" style="height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #E5E5E2; border-radius: 7px; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>Zip</button>
+              </div>
+            </li>
+          </sc-for>
+        </ul>
+      </section>
+
+      <section aria-labelledby="mem" style="background: #FFFFFF; border: 1px solid #E5E5E2; border-radius: 14px; display: flex; flex-direction: column">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid #EDEDEA">
+          <h2 id="mem" style="margin: 0; font-size: 15px; font-weight: 600; flex: 1">Members <span style="font-weight: 400; color: #6B6B73">· 7 of 10</span></h2>
+          <form style="display: flex; flex-wrap: wrap; gap: 8px; flex: 0 1 560px">
+            <label for="addm" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+            <input id="addm" type="email" placeholder="Add by email address" style="flex: 1 1 220px; height: 38px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 14px">
+            <label for="addr" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Organisation role</label>
+            <select id="addr" style="height: 38px; padding: 0 8px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 14px; background: #FFFFFF"><option>Member</option><option>Organisation admin</option></select>
+            <button type="submit" style="height: 38px; padding: 0 14px; border: 0; border-radius: 8px; background: #18181B; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Add</button>
+          </form>
+        </div>
+        <div style="position: relative; overflow-x: auto">
+          <table style="width: 100%; min-width: 680px; border-collapse: collapse; font-size: 14px">
+            <thead>
+              <tr style="text-align: left; color: #6B6B73; font-size: 12px">
+                <th scope="col" style="padding: 10px 20px; font-weight: 500; border-bottom: 1px solid #EDEDEA">Person</th>
+                <th scope="col" style="padding: 10px 12px; font-weight: 500; border-bottom: 1px solid #EDEDEA">Role in organisation</th>
+                <th scope="col" style="padding: 10px 12px; font-weight: 500; border-bottom: 1px solid #EDEDEA">Projects</th>
+                <th scope="col" style="padding: 10px 20px; border-bottom: 1px solid #EDEDEA"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{members}}" as="m" hint-placeholder-count="7">
+                <tr>
+                  <td style="padding: 10px 20px; border-bottom: 1px solid #F1F1EE"><div style="display: flex; align-items: center; gap: 12px"><span style="width: 32px; height: 32px; border-radius: 50%; background: {{m.bg}}; color: {{m.fg}}; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex: none">{{m.init}}</span><span style="display: flex; flex-direction: column"><span style="font-weight: 500">{{m.name}}</span><span style="font-size: 13px; color: {{m.subColor}}">{{m.sub}}</span></span></div></td>
+                  <td style="padding: 10px 12px; border-bottom: 1px solid #F1F1EE"><label for="{{m.id}}" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Role for {{m.name}}</label><select id="{{m.id}}" style="height: 34px; padding: 0 8px; border: 1px solid #E5E5E2; border-radius: 7px; font: inherit; font-size: 13px; background: #FFFFFF"><option>{{m.role}}</option><option>{{m.otherRole}}</option></select></td>
+                  <td style="padding: 10px 12px; border-bottom: 1px solid #F1F1EE; color: #52525B">{{m.projects}}</td>
+                  <td style="padding: 10px 20px; border-bottom: 1px solid #F1F1EE; text-align: right"><button type="button" style="height: 34px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; font: inherit; font-size: 13px; font-weight: 500; color: #B91C1C; cursor: pointer">Remove</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="danger" style="background: #FFFFFF; border: 1px solid #F1C9C4; border-radius: 14px; padding: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+        <div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 4px">
+          <h2 id="danger" style="margin: 0; font-size: 15px; font-weight: 600">Delete organisation</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #52525B">Removes Studio Noord, its 4 projects and access for its 7 members from ChatCMS. Live websites and their repositories are not touched.</p>
+        </div>
+        <button type="button" style="height: 40px; padding: 0 16px; border: 1px solid #F1C9C4; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; color: #B91C1C; cursor: pointer">Delete organisation…</button>
+      </section>
+    </main>
+  </div>
+
+  <sc-if value="{{confirmDelete}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(24,24,27,.42); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box">
+      <div role="dialog" aria-modal="true" aria-labelledby="del-title" style="width: 100%; max-width: 480px; background: #FFFFFF; border-radius: 16px; padding: 24px; box-shadow: 0 24px 64px rgba(16,24,40,.24); display: flex; flex-direction: column; gap: 16px">
+        <h2 id="del-title" style="margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.015em">Delete Studio Noord?</h2>
+        <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5; color: #3F3F46">
+          <li>4 projects are removed from ChatCMS</li>
+          <li>7 members lose access; their accounts stay</li>
+          <li>Live websites and repositories keep working</li>
+        </ul>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <label for="confirmname" style="font-size: 14px; font-weight: 500">Type <strong>Studio Noord</strong> to confirm</label>
+          <input id="confirmname" type="text" style="height: 42px; padding: 0 12px; border: 1px solid #D9D9D5; border-radius: 8px; font: inherit; font-size: 15px">
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end">
+          <button type="button" style="height: 42px; padding: 0 16px; border: 1px solid #E5E5E2; border-radius: 8px; background: #FFFFFF; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">Cancel</button>
+          <button type="button" style="height: 42px; padding: 0 16px; border: 0; border-radius: 8px; background: #B91C1C; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Delete organisation</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"confirmDelete":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = [
+      ['PS', 'Pim Snel', 'pim@studionoord.nl', 'Organisation admin', 'All projects', '#E6F2FB', '#0A5A8F'],
+      ['LM', 'Lotte Mulder', 'lotte@studionoord.nl', 'Organisation admin', 'All projects', '#EDE4F6', '#5B21B6'],
+      ['DV', 'Daan Verhoef', 'daan@studionoord.nl', 'Member', '3 projects', '#E1EDD5', '#3F6212'],
+      ['EV', 'Eva de Vries', 'eva@korenaar.nl', 'Member', 'Korenaar Bakery', '#F3E3D3', '#9A3412'],
+      ['JB', 'Joris Bakker', 'joris@korenaar.nl', 'Member', 'Korenaar Bakery', '#DCE7F7', '#1E3A8A'],
+      ['RK', 'Ruben Koster', 'ruben@fietsatelierzuid.nl', 'Member', 'Fietsatelier Zuid', '#F1F1EE', '#3F3F46'],
+      ['SS', 'sanne@korenaar.nl', 'Invitation sent · not accepted yet', 'Member', 'Korenaar Bakery', '#FFFFFF', '#6B6B73']
+    ];
+    return {
+      projects: [
+        { init: 'K', name: 'Korenaar Bakery', domain: 'korenaar.nl', people: '4 people', bg: '#F3E3D3', fg: '#9A3412' },
+        { init: 'F', name: 'Fietsatelier Zuid', domain: 'fietsatelierzuid.nl', people: '3 people', bg: '#DCE7F7', fg: '#1E3A8A' },
+        { init: 'L', name: 'Lindewaard Werkt', domain: 'werkt.lindewaard.nl', people: '3 people', bg: '#E1EDD5', fg: '#3F6212' },
+        { init: 'D', name: 'Duinzicht Camping', domain: 'duinzicht.nl', people: '3 people', bg: '#EDE4F6', fg: '#5B21B6' }
+      ],
+      confirmDelete: this.props.confirmDelete ?? false,
+      members: rows.map(([init, name, sub, role, projects, bg, fg], i) => ({
+        id: 'role' + i, init, name, sub, role, projects, bg, fg,
+        otherRole: role === 'Member' ? 'Organisation admin' : 'Member',
+        subColor: sub.startsWith('Invitation') ? '#92400E' : '#6B6B73'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

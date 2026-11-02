@@ -44,7 +44,12 @@ When done, screenshot it at 1440 and 390 px and compare with the references.
 
 Suggested order: Sign in → Projects → Content browser → Form editor + preview
 → Media → Publish (all four states) → History & rollback → Sync states →
-People & roles → Onboarding.
+People & roles → Onboarding → Organisation admin (Members, Projects) →
+Platform admin (Organisations, Organisation, Users).
+
+Before the admin screens, ask Claude Code to implement the permission model
+from DESIGN.md §6 and the limit rules (§"Limits (rules)") in the backend, so
+every limit check happens server-side and the UI only shows the result.
 
 | Screen | §  | Reference file(s) |
 | --- | --- | --- |
@@ -58,10 +63,17 @@ People & roles → Onboarding.
 | Publish | 5.8 | `publish`, `publish-building`, `publish-done`, `publish-error`, `phone-publish` |
 | History & rollback | 5.9 | `history`, `history-rollback` |
 | Sync status | 5.10 | `sync` |
+| Roles & hierarchy (reference) | 5.11, 6 | `hierarchy` |
+| Organisation admin · Members | 5.12 | `org-members`, `org-members-full` |
+| Organisation admin · Projects | 5.13 | `org-projects`, `org-projects-duplicate`, `org-projects-duplicate-at-limit`, `org-projects-move`, `org-projects-move-at-limit` |
+| Platform admin · Organisations | 5.14 | `admin-organisations` |
+| Platform admin · Organisation | 5.15 | `admin-organisation`, `admin-organisation-delete` |
+| Platform admin · Users | 5.16 | `admin-users` |
 
 ## Useful follow-ups
 
 - "Check every screen at 390 px for horizontal scrolling and touch targets under 44 px."
+- "Write tests that every limit-guarded action (invite, add member, new/import/duplicate/move project) is refused over the limit with the error from DESIGN.md."
 - "Grep the UI strings for banned git words from DESIGN.md §7 and fix them."
 - "Make the form editor render fields from a Quiqr model YAML; the drawn
   editor shows text, date, select, image, textarea, markdown, list and a
