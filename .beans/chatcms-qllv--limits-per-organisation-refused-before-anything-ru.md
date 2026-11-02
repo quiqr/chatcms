@@ -1,11 +1,11 @@
 ---
 # chatcms-qllv
 title: Limits per organisation, refused before anything runs
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-11-02T20:04:48Z
-updated_at: 2026-11-02T20:04:48Z
+updated_at: 2026-11-02T21:48:11Z
 parent: chatcms-7r0u
 ---
 

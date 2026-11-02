@@ -154,8 +154,17 @@ func (s *Service) CreateProject(ctx context.Context, who httpapi.Actor, organisa
 		return httpapi.ProjectView{}, httpapi.ErrNotAllowed
 	}
 
-	project, err := s.store.CreateProject(ctx, organisation.ID, slug, name, domain)
-	if err != nil {
+	// Counted and made together, so that two people making a site at the
+	// same moment cannot both take the last one.
+	var project Project
+	if err := s.store.WithRoomForAProject(ctx, organisation.ID, func(within *Store) error {
+		made, err := within.CreateProject(ctx, organisation.ID, slug, name, domain)
+		if err != nil {
+			return err
+		}
+		project = made
+		return nil
+	}); err != nil {
 		return httpapi.ProjectView{}, refusal(err)
 	}
 
@@ -661,4 +670,28 @@ func (s *Service) SendTheInvitationAgain(ctx context.Context, who httpapi.Actor,
 		return httpapi.ErrMissing
 	}
 	return s.inviter.SendAgain(ctx, person)
+}
+
+// UsageOf is how full an organisation is, for anybody who belongs to it. It
+// is not a secret from its own members: a screen that offers a New project
+// button has to know whether there is room for one.
+func (s *Service) UsageOf(ctx context.Context, who httpapi.Actor, organisationSlug string) (httpapi.UsageView, error) {
+	organisation, _, err := s.reach(ctx, who, organisationSlug)
+	if err != nil {
+		return httpapi.UsageView{}, err
+	}
+
+	usage, err := s.store.UsageFor(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.UsageView{}, err
+	}
+
+	return httpapi.UsageView{
+		Members:  counted(usage.Members),
+		Projects: counted(usage.Projects),
+	}, nil
+}
+
+func counted(from Counted) httpapi.CountedView {
+	return httpapi.CountedView{Held: from.Held, Allowed: from.Allowed, Full: from.Full()}
 }

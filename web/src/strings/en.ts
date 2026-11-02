@@ -232,6 +232,17 @@ export const en = {
   "history.yes-go-back": "Yes, go back",
   "history.your-site-will-look-as-it-did": "Your site will look exactly as it did on {when}.",
 
+  // limits
+  "limits.almost-full": "Almost full",
+  "limits.full": "Full",
+  "limits.no-limit": "{held} · no limit",
+  "limits.no-seats-left-many": "All {allowed} seats are in use. Remove somebody, or ask the platform admin to raise the limit.",
+  "limits.no-seats-left-one": "The one seat is in use. Remove somebody, or ask the platform admin to raise the limit.",
+  "limits.no-sites-left-many": "All {allowed} sites are in use. Archive or remove one, or ask the platform admin to raise the limit.",
+  "limits.no-sites-left-one": "The one site is in use. Archive or remove it, or ask the platform admin to raise the limit.",
+  "limits.seats-used": "{held} of {allowed} seats used",
+  "limits.sites-used": "{held} of {allowed} sites used",
+
   // media
   "media.add-pictures": "Add pictures",
   "media.adding": "Adding…",
@@ -461,9 +472,12 @@ export const en = {
   "refused.file-needs-name-with-some": "That file needs a name with some letters or numbers in it.",
   "refused.import-failed": "The site could not be brought in: {why}",
   "refused.last-administrator": "This is the last platform admin, so there would be nobody left to appoint another.",
+  "refused.limit-below-one": "A limit is a number of at least one, or none at all.",
   "refused.model-cannot-be-read": "This site's model cannot be read: {why}",
   "refused.name-cannot-empty": "A name cannot be empty.",
   "refused.no-address-waiting": "There is no address waiting to be confirmed.",
+  "refused.no-room-for-a-member": "That makes {would} members, and the limit is {allowed}. Remove somebody, or ask the platform admin to raise the limit.",
+  "refused.no-room-for-a-site": "That makes {would} sites, and the limit is {allowed}. Archive or remove one, or ask the platform admin to raise the limit.",
   "refused.no-such-field": "This page has no field called “{field}”.",
   "refused.no-such-person": "Nobody with that email address has an account yet.",
   "refused.not-a-role": "That is not a role.",

@@ -109,6 +109,18 @@ func (s *stubAdministration) MakePerson(_ context.Context, _ Actor, email, displ
 	return PersonWholeView{Email: email, DisplayName: displayName, StillToAccept: true}, s.err
 }
 
+func (s *stubAdministration) SetLimits(_ context.Context, _ Actor, slug string, members, projects *int) error {
+	s.note("limits on " + slug + ": " + said(members) + " members, " + said(projects) + " sites")
+	return s.err
+}
+
+func said(limit *int) string {
+	if limit == nil {
+		return "no limit"
+	}
+	return strconv.Itoa(*limit)
+}
+
 func (s *stubAdministration) ActAs(_ context.Context, _ Actor, token, email string) error {
 	s.note("act as " + email + " on " + token)
 	return s.err
@@ -164,6 +176,7 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodGet, "/api/administration/people/a@b.c", nil},
 		{http.MethodPost, "/api/administration/people/a@b.c/act-as", nil},
 		{http.MethodDelete, "/api/acting-as", nil},
+		{http.MethodPut, "/api/administration/organisations/bakery/limits", map[string]any{"members": 5}},
 	} {
 		recorder := call(t, handler, each.method, each.path, each.body)
 		if recorder.Code != http.StatusUnauthorized {
@@ -512,5 +525,23 @@ func TestActingAsReportsARefusalWithItsReason(t *testing.T) {
 	}
 	if !strings.Contains(recorder.Body.String(), "cannot be acted as") {
 		t.Errorf("the reason did not reach the screen: %s", recorder.Body)
+	}
+}
+
+func TestTheLimitsAreSetAndNoLimitIsSaidOutLoud(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodPut,
+		"/api/administration/organisations/bakery/limits",
+		map[string]any{"members": 10, "projects": nil})
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204: %s", recorder.Code, recorder.Body)
+	}
+	// A missing limit is "no limit" rather than zero: the two are different
+	// answers, and a body that leaves one out means the one it leaves out.
+	if len(service.asked) == 0 || service.asked[0] != "limits on bakery: 10 members, no limit sites" {
+		t.Errorf("the service was asked %v", service.asked)
 	}
 }

@@ -45,6 +45,7 @@ const (
 	MadeAPerson           What = "made a person"
 	BeganActingAs         What = "began acting as somebody"
 	StoppedActingAs       What = "stopped acting as somebody"
+	SetTheLimits          What = "set what an organisation is allowed"
 )
 
 // Record is one act, with who did it and what it was done to. The names are

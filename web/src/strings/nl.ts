@@ -235,6 +235,17 @@ export const nl: Strings = {
   "history.yes-go-back": "Ja, ga terug",
   "history.your-site-will-look-as-it-did": "Je site ziet er dan precies zo uit als op {when}.",
 
+  // limits
+  "limits.almost-full": "Bijna vol",
+  "limits.full": "Vol",
+  "limits.no-limit": "{held} · geen limiet",
+  "limits.no-seats-left-many": "Alle {allowed} plaatsen zijn bezet. Haal er iemand uit, of vraag de platformbeheerder de limiet te verhogen.",
+  "limits.no-seats-left-one": "De enige plaats is bezet. Haal er iemand uit, of vraag de platformbeheerder de limiet te verhogen.",
+  "limits.no-sites-left-many": "Alle {allowed} sites zijn in gebruik. Archiveer of verwijder er een, of vraag de platformbeheerder de limiet te verhogen.",
+  "limits.no-sites-left-one": "De enige site is in gebruik. Archiveer of verwijder hem, of vraag de platformbeheerder de limiet te verhogen.",
+  "limits.seats-used": "{held} van {allowed} plaatsen bezet",
+  "limits.sites-used": "{held} van {allowed} sites in gebruik",
+
   // media
   "media.add-pictures": "Afbeeldingen toevoegen",
   "media.adding": "Toevoegen…",
@@ -464,9 +475,12 @@ export const nl: Strings = {
   "refused.file-needs-name-with-some": "Dat bestand heeft een naam nodig met letters of cijfers erin.",
   "refused.import-failed": "De site kon niet binnengehaald worden: {why}",
   "refused.last-administrator": "Dit is de laatste platformbeheerder, dus er zou niemand overblijven om een volgende aan te wijzen.",
+  "refused.limit-below-one": "Een limiet is een getal van minstens één, of helemaal geen limiet.",
   "refused.model-cannot-be-read": "Het model van deze site kan niet gelezen worden: {why}",
   "refused.name-cannot-empty": "Een naam kan niet leeg zijn.",
   "refused.no-address-waiting": "Er wacht geen adres op bevestiging.",
+  "refused.no-room-for-a-member": "Dat maakt {would} leden, en de limiet is {allowed}. Haal er iemand uit, of vraag de platformbeheerder de limiet te verhogen.",
+  "refused.no-room-for-a-site": "Dat maakt {would} sites, en de limiet is {allowed}. Archiveer of verwijder er een, of vraag de platformbeheerder de limiet te verhogen.",
   "refused.no-such-field": "Deze pagina heeft geen veld dat “{field}” heet.",
   "refused.no-such-person": "Niemand met dat e-mailadres heeft al een account.",
   "refused.not-a-role": "Dat is geen rol.",

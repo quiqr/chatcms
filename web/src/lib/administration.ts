@@ -1,10 +1,12 @@
-import { get, post, remove } from "./api";
+import { get, post, put, remove } from "./api";
+import type { Usage } from "../components/ui/usage";
 
 export type AdministeredOrganisation = {
   slug: string;
   name: string;
   projects: number;
   people: number;
+  usage: Usage;
 };
 
 export type Administrator = {
@@ -70,6 +72,7 @@ export function turnAccountOn(email: string) {
 export type OrganisationWhole = {
   slug: string;
   name: string;
+  usage: Usage;
   people: { personId: string; email: string; displayName: string; role: string; stillToAccept: boolean }[];
   projects: { slug: string; name: string; domain: string }[];
 };
@@ -118,4 +121,11 @@ export function makePerson(body: { email: string; displayName: string }) {
 
 export function actAs(email: string) {
   return post<void>(`/api/administration/people/${encodeURIComponent(email)}/act-as`);
+}
+
+export function setLimits(organisation: string, members: number | null, projects: number | null) {
+  return put<void>(`/api/administration/organisations/${organisation}/limits`, {
+    members,
+    projects,
+  });
 }

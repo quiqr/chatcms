@@ -35,7 +35,7 @@ func (q *Queries) CountProjectAdministrators(ctx context.Context, projectID pgty
 }
 
 const createOrganisation = `-- name: CreateOrganisation :one
-INSERT INTO organisations (slug, name) VALUES ($1, $2) RETURNING id, slug, name, created_at, updated_at
+INSERT INTO organisations (slug, name) VALUES ($1, $2) RETURNING id, slug, name, created_at, updated_at, max_members, max_projects
 `
 
 type CreateOrganisationParams struct {
@@ -52,12 +52,14 @@ func (q *Queries) CreateOrganisation(ctx context.Context, arg CreateOrganisation
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MaxMembers,
+		&i.MaxProjects,
 	)
 	return i, err
 }
 
 const createProject = `-- name: CreateProject :one
-INSERT INTO projects (organisation_id, slug, name, domain) VALUES ($1, $2, $3, $4) RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form
+INSERT INTO projects (organisation_id, slug, name, domain) VALUES ($1, $2, $3, $4) RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form, archived_at
 `
 
 type CreateProjectParams struct {
@@ -91,12 +93,13 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 		&i.PublishTo,
 		&i.PublishBranch,
 		&i.PublishForm,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
 
 const getOrganisation = `-- name: GetOrganisation :one
-SELECT id, slug, name, created_at, updated_at FROM organisations WHERE id = $1
+SELECT id, slug, name, created_at, updated_at, max_members, max_projects FROM organisations WHERE id = $1
 `
 
 func (q *Queries) GetOrganisation(ctx context.Context, id pgtype.UUID) (Organisation, error) {
@@ -108,12 +111,14 @@ func (q *Queries) GetOrganisation(ctx context.Context, id pgtype.UUID) (Organisa
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MaxMembers,
+		&i.MaxProjects,
 	)
 	return i, err
 }
 
 const getOrganisationBySlug = `-- name: GetOrganisationBySlug :one
-SELECT id, slug, name, created_at, updated_at FROM organisations WHERE slug = $1
+SELECT id, slug, name, created_at, updated_at, max_members, max_projects FROM organisations WHERE slug = $1
 `
 
 func (q *Queries) GetOrganisationBySlug(ctx context.Context, slug string) (Organisation, error) {
@@ -125,12 +130,14 @@ func (q *Queries) GetOrganisationBySlug(ctx context.Context, slug string) (Organ
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MaxMembers,
+		&i.MaxProjects,
 	)
 	return i, err
 }
 
 const getProject = `-- name: GetProject :one
-SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form FROM projects WHERE id = $1
+SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form, archived_at FROM projects WHERE id = $1
 `
 
 func (q *Queries) GetProject(ctx context.Context, id pgtype.UUID) (Project, error) {
@@ -152,12 +159,13 @@ func (q *Queries) GetProject(ctx context.Context, id pgtype.UUID) (Project, erro
 		&i.PublishTo,
 		&i.PublishBranch,
 		&i.PublishForm,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
 
 const getProjectBySlug = `-- name: GetProjectBySlug :one
-SELECT projects.id, projects.organisation_id, projects.slug, projects.name, projects.domain, projects.created_at, projects.updated_at, projects.remote, projects.source_kind, projects.source_address, projects.deploy_public_key, projects.deploy_private_key, projects.publish_to, projects.publish_branch, projects.publish_form FROM projects
+SELECT projects.id, projects.organisation_id, projects.slug, projects.name, projects.domain, projects.created_at, projects.updated_at, projects.remote, projects.source_kind, projects.source_address, projects.deploy_public_key, projects.deploy_private_key, projects.publish_to, projects.publish_branch, projects.publish_form, projects.archived_at FROM projects
 JOIN organisations ON organisations.id = projects.organisation_id
 WHERE organisations.slug = $1 AND projects.slug = $2
 `
@@ -186,6 +194,7 @@ func (q *Queries) GetProjectBySlug(ctx context.Context, arg GetProjectBySlugPara
 		&i.PublishTo,
 		&i.PublishBranch,
 		&i.PublishForm,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
@@ -220,7 +229,7 @@ func (q *Queries) ListOrganisationMembershipsForPerson(ctx context.Context, pers
 }
 
 const listOrganisationsForPerson = `-- name: ListOrganisationsForPerson :many
-SELECT DISTINCT organisations.id, organisations.slug, organisations.name, organisations.created_at, organisations.updated_at
+SELECT DISTINCT organisations.id, organisations.slug, organisations.name, organisations.created_at, organisations.updated_at, organisations.max_members, organisations.max_projects
 FROM organisations
 LEFT JOIN organisation_members
        ON organisation_members.organisation_id = organisations.id
@@ -248,6 +257,8 @@ func (q *Queries) ListOrganisationsForPerson(ctx context.Context, personID pgtyp
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MaxMembers,
+			&i.MaxProjects,
 		); err != nil {
 			return nil, err
 		}
@@ -336,7 +347,7 @@ func (q *Queries) ListProjectMembershipsForPerson(ctx context.Context, personID 
 }
 
 const listProjectsInOrganisation = `-- name: ListProjectsInOrganisation :many
-SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form FROM projects WHERE organisation_id = $1 ORDER BY name
+SELECT id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form, archived_at FROM projects WHERE organisation_id = $1 ORDER BY name
 `
 
 func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID pgtype.UUID) ([]Project, error) {
@@ -364,6 +375,7 @@ func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID
 			&i.PublishTo,
 			&i.PublishBranch,
 			&i.PublishForm,
+			&i.ArchivedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -373,6 +385,38 @@ func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID
 		return nil, err
 	}
 	return items, nil
+}
+
+const organisationUsage = `-- name: OrganisationUsage :one
+SELECT o.max_members,
+       o.max_projects,
+       (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS members,
+       (SELECT count(*) FROM projects p
+        WHERE p.organisation_id = o.id AND p.archived_at IS NULL) AS projects
+FROM organisations o
+WHERE o.id = $1
+`
+
+type OrganisationUsageRow struct {
+	MaxMembers  *int32 `json:"max_members"`
+	MaxProjects *int32 `json:"max_projects"`
+	Members     int64  `json:"members"`
+	Projects    int64  `json:"projects"`
+}
+
+// What an organisation holds and what it is allowed, in one answer, so that
+// no two screens can disagree about how full it is. A membership held or
+// waiting is a seat; an archived site is not a site.
+func (q *Queries) OrganisationUsage(ctx context.Context, id pgtype.UUID) (OrganisationUsageRow, error) {
+	row := q.db.QueryRow(ctx, organisationUsage, id)
+	var i OrganisationUsageRow
+	err := row.Scan(
+		&i.MaxMembers,
+		&i.MaxProjects,
+		&i.Members,
+		&i.Projects,
+	)
+	return i, err
 }
 
 const removeOrganisationMember = `-- name: RemoveOrganisationMember :exec
@@ -401,6 +445,34 @@ type RemoveProjectMemberParams struct {
 func (q *Queries) RemoveProjectMember(ctx context.Context, arg RemoveProjectMemberParams) error {
 	_, err := q.db.Exec(ctx, removeProjectMember, arg.ProjectID, arg.PersonID)
 	return err
+}
+
+const setOrganisationLimits = `-- name: SetOrganisationLimits :one
+UPDATE organisations
+SET max_members = $2, max_projects = $3, updated_at = now()
+WHERE id = $1
+RETURNING id, slug, name, created_at, updated_at, max_members, max_projects
+`
+
+type SetOrganisationLimitsParams struct {
+	ID          pgtype.UUID `json:"id"`
+	MaxMembers  *int32      `json:"max_members"`
+	MaxProjects *int32      `json:"max_projects"`
+}
+
+func (q *Queries) SetOrganisationLimits(ctx context.Context, arg SetOrganisationLimitsParams) (Organisation, error) {
+	row := q.db.QueryRow(ctx, setOrganisationLimits, arg.ID, arg.MaxMembers, arg.MaxProjects)
+	var i Organisation
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.MaxMembers,
+		&i.MaxProjects,
+	)
+	return i, err
 }
 
 const setOrganisationMember = `-- name: SetOrganisationMember :exec

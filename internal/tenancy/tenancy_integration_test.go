@@ -21,6 +21,7 @@ const password = "a long enough passphrase"
 type harness struct {
 	store   *tenancy.Store
 	service *tenancy.Service
+	inviter *tenancy.Inviter
 	auth    *auth.Service
 	logs    *bytes.Buffer
 }
@@ -44,6 +45,7 @@ func newHarness(t *testing.T) *harness {
 	return &harness{
 		store:   tenancyStore,
 		service: tenancy.NewService(tenancyStore, identity),
+		inviter: tenancy.NewInviter(tenancyStore, identity),
 		auth:    identity,
 		logs:    logs,
 	}

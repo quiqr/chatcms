@@ -96,3 +96,21 @@ SET publish_to = $2,
     publish_form = $4,
     updated_at = now()
 WHERE id = $1;
+
+-- name: OrganisationUsage :one
+-- What an organisation holds and what it is allowed, in one answer, so that
+-- no two screens can disagree about how full it is. A membership held or
+-- waiting is a seat; an archived site is not a site.
+SELECT o.max_members,
+       o.max_projects,
+       (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS members,
+       (SELECT count(*) FROM projects p
+        WHERE p.organisation_id = o.id AND p.archived_at IS NULL) AS projects
+FROM organisations o
+WHERE o.id = $1;
+
+-- name: SetOrganisationLimits :one
+UPDATE organisations
+SET max_members = $2, max_projects = $3, updated_at = now()
+WHERE id = $1
+RETURNING *;

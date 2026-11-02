@@ -100,7 +100,12 @@ func (i *Inviter) InviteToOrganisation(ctx context.Context, organisationID uuid.
 		return Invitation{}, err
 	}
 
-	if err := i.store.SetOrganisationRole(ctx, organisationID, person.ID, role); err != nil {
+	// Somebody already in the organisation takes no new seat, so the limit
+	// is asked about only when this would add one.
+	if err := i.store.WithRoomForAMemberUnlessAlreadyIn(ctx, organisationID, person.ID,
+		func(within *Store) error {
+			return within.SetOrganisationRole(ctx, organisationID, person.ID, role)
+		}); err != nil {
 		return Invitation{}, err
 	}
 

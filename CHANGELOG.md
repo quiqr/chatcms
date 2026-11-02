@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Limits per organisation. An organisation may be allowed a number of members
+  and a number of sites; both are optional, both are set by the platform
+  admin, and both are refused before anything runs. The refusal names the
+  limit and the numbers and says what can be done about it, and a screen that
+  would be refused says so before it is used rather than after. A pending
+  invitation holds a seat. Lowering a limit below what is already there
+  removes nothing: it stops what is new until usage is under it again.
+
 ### Changed
 
 - Three levels of role, from the design hand-off of 2 November. A platform

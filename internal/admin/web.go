@@ -7,6 +7,7 @@ import (
 
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
+	"github.com/quiqr/chatcms/internal/tenancy"
 )
 
 // Web is the service as the HTTP layer wants it: the same acts, with the
@@ -120,11 +121,16 @@ func (w *Web) Organisations(ctx context.Context, who httpapi.Actor) ([]httpapi.O
 
 	out := make([]httpapi.OrganisationSummaryView, 0, len(rows))
 	for _, row := range rows {
+		usage, err := w.service.tenancy.UsageFor(ctx, uuid.UUID(row.ID.Bytes))
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, httpapi.OrganisationSummaryView{
 			Slug:     row.Slug,
 			Name:     row.Name,
 			Projects: row.ProjectCount,
 			People:   row.PeopleCount,
+			Usage:    usageView(usage),
 		})
 	}
 	return out, nil
@@ -197,4 +203,25 @@ func (w *Web) ActAs(ctx context.Context, who httpapi.Actor, token, email string)
 
 func (w *Web) StopActingAs(ctx context.Context, who httpapi.Actor, token string) error {
 	return w.service.StopActingAs(ctx, who, token)
+}
+
+func (w *Web) SetLimits(ctx context.Context, who httpapi.Actor, slug string, members, projects *int) error {
+	return w.service.SetLimits(ctx, who, slug, members, projects)
+}
+
+// usageView is how full an organisation is, in the shape every screen that
+// says so reads.
+func usageView(usage tenancy.Usage) httpapi.UsageView {
+	return httpapi.UsageView{
+		Members:  countedView(usage.Members),
+		Projects: countedView(usage.Projects),
+	}
+}
+
+func countedView(counted tenancy.Counted) httpapi.CountedView {
+	return httpapi.CountedView{
+		Held:    counted.Held,
+		Allowed: counted.Allowed,
+		Full:    counted.Full(),
+	}
 }

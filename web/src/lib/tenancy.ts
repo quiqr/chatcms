@@ -1,4 +1,5 @@
 import { get, post, put, remove, sendForm } from "./api";
+import type { Usage } from "../components/ui/usage";
 
 export type Organisation = {
   slug: string;
@@ -32,7 +33,9 @@ export function listOrganisations() {
 }
 
 export function listProjects(organisation: string) {
-  return get<{ projects: Project[] }>(`/api/organisations/${organisation}/projects`);
+  return get<{ projects: Project[]; usage: Usage }>(
+    `/api/organisations/${organisation}/projects`,
+  );
 }
 
 export function listPeople(organisation: string, project: string) {

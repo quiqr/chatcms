@@ -26,6 +26,7 @@ type AdministrationService interface {
 	TurnAccountOn(ctx context.Context, who Actor, email string) error
 	Organisation(ctx context.Context, who Actor, slug string) (OrganisationWholeView, error)
 	RemoveOrganisation(ctx context.Context, who Actor, slug string) error
+	SetLimits(ctx context.Context, who Actor, slug string, members, projects *int) error
 	People(ctx context.Context, who Actor, search string, most int32) (PeopleView, error)
 	Person(ctx context.Context, who Actor, email string) (PersonWholeView, error)
 	MakePerson(ctx context.Context, who Actor, email, displayName string) (PersonWholeView, error)
@@ -57,6 +58,7 @@ type OrganisationWholeView struct {
 	Name     string        `json:"name"`
 	People   []MemberView  `json:"people"`
 	Projects []ProjectView `json:"projects"`
+	Usage    UsageView     `json:"usage"`
 }
 
 // BelongingView is one place somebody can reach, and what they hold there.
@@ -93,10 +95,32 @@ type PeopleView struct {
 // OrganisationSummaryView is one organisation as an administrator sees it,
 // which includes ones they are not in.
 type OrganisationSummaryView struct {
-	Slug     string `json:"slug"`
-	Name     string `json:"name"`
-	Projects int64  `json:"projects"`
-	People   int64  `json:"people"`
+	Slug     string    `json:"slug"`
+	Name     string    `json:"name"`
+	Projects int64     `json:"projects"`
+	People   int64     `json:"people"`
+	Usage    UsageView `json:"usage"`
+}
+
+// CountedView is one of the two things an organisation can run out of: what
+// it holds, and what it is allowed. Allowed is absent where there is no
+// limit, which is what a new organisation has.
+type CountedView struct {
+	Held    int  `json:"held"`
+	Allowed *int `json:"allowed,omitempty"`
+	Full    bool `json:"full"`
+}
+
+// UsageView is how full an organisation is. Every screen that says so reads
+// this, so that two of them cannot disagree.
+type UsageView struct {
+	Members  CountedView `json:"members"`
+	Projects CountedView `json:"projects"`
+}
+
+type limitsRequest struct {
+	Members  *int `json:"members"`
+	Projects *int `json:"projects"`
 }
 
 type makeOrganisationRequest struct {
@@ -199,6 +223,23 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 			}
 			w.WriteHeader(http.StatusNoContent)
 		})))
+
+	mux.Handle("PUT /api/administration/organisations/{organisation}/limits", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body limitsRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			if err := service.SetLimits(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), body.Members, body.Projects); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.HandleFunc("/api/administration/organisations/{organisation}/limits", MethodNotAllowed)
 
 	mux.HandleFunc("/api/administration/organisations/{organisation}", MethodNotAllowed)
 

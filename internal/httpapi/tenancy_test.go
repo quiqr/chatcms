@@ -15,12 +15,13 @@ import (
 // can be tested without a database. What it returns is what the handlers have
 // to turn into status codes and wording.
 type stubTenancy struct {
-	organisations []OrganisationView
-	projects      []ProjectView
-	people        []MemberView
-	member        MemberView
-	err           error
-	calls         []string
+	organisations   []OrganisationView
+	projects        []ProjectView
+	people          []MemberView
+	member          MemberView
+	allowedProjects int
+	err             error
+	calls           []string
 }
 
 func (s *stubTenancy) record(name string) { s.calls = append(s.calls, name) }
@@ -73,6 +74,14 @@ func (s *stubTenancy) OrganisationPeople(context.Context, Actor, string) ([]Memb
 func (s *stubTenancy) CreateOrganisation(_ context.Context, _ Actor, slug, name string) (OrganisationView, error) {
 	s.record("create-organisation")
 	return OrganisationView{Slug: slug, Name: name}, s.err
+}
+
+func (s *stubTenancy) UsageOf(_ context.Context, _ Actor, organisation string) (UsageView, error) {
+	s.record("usage of " + organisation)
+	return UsageView{
+		Members:  CountedView{Held: 3},
+		Projects: CountedView{Held: 1, Allowed: &s.allowedProjects, Full: false},
+	}, s.err
 }
 
 func (s *stubTenancy) ListProjects(context.Context, Actor, string) ([]ProjectView, error) {
@@ -472,5 +481,25 @@ func TestChangingAndRemovingAProjectThroughItsEndpoints(t *testing.T) {
 	removed := signedInCall(t, handler, http.MethodDelete, project, nil)
 	if removed.Code != http.StatusNoContent {
 		t.Errorf("removing = %d, want 204: %s", removed.Code, removed.Body)
+	}
+}
+
+func TestTheProjectsAnswerSaysHowFullTheOrganisationIs(t *testing.T) {
+	// A screen that offers a New project button has to know whether there is
+	// room for one, so it comes with the list rather than after it.
+	service := &stubTenancy{allowedProjects: 5, projects: []ProjectView{{Slug: "korenaar"}}}
+	handler := withTenancy(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/organisations/technative/projects", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if !strings.Contains(recorder.Body.String(), `"usage"`) {
+		t.Errorf("the answer does not say how full the organisation is: %s", recorder.Body)
+	}
+	if !strings.Contains(recorder.Body.String(), `"allowed":5`) {
+		t.Errorf("the answer does not say what it is allowed: %s", recorder.Body)
 	}
 }

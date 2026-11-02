@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,6 +29,13 @@ func Open(ctx context.Context, url string) (*DB, error) {
 	}
 
 	return &DB{pool: pool, url: url, Queries: New(pool)}, nil
+}
+
+// Within is this database with every query running inside a transaction. It
+// is how a caller counts something and acts on the count without a second
+// caller slipping between the two.
+func (db *DB) Within(tx pgx.Tx) *DB {
+	return &DB{pool: db.pool, url: db.url, Queries: db.Queries.WithTx(tx)}
 }
 
 func (db *DB) Pool() *pgxpool.Pool {

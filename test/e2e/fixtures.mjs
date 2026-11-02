@@ -167,3 +167,20 @@ export async function saves(page, change) {
   await written;
   await expect(page.getByLabel("Whether this page is saved")).toHaveText("All changes saved");
 }
+
+/**
+ * asksFor is a request from a screen's own session, with the header the
+ * server wants repeated. Without it a mutating request is refused, which
+ * looks exactly like a permission the test meant to check.
+ */
+export async function asksFor(page, method, url, body) {
+  const token = (await page.context().cookies())
+    .find((cookie) => cookie.name === "chatcms_request_token")?.value;
+
+  return page.request.fetch(url, {
+    method,
+    headers: { "X-Chatcms-Request-Token": token ?? "" },
+    data: body,
+    failOnStatusCode: false,
+  });
+}

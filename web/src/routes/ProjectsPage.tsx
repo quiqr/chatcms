@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react";
+import { Ban, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router";
 
@@ -12,6 +12,7 @@ import { useHere } from "../lib/whoami";
 import { OrganisationShell } from "../shells/OrganisationShell";
 import { plural, say } from "../lib/say";
 import { whatWentWrong } from "../lib/api";
+import { HowFull, whyThereIsNoRoom, type Usage } from "../components/ui/usage";
 
 function status(project: Project) {
   if (project.unpublished > 0) {
@@ -139,8 +140,12 @@ export function ProjectsPage() {
   const { who, organisation: here } = useHere();
   const current = fromAddress ?? here;
 
-  const [projects] = useAsync(
-    () => (current ? listProjects(current) : Promise.resolve({ projects: [] })),
+  const [projects] = useAsync<{ projects: Project[]; usage?: Usage }>(
+    () =>
+      current
+        ? listProjects(current)
+        : // Nowhere to ask about: no projects, and no limit either.
+          Promise.resolve({ projects: [] }),
     [current],
   );
 
@@ -154,6 +159,9 @@ export function ProjectsPage() {
         project.domain.toLowerCase().includes(needle),
     );
   }, [projects, search]);
+
+  const usage = projects.state === "ready" ? projects.value.usage : undefined;
+  const noRoomForASite = usage ? whyThereIsNoRoom(usage.projects, "sites") : null;
 
   const organisationName =
     who.organisations.find((one) => one.slug === current)?.name ?? current ?? "Your work";
@@ -179,11 +187,24 @@ export function ProjectsPage() {
           />
         </label>
 
-        <Button variant="ink" onClick={() => setMaking(true)}>
+        <Button variant="ink" onClick={() => setMaking(true)} disabled={noRoomForASite !== null}>
           <Plus aria-hidden="true" className="size-4" />
           {say("projects.new-project")}
         </Button>
       </div>
+
+      {usage?.projects.allowed !== undefined && (
+        <div className="mt-3">
+          <HowFull counted={usage.projects} of="sites" />
+        </div>
+      )}
+
+      {noRoomForASite && (
+        <p className="mt-3 flex items-start gap-2 rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+          <Ban aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          {noRoomForASite}
+        </p>
+      )}
 
       {making && (
         <NewProject

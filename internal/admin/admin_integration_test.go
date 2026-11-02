@@ -961,3 +961,95 @@ func TestTurningTheActedAsAccountOffEndsIt(t *testing.T) {
 		t.Errorf("the session is still acting as somebody turned off: %+v", after)
 	}
 }
+
+func TestOnlyAPlatformAdminSetsTheLimits(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	five := 5
+	// The organisation's own admin may not lift their own ceiling.
+	if err := h.web.SetLimits(t.Context(), owner, "bakery", &five, nil); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("SetLimits() as the organisation's admin error = %v, want ErrNotAllowed", err)
+	}
+
+	if err := h.web.SetLimits(t.Context(), boss, "bakery", &five, &five); err != nil {
+		t.Fatalf("SetLimits() error = %v, want nil", err)
+	}
+
+	whole, err := h.web.Organisation(t.Context(), boss, "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if whole.Usage.Members.Allowed == nil || *whole.Usage.Members.Allowed != 5 {
+		t.Errorf("the organisation is allowed %+v members", whole.Usage.Members)
+	}
+	if whole.Usage.Members.Held != 1 {
+		t.Errorf("it holds %d members, want its admin", whole.Usage.Members.Held)
+	}
+
+	// Taken away again is a limit of none, not a limit of zero.
+	if err := h.web.SetLimits(t.Context(), boss, "bakery", nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	whole, err = h.web.Organisation(t.Context(), boss, "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if whole.Usage.Members.Allowed != nil || whole.Usage.Members.Full {
+		t.Errorf("after taking the limit away it is %+v", whole.Usage.Members)
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, record := range records {
+		if record.Did == string(admin.SetTheLimits) && record.To == "Bakery" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("setting the limits is not in the history: %+v", records)
+	}
+}
+
+func TestAPlatformAdminIsNotAboveTheLimitTheySet(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+	another := h.person(t, "another@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	one := 1
+	if err := h.web.SetLimits(t.Context(), boss, "bakery", &one, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	// What a platform admin may do that nobody else can is raise the limit,
+	// not walk past it.
+	err := h.web.PutSomebodyInto(t.Context(), boss, "bakery", another.Email, "member")
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("putting somebody into a full organisation error = %v, want a refusal", err)
+	}
+	if refused.Key != "refused.no-room-for-a-member" {
+		t.Errorf("the refusal is named %q", refused.Key)
+	}
+
+	two := 2
+	if err := h.web.SetLimits(t.Context(), boss, "bakery", &two, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.web.PutSomebodyInto(t.Context(), boss, "bakery", another.Email, "member"); err != nil {
+		t.Errorf("after raising the limit, putting somebody in error = %v, want nil", err)
+	}
+}

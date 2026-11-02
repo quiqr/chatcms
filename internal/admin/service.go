@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"strconv"
+
 	"github.com/google/uuid"
 
 	"github.com/quiqr/chatcms/internal/auth"
@@ -25,6 +27,9 @@ type Tenancy interface {
 	CreateOrganisation(ctx context.Context, slug, name string, ownerID uuid.UUID) (tenancy.Organisation, error)
 	OrganisationBySlug(ctx context.Context, slug string) (tenancy.Organisation, error)
 	SetOrganisationRole(ctx context.Context, organisationID, personID uuid.UUID, role policy.OrganisationRole) error
+	PutSomebodyInWithRoom(ctx context.Context, organisationID, personID uuid.UUID, role policy.OrganisationRole) error
+	UsageFor(ctx context.Context, organisationID uuid.UUID) (tenancy.Usage, error)
+	SetLimits(ctx context.Context, organisationID uuid.UUID, members, projects *int) error
 	RemoveFromOrganisation(ctx context.Context, organisationID, personID uuid.UUID) error
 }
 
@@ -112,7 +117,9 @@ func (s *Service) PutSomebodyInto(ctx context.Context, who httpapi.Actor, slug, 
 		return err
 	}
 
-	if err := s.tenancy.SetOrganisationRole(ctx, organisation.ID, person.id, role); err != nil {
+	// A platform admin is not above the limit they set: a seat is a seat.
+	// What they may do that nobody else can is raise the limit.
+	if err := s.tenancy.PutSomebodyInWithRoom(ctx, organisation.ID, person.id, role); err != nil {
 		return refusal(err)
 	}
 
@@ -308,9 +315,15 @@ func (s *Service) Organisation(ctx context.Context, who httpapi.Actor, slug stri
 		return httpapi.OrganisationWholeView{}, err
 	}
 
+	usage, err := s.tenancy.UsageFor(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationWholeView{}, err
+	}
+
 	whole := httpapi.OrganisationWholeView{
 		Slug:     organisation.Slug,
 		Name:     organisation.Name,
+		Usage:    usageView(usage),
 		People:   make([]httpapi.MemberView, 0, len(people)),
 		Projects: make([]httpapi.ProjectView, 0, len(projects)),
 	}
@@ -483,4 +496,36 @@ func (s *Service) StopActingAs(ctx context.Context, who httpapi.Actor, token str
 		DisplayName: who.Really.DisplayName,
 	}, StoppedActingAs, who.ID, who.Email, nil)
 	return nil
+}
+
+// SetLimits writes what an organisation is allowed. Only a platform admin
+// may: a limit set from inside the organisation it binds is not a limit.
+func (s *Service) SetLimits(ctx context.Context, who httpapi.Actor, slug string, members, projects *int) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionSetLimits); err != nil {
+		return err
+	}
+
+	organisation, err := s.tenancy.OrganisationBySlug(ctx, slug)
+	if err != nil {
+		return err
+	}
+
+	if err := s.tenancy.SetLimits(ctx, organisation.ID, members, projects); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, SetTheLimits, organisation.ID.String(), organisation.Name, map[string]any{
+		"members":  said(members),
+		"projects": said(projects),
+	})
+	return nil
+}
+
+// said is a limit as the record writes it, so that "no limit" reads as
+// something rather than as a missing field.
+func said(limit *int) string {
+	if limit == nil {
+		return "no limit"
+	}
+	return strconv.Itoa(*limit)
 }

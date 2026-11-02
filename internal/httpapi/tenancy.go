@@ -22,6 +22,7 @@ type TenancyService interface {
 	RemoveProject(ctx context.Context, actor Actor, organisation, project string) error
 	CreateOrganisation(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	ListProjects(ctx context.Context, actor Actor, organisationSlug string) ([]ProjectView, error)
+	UsageOf(ctx context.Context, actor Actor, organisationSlug string) (UsageView, error)
 	CreateProject(ctx context.Context, actor Actor, organisationSlug, slug, name, domain string) (ProjectView, error)
 	GetProject(ctx context.Context, actor Actor, organisationSlug, projectSlug string) (ProjectView, error)
 	ListPeople(ctx context.Context, actor Actor, organisationSlug, projectSlug string) ([]MemberView, error)
@@ -196,7 +197,12 @@ func listProjectsHandler(service TenancyService) http.Handler {
 			writeTenancyError(w, err)
 			return
 		}
-		WriteJSON(w, http.StatusOK, map[string]any{"projects": projects})
+		usage, err := service.UsageOf(r.Context(), ActorFrom(r.Context()), r.PathValue("organisation"))
+		if err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]any{"projects": projects, "usage": usage})
 	})
 }
 

@@ -96,7 +96,7 @@ func (q *Queries) ListAdministrators(ctx context.Context) ([]Person, error) {
 }
 
 const listEveryOrganisation = `-- name: ListEveryOrganisation :many
-SELECT o.id, o.slug, o.name, o.created_at, o.updated_at, (SELECT count(*) FROM projects p WHERE p.organisation_id = o.id) AS project_count,
+SELECT o.id, o.slug, o.name, o.created_at, o.updated_at, o.max_members, o.max_projects, (SELECT count(*) FROM projects p WHERE p.organisation_id = o.id) AS project_count,
             (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS people_count
 FROM organisations o
 ORDER BY lower(o.name)
@@ -108,6 +108,8 @@ type ListEveryOrganisationRow struct {
 	Name         string             `json:"name"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	MaxMembers   *int32             `json:"max_members"`
+	MaxProjects  *int32             `json:"max_projects"`
 	ProjectCount int64              `json:"project_count"`
 	PeopleCount  int64              `json:"people_count"`
 }
@@ -127,6 +129,8 @@ func (q *Queries) ListEveryOrganisation(ctx context.Context) ([]ListEveryOrganis
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.MaxMembers,
+			&i.MaxProjects,
 			&i.ProjectCount,
 			&i.PeopleCount,
 		); err != nil {
@@ -495,7 +499,7 @@ func (q *Queries) RemoveProject(ctx context.Context, id pgtype.UUID) error {
 const renameOrganisation = `-- name: RenameOrganisation :one
 UPDATE organisations SET name = $2, updated_at = now()
 WHERE id = $1
-RETURNING id, slug, name, created_at, updated_at
+RETURNING id, slug, name, created_at, updated_at, max_members, max_projects
 `
 
 type RenameOrganisationParams struct {
@@ -512,6 +516,8 @@ func (q *Queries) RenameOrganisation(ctx context.Context, arg RenameOrganisation
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.MaxMembers,
+		&i.MaxProjects,
 	)
 	return i, err
 }
@@ -550,7 +556,7 @@ func (q *Queries) StopAdministrating(ctx context.Context, id pgtype.UUID) (Perso
 const updateProject = `-- name: UpdateProject :one
 UPDATE projects SET name = $2, domain = $3, updated_at = now()
 WHERE id = $1
-RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form
+RETURNING id, organisation_id, slug, name, domain, created_at, updated_at, remote, source_kind, source_address, deploy_public_key, deploy_private_key, publish_to, publish_branch, publish_form, archived_at
 `
 
 type UpdateProjectParams struct {
@@ -578,6 +584,7 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 		&i.PublishTo,
 		&i.PublishBranch,
 		&i.PublishForm,
+		&i.ArchivedAt,
 	)
 	return i, err
 }

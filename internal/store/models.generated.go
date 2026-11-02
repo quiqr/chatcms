@@ -54,11 +54,13 @@ type Job struct {
 }
 
 type Organisation struct {
-	ID        pgtype.UUID        `json:"id"`
-	Slug      string             `json:"slug"`
-	Name      string             `json:"name"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID          pgtype.UUID        `json:"id"`
+	Slug        string             `json:"slug"`
+	Name        string             `json:"name"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	MaxMembers  *int32             `json:"max_members"`
+	MaxProjects *int32             `json:"max_projects"`
 }
 
 type OrganisationMember struct {
@@ -100,6 +102,7 @@ type Project struct {
 	PublishTo        string             `json:"publish_to"`
 	PublishBranch    string             `json:"publish_branch"`
 	PublishForm      string             `json:"publish_form"`
+	ArchivedAt       pgtype.Timestamptz `json:"archived_at"`
 }
 
 type ProjectMember struct {

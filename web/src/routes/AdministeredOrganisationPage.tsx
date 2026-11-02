@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
+import { Ban } from "lucide-react";
+
 import { Badge } from "../components/ui/badge";
+import { HowFull, whyThereIsNoRoom } from "../components/ui/usage";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
@@ -62,6 +65,7 @@ export function AdministeredOrganisationPage() {
   const here = whole.value;
   const people = here.people ?? [];
   const projects = here.projects ?? [];
+  const noRoomForAMember = whyThereIsNoRoom(here.usage.members, "seats");
   const shownName = name ?? here.name;
 
   return (
@@ -95,6 +99,15 @@ export function AdministeredOrganisationPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold">{say("administered-organisation.who-is-in-it")}</h2>
+
+        <HowFull counted={here.usage.members} of="seats" />
+
+        {noRoomForAMember && (
+          <p className="flex items-start gap-2 rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+            <Ban aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {noRoomForAMember}
+          </p>
+        )}
 
         {people.length === 0 ? (
           <p className="text-[15px] text-subtle-foreground">
@@ -170,7 +183,11 @@ export function AdministeredOrganisationPage() {
             <option value="admin">{say("common.role-admin")}</option>
           </select>
 
-          <Button type="submit" variant="outline" disabled={busy || email.trim() === ""}>
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={busy || email.trim() === "" || noRoomForAMember !== null}
+          >
             {say("administered-organisation.put-them-in")}
           </Button>
         </form>
@@ -178,6 +195,8 @@ export function AdministeredOrganisationPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold">{say("administered-organisation.its-sites")}</h2>
+
+        <HowFull counted={here.usage.projects} of="sites" />
 
         {projects.length === 0 ? (
           <p className="text-[15px] text-subtle-foreground">{say("administered-organisation.none")}</p>
