@@ -1,12 +1,13 @@
 ---
 # chatcms-qllv
 title: Limits per organisation, refused before anything runs
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-11-02T20:04:48Z
-updated_at: 2026-11-02T21:48:11Z
+updated_at: 2026-11-02T23:30:00Z
 parent: chatcms-7r0u
+openspec-link: openspec/changes/archive/2026-11-02-add-organisation-limits
 ---
 
 ## Purpose
@@ -59,3 +60,47 @@ behind them.
 - `docs/design/DESIGN.md`, "Limits (rules)" and sections 5.12 to 5.15.
 - `docs/design/reference/html/org-projects-duplicate-at-limit.html`,
   `org-projects-move-at-limit.html`, `org-members-full.html`.
+
+## Summary of Changes
+
+An organisation may be allowed so many members and so many sites. Both are
+optional, both belong to the platform admin, and both are refused before
+anything runs.
+
+- **Migration `00014`** adds the two nullable columns, with a constraint that
+  a limit is at least one, and `projects.archived_at` so that the count the
+  limit reads asks the right question from the start rather than being
+  rewritten the day archiving lands.
+- **`internal/tenancy/limits.go`** is the one place that reads how full an
+  organisation is and the one place that refuses. The count and the act share
+  a transaction, so two people taking the last seat cannot both get it; that
+  needed `store.DB.Within(tx)`, which is new.
+- **Three acts ask before they run**: putting somebody into an organisation,
+  inviting somebody, and making a site. Changing the role of somebody already
+  in a full organisation is deliberately allowed, because a full organisation
+  must still be one somebody can reorganise.
+- **A platform admin is not above the limit they set.** They are refused like
+  anybody else; raising it is what they may do that nobody else can.
+- **The refusal names the limit, the numbers and the ways out**, carries a
+  key, and is therefore said in Dutch too.
+- **`HowFull` and `whyThereIsNoRoom`** are one component, so the
+  organisation's own screens and the platform admin's cannot disagree. The
+  projects answer carries usage, because a New project button has to know
+  whether there is room for one.
+- Proved by six integration tests over the guard and the limits, two handler
+  tests, five frontend tests, and
+  `test/e2e/22-limits.spec.mjs` at 1440 px and at 390 px.
+
+### What the gate caught
+
+A stub in `internal/httpapi` stopped implementing an interface I had widened.
+`go build ./...` does not compile tests, so only `go vet` inside the gate saw
+it. Worth running vet after every interface change rather than after the last
+one.
+
+### Found on the way
+
+A seat limit of one read as "All 1 seats are in use", and a mutating request
+from a Playwright page is refused without the request-token header. The
+first is plural-aware in both languages now; the second is a shared `asksFor`
+helper in the fixtures rather than a trap each spec rediscovers.
