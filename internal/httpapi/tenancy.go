@@ -23,6 +23,7 @@ type TenancyService interface {
 	CreateOrganisation(ctx context.Context, actor Actor, slug, name string) (OrganisationView, error)
 	ListProjects(ctx context.Context, actor Actor, organisationSlug string) ([]ProjectView, error)
 	UsageOf(ctx context.Context, actor Actor, organisationSlug string) (UsageView, error)
+	ManageableOrganisation(ctx context.Context, actor Actor, organisationSlug string) (OrganisationAreaView, error)
 	CreateProject(ctx context.Context, actor Actor, organisationSlug, slug, name, domain string) (ProjectView, error)
 	GetProject(ctx context.Context, actor Actor, organisationSlug, projectSlug string) (ProjectView, error)
 	ListPeople(ctx context.Context, actor Actor, organisationSlug, projectSlug string) ([]MemberView, error)
@@ -48,6 +49,32 @@ var (
 type OrganisationView struct {
 	Slug string `json:"slug"`
 	Name string `json:"name"`
+	// YouAdminister says this person administers the organisation, which is
+	// what decides whether a way into its own screens is offered.
+	YouAdminister bool `json:"youAdminister,omitempty"`
+}
+
+// OrganisationAreaView is one organisation as whoever administers it sees
+// it: what it holds, who is in it, and how full it is. One answer, because
+// the shell needs the counts whichever screen of the area is open.
+type OrganisationAreaView struct {
+	Slug     string               `json:"slug"`
+	Name     string               `json:"name"`
+	Usage    UsageView            `json:"usage"`
+	People   []OrganisationPerson `json:"people"`
+	Projects []ProjectView        `json:"projects"`
+}
+
+// OrganisationPerson is somebody in an organisation, with the sites inside it
+// they hold a role on.
+type OrganisationPerson struct {
+	PersonID      string          `json:"personId"`
+	Email         string          `json:"email"`
+	DisplayName   string          `json:"displayName"`
+	Role          string          `json:"role"`
+	StillToAccept bool            `json:"stillToAccept"`
+	LastSeen      *time.Time      `json:"lastSeen,omitempty"`
+	Projects      []BelongingView `json:"projects"`
 }
 
 // ProjectView is a project as the interface sees it, including what this
@@ -350,6 +377,18 @@ func removeProjectHandler(service TenancyService) http.Handler {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+func manageOrganisationHandler(service TenancyService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		area, err := service.ManageableOrganisation(r.Context(), ActorFrom(r.Context()),
+			r.PathValue("organisation"))
+		if err != nil {
+			writeTenancyError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, area)
 	})
 }
 

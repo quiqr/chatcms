@@ -442,3 +442,29 @@ export function changeProject(
 export function removeProject(organisation: string, project: string) {
   return remove<void>(`/api/organisations/${organisation}/projects/${project}`);
 }
+
+export type OrganisationPerson = {
+  personId: string;
+  email: string;
+  displayName: string;
+  role: string;
+  stillToAccept: boolean;
+  lastSeen?: string;
+  projects: { slug: string; name: string; role: string }[];
+};
+
+export type OrganisationArea = {
+  slug: string;
+  name: string;
+  usage: Usage;
+  people: OrganisationPerson[];
+  projects: Project[];
+};
+
+/**
+ * readOrganisationArea is everything the organisation's own screens need, in
+ * one request: the shell wants the counts whichever screen is open.
+ */
+export function readOrganisationArea(organisation: string) {
+  return get<OrganisationArea>(`/api/organisations/${organisation}/manage`);
+}

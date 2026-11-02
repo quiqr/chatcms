@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- An organisation has screens of its own. Whoever administers one reaches
+  them from the switcher and sees what the organisation holds: its sites as a
+  list, who is in it with the sites each person reaches, and how full it is
+  against its limits. Inviting somebody and taking them out happen there, and
+  taking somebody out of an organisation now takes their roles on its sites
+  with them. The People and roles screen on a project keeps the project; the
+  organisation half of it moved to the organisation.
+
+### Added
+
 - Limits per organisation. An organisation may be allowed a number of members
   and a number of sites; both are optional, both are set by the platform
   admin, and both are refused before anything runs. The refusal names the

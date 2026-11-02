@@ -10,7 +10,7 @@ import { projectsPath } from "../lib/paths";
 
 export type OrganisationShellProps = {
   organisation: { slug?: string; name: string };
-  organisations?: { slug: string; name: string }[];
+  organisations?: { slug: string; name: string; youAdminister?: boolean }[];
   viewer?: { name: string };
   children: ReactNode;
 };
@@ -58,6 +58,20 @@ export function OrganisationShell({
                   </NavLink>
                 </MenuItem>
               ))
+            )}
+            {organisations.some((one) => one.youAdminister) && (
+              <>
+                <MenuSeparator />
+                {organisations
+                  .filter((one) => one.youAdminister)
+                  .map((one) => (
+                    <MenuItem key={`manage-${one.slug}`} asChild>
+                      <NavLink to={`/o/${one.slug}/manage/projects`}>
+                        {say("manage.manage-named", { name: one.name })}
+                      </NavLink>
+                    </MenuItem>
+                  ))}
+              </>
             )}
             {administers && (
               <>

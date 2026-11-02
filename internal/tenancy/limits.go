@@ -2,7 +2,9 @@ package tenancy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -228,4 +230,51 @@ func (s *Store) PutSomebodyInWithRoom(ctx context.Context, organisationID, perso
 	return s.WithRoomForAMemberUnlessAlreadyIn(ctx, organisationID, personID, func(within *Store) error {
 		return within.SetOrganisationRole(ctx, organisationID, personID, role)
 	})
+}
+
+// MemberWithProjects is somebody in an organisation, with the sites inside it
+// they hold a role on.
+type MemberWithProjects struct {
+	PersonID      uuid.UUID
+	Email         string
+	DisplayName   string
+	Role          policy.OrganisationRole
+	StillToAccept bool
+	LastSeen      time.Time
+	EverSeen      bool
+	Projects      []ProjectRole
+}
+
+// ProjectRole is one site somebody reaches, and what they hold there.
+type ProjectRole struct {
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
+// MembersWithTheirProjects is everybody in an organisation and the sites each
+// one reaches, read with the list rather than one person at a time.
+func (s *Store) MembersWithTheirProjects(ctx context.Context, organisationID uuid.UUID) ([]MemberWithProjects, error) {
+	rows, err := s.db.Queries.ListOrganisationMembersWithTheirProjects(ctx, pgUUID(organisationID))
+	if err != nil {
+		return nil, fmt.Errorf("reading who is in the organisation failed: %w", err)
+	}
+
+	out := make([]MemberWithProjects, 0, len(rows))
+	for _, row := range rows {
+		projects := []ProjectRole{}
+		_ = json.Unmarshal(row.Projects, &projects)
+
+		out = append(out, MemberWithProjects{
+			PersonID:      uuid.UUID(row.PersonID.Bytes),
+			Email:         row.Email,
+			DisplayName:   row.DisplayName,
+			Role:          policy.OrganisationRole(row.Role),
+			StillToAccept: row.PasswordHash == nil || *row.PasswordHash == "",
+			LastSeen:      row.LastSeen.Time,
+			EverSeen:      row.LastSeen.Valid,
+			Projects:      projects,
+		})
+	}
+	return out, nil
 }

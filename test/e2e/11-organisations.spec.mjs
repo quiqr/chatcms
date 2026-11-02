@@ -45,16 +45,18 @@ test("somebody in two organisations sees each one's own projects", async ({
     await page.getByRole("button", { name: "Bakkerij Zuid" }).click();
 
     const switcher = page.getByRole("menu");
-    await expect(switcher.getByRole("menuitem", { name: /TechNative/ })).toBeVisible();
+    // Exactly, because the switcher also offers "Manage TechNative" to
+    // whoever administers it.
+    await expect(switcher.getByRole("menuitem", { name: "TechNative", exact: true })).toBeVisible();
     await expect(
-      switcher.getByRole("menuitem", { name: /Bakkerij Zuid/ }),
+      switcher.getByRole("menuitem", { name: /^Bakkerij Zuid/ }),
     ).toHaveAttribute("aria-current", "true");
   });
 
   await test.step("choosing the other one goes there", async () => {
     // The switcher listed both and did nothing once, so this follows the
     // switch and reads what comes back rather than what was clicked.
-    await page.getByRole("menuitem", { name: /TechNative/ }).click();
+    await page.getByRole("menuitem", { name: "TechNative", exact: true }).click();
 
     await page.waitForURL(/\/o\/technative\/projects/);
     await expect(page.getByText("Korenaar Bakery")).toBeVisible();
@@ -64,7 +66,7 @@ test("somebody in two organisations sees each one's own projects", async ({
   await test.step("and back again, from a screen that is not the projects", async () => {
     await page.goto(`${chatcms.url}/o/technative/settings`);
     await page.getByRole("button", { name: /TechNative/ }).first().click();
-    await page.getByRole("menuitem", { name: /Bakkerij Zuid/ }).click();
+    await page.getByRole("menuitem", { name: /^Bakkerij Zuid/ }).click();
 
     await page.waitForURL(/\/o\/bakkerij-zuid\/projects/);
     await expect(page.getByText("Korenaar Bakery")).toHaveCount(0);

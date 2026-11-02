@@ -2,25 +2,19 @@
 // whoever runs the platform every time somebody joins.
 import { test, expect, worksOnAPhone } from "./fixtures.mjs";
 
-test("an organisation admin invites somebody and then withdraws it", async ({
+test("an organisation admin invites somebody and then takes them out", async ({
   signedIn: page,
   chatcms,
 }, testInfo) => {
-  await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
-
-  await test.step("the screen shows both levels", async () => {
-    await expect(page.getByRole("radio", { name: "This project" })).toBeVisible();
-    await expect(page.getByRole("radio", { name: "Organisation" })).toBeVisible();
-  });
+  // Who belongs to an organisation is managed from the organisation, which
+  // is its own area rather than a tab on one of its projects.
+  await page.goto(`${chatcms.url}/o/technative/manage/members`);
 
   await test.step("somebody is invited to the organisation", async () => {
-    await page.getByRole("radio", { name: "Organisation" }).click();
+    await page.getByLabel("Email").fill("nieuw@korenaar.example");
+    await page.getByRole("button", { name: "Send invite" }).click();
 
-    await page.getByLabel("Invite someone").fill("nieuw@korenaar.example");
-    await page.getByLabel("Role for the person you invite").selectOption("member");
-    await page.getByRole("button", { name: /Send invite/i }).click();
-
-    await expect(page.getByText("nieuw@korenaar.example").first()).toBeVisible();
+    await expect(page.getByText("nieuw@korenaar.example")).toBeVisible();
     await expect(page.getByText("Still to accept").first()).toBeVisible();
   });
 
@@ -29,26 +23,21 @@ test("an organisation admin invites somebody and then withdraws it", async ({
     expect(message.Text).toContain("set-password?token=");
   });
 
-  await test.step("the invitation is withdrawn, and they are gone", async () => {
-    await page.getByRole("button", { name: /Actions for nieuw@korenaar.example/ }).click();
-    await page.getByText("Withdraw the invitation").click();
-
+  await test.step("and taken out again", async () => {
+    await page.getByRole("button", { name: /Take nieuw@korenaar.example out/ }).click();
     await expect(page.getByText("nieuw@korenaar.example")).toHaveCount(0);
   });
 
   await worksOnAPhone(page, testInfo);
 });
 
-test("the project level still shows who may edit this site", async ({ signedIn: page, chatcms }) => {
+test("the people of a site are the site's own", async ({ signedIn: page, chatcms }) => {
   await page.goto(`${chatcms.url}/o/technative/p/korenaar/people`);
 
-  // The two levels are different sets of people, and switching must not
-  // show one where the other belongs.
-  await page.getByRole("radio", { name: "Organisation" }).click();
-  await expect(page.getByLabel("Role for the person you invite")).toHaveValue("member");
-
-  await page.getByRole("radio", { name: "This project" }).click();
+  // The organisation half of this screen moved to the organisation's area,
+  // so what is offered here is a role on this site.
   await expect(page.getByLabel("Role for the person you invite")).toHaveValue("editor");
+  await expect(page.getByRole("radio", { name: "Organisation" })).toHaveCount(0);
 });
 
 test("somebody who merely belongs cannot manage the organisation", async ({

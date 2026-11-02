@@ -7,16 +7,11 @@ import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "../components/ui/menu";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
-import { Segmented } from "../components/ui/segmented";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
 import { say } from "../lib/say";
 import { named } from "../shells/roles";
 import {
-  changeOrganisationRole,
-  inviteToOrganisation,
-  listOrganisationPeople,
-  removeFromOrganisation,
   sendTheInvitationAgain,
   useHere,
 } from "../lib/whoami";
@@ -41,8 +36,6 @@ const whatEachRoleCanDo: { role: string; says: string }[] = [
 ];
 
 // The roles an organisation has, which are not the roles a project has.
-const organisationRoles = ["admin", "member"] as const;
-
 function RoleSelect({
   value,
   onChange,
@@ -78,12 +71,10 @@ export function PeoplePage() {
   // are two different questions about two different sets of people. The
   // design draws them as one screen with a switch rather than two screens
   // somebody has to know about.
-  const [level, setLevel] = useState<"project" | "organisation">("project");
-  const here = level === "project";
 
   const [people, loadAgain] = useAsync(
-    () => (here ? listPeople(organisation, project) : listOrganisationPeople(organisation)),
-    [organisation, project, level],
+    () => listPeople(organisation, project),
+    [organisation, project],
   );
 
   const [email, setEmail] = useState("");
@@ -95,9 +86,7 @@ export function PeoplePage() {
     setProblem("");
     setBusy(true);
     try {
-      await (here
-        ? invitePerson(organisation, project, email, role)
-        : inviteToOrganisation(organisation, email, role));
+      await invitePerson(organisation, project, email, role);
       setEmail("");
       loadAgain();
     } catch (error) {
@@ -110,9 +99,7 @@ export function PeoplePage() {
   async function change(member: Member, next: string) {
     setProblem("");
     try {
-      await (here
-        ? changeRole(organisation, project, member.personId, next)
-        : changeOrganisationRole(organisation, member.personId, next));
+      await changeRole(organisation, project, member.personId, next);
       loadAgain();
     } catch (error) {
       setProblem(whatWentWrong(error, "people.that-change-could-not-be-made"));
@@ -131,9 +118,7 @@ export function PeoplePage() {
   async function take(member: Member) {
     setProblem("");
     try {
-      await (here
-        ? removePerson(organisation, project, member.personId)
-        : removeFromOrganisation(organisation, member.personId));
+      await removePerson(organisation, project, member.personId);
       loadAgain();
     } catch (error) {
       setProblem(whatWentWrong(error, "people.that-person-could-not-be-removed"));
@@ -144,22 +129,6 @@ export function PeoplePage() {
     <div className="flex flex-wrap items-start gap-6">
       <div className="min-w-0 max-w-full shrink grow-[999] basis-[520px]">
         <h2 className="text-[22px] font-semibold tracking-tight">{say("people.people-roles")}</h2>
-
-        <div className="mt-4">
-          <Segmented
-            label={say("people.who-to-show")}
-            value={level}
-            onValueChange={(next) => {
-              setLevel(next as "project" | "organisation");
-              setRole(next === "project" ? "editor" : "member");
-              setProblem("");
-            }}
-            options={[
-              { value: "project", label: say("people.this-project") },
-              { value: "organisation", label: "Organisation" },
-            ]}
-          />
-        </div>
 
         <form
           onSubmit={(event) => {
@@ -182,7 +151,7 @@ export function PeoplePage() {
             value={role}
             onChange={setRole}
             label={say("people.role-for-the-person-you-invite")}
-            choices={here ? roles : organisationRoles}
+            choices={roles}
           />
           <Button type="submit" variant="ink" disabled={busy}>
             {busy ? say("common.sending") : say("people.send-invite")}
@@ -242,7 +211,7 @@ export function PeoplePage() {
                         value={member.role}
                         onChange={(next) => void change(member, next)}
                         label={`Role for ${member.displayName || member.email}`}
-                        choices={here ? roles : organisationRoles}
+                        choices={roles}
                       />
                     </TableCell>
                     <TableCell>
@@ -271,9 +240,7 @@ export function PeoplePage() {
                           <MenuItem destructive onSelect={() => void take(member)}>
                             {member.stillToAccept
                               ? say("people.withdraw-the-invitation")
-                              : here
-                                ? say("people.remove-from-this-project")
-                                : say("people.remove-from-the-organisation")}
+                              : say("people.remove-from-this-project")}
                           </MenuItem>
                         </MenuContent>
                       </Menu>

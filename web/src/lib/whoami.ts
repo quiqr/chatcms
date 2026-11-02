@@ -11,7 +11,7 @@ export type Person = {
 export type WhoAmI = {
   person: Person;
   administers: boolean;
-  organisations: { slug: string; name: string }[];
+  organisations: { slug: string; name: string; youAdminister?: boolean }[];
   /** appearance is what they chose, or empty to follow the machine. */
   appearance?: string;
   /** language is what they chose, or empty to follow the browser. */

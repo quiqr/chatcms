@@ -267,6 +267,16 @@ func (s *Store) RemoveFromOrganisation(ctx context.Context, organisationID, pers
 		}
 	}
 
+	// Their roles on its sites go with them: a role on a project in an
+	// organisation nobody is in any more is a reach no screen shows.
+	if err := s.db.Queries.RemoveEveryProjectRoleInOrganisation(ctx,
+		store.RemoveEveryProjectRoleInOrganisationParams{
+			OrganisationID: pgUUID(organisationID),
+			PersonID:       pgUUID(personID),
+		}); err != nil {
+		return fmt.Errorf("removing their roles on its sites failed: %w", err)
+	}
+
 	return s.db.Queries.RemoveOrganisationMember(ctx, store.RemoveOrganisationMemberParams{
 		OrganisationID: pgUUID(organisationID),
 		PersonID:       pgUUID(personID),

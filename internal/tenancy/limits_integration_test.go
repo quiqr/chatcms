@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
 )
@@ -171,5 +173,104 @@ func TestALimitIsANumberOfAtLeastOne(t *testing.T) {
 	var refused *httpapi.RefusedError
 	if !errors.As(err, &refused) {
 		t.Fatalf("a limit of zero error = %v, want a refusal", err)
+	}
+}
+
+func TestTheAreaIsForWhoeverAdministersTheOrganisation(t *testing.T) {
+	h := newHarness(t)
+	admin := h.person(t, "admin@example.org")
+	organisation := h.organisation(t, "technative", admin)
+	project := h.project(t, organisation, "korenaar")
+
+	member := h.person(t, "member@example.org")
+	if err := h.store.SetOrganisationRole(t.Context(), organisation.ID, member.ID,
+		policy.OrganisationMember); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.store.SetProjectRole(t.Context(), project.ID, member.ID, policy.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+
+	area, err := h.service.ManageableOrganisation(t.Context(), h.who(admin), "technative")
+	if err != nil {
+		t.Fatalf("ManageableOrganisation() error = %v, want nil", err)
+	}
+	if area.Name != "technative" || len(area.Projects) != 1 {
+		t.Errorf("the area holds %+v", area)
+	}
+	if len(area.People) != 2 {
+		t.Fatalf("the area shows %d people, want both", len(area.People))
+	}
+
+	// Each person carries the sites they reach inside this organisation,
+	// read with the list rather than one request per person.
+	by := map[string][]string{}
+	for _, person := range area.People {
+		for _, reached := range person.Projects {
+			by[person.Email] = append(by[person.Email], reached.Slug+":"+reached.Role)
+		}
+	}
+	if got := by[member.Email]; len(got) != 1 || got[0] != "korenaar:editor" {
+		t.Errorf("the member reaches %v, want korenaar as an editor", got)
+	}
+
+	// Somebody who merely belongs cannot manage it.
+	if _, err := h.service.ManageableOrganisation(t.Context(), h.who(member), "technative"); !errors.Is(err, httpapi.ErrNotAllowed) {
+		t.Errorf("ManageableOrganisation() as a member error = %v, want ErrNotAllowed", err)
+	}
+}
+
+func TestTakingSomebodyOutTakesTheirRolesOnItsSites(t *testing.T) {
+	h := newHarness(t)
+	admin := h.person(t, "admin@example.org")
+	organisation := h.organisation(t, "technative", admin)
+	project := h.project(t, organisation, "korenaar")
+
+	// And a site somewhere else, which must be left alone.
+	elsewhere := h.organisation(t, "bakkerij", admin)
+	theirs := h.project(t, elsewhere, "korenaar-bakery")
+
+	member := h.person(t, "member@example.org")
+	for _, where := range []struct {
+		organisation uuid.UUID
+		project      uuid.UUID
+	}{{organisation.ID, project.ID}, {elsewhere.ID, theirs.ID}} {
+		if err := h.store.SetOrganisationRole(t.Context(), where.organisation, member.ID,
+			policy.OrganisationMember); err != nil {
+			t.Fatal(err)
+		}
+		if err := h.store.SetProjectRole(t.Context(), where.project, member.ID, policy.RoleEditor); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := h.store.RemoveFromOrganisation(t.Context(), organisation.ID, member.ID); err != nil {
+		t.Fatalf("RemoveFromOrganisation() error = %v, want nil", err)
+	}
+
+	// Gone from this organisation's site...
+	people, err := h.store.Members(t.Context(), project.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, person := range people {
+		if person.PersonID == member.ID {
+			t.Error("they still hold a role on a site of the organisation they were taken out of")
+		}
+	}
+
+	// ...and untouched in the one they are still in.
+	stillTheirs, err := h.store.Members(t.Context(), theirs.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, person := range stillTheirs {
+		if person.PersonID == member.ID {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("removing them from one organisation took their role in another")
 	}
 }

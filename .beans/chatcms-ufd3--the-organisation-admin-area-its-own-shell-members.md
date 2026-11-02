@@ -1,11 +1,11 @@
 ---
 # chatcms-ufd3
 title: 'The organisation admin area: its own shell, members and projects'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-11-02T20:05:14Z
-updated_at: 2026-11-02T20:05:14Z
+updated_at: 2026-11-02T22:14:58Z
 parent: chatcms-7r0u
 blocked_by:
     - chatcms-civ6

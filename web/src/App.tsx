@@ -22,6 +22,9 @@ import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { PreferencesPage } from "./routes/PreferencesPage";
 import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
 import { ProjectsPage } from "./routes/ProjectsPage";
+import { ManageMembers } from "./routes/ManageMembers";
+import { ManageOrganisationPage } from "./routes/ManageOrganisationPage";
+import { ManageProjects } from "./routes/ManageProjects";
 import { ConfirmAddressPage } from "./routes/ConfirmAddressPage";
 import { ForgotPasswordPage } from "./routes/ForgotPasswordPage";
 import { SetPasswordPage } from "./routes/SetPasswordPage";
@@ -41,6 +44,24 @@ export function App() {
             address names, asked once rather than guessed per screen. */}
         <Route element={<Knowing><Outlet /></Knowing>}>
           <Route path="/projects" element={<ProjectsPage />} />
+
+          {/* An organisation's own area: its shell, and the screens of it. */}
+          <Route
+            path="/o/:organisation/manage"
+            element={<Navigate to="projects" replace />}
+          />
+          <Route
+            path="/o/:organisation/manage/projects"
+            element={<ManageOrganisationPage screen={(area) => <ManageProjects area={area} />} />}
+          />
+          <Route
+            path="/o/:organisation/manage/members"
+            element={
+              <ManageOrganisationPage
+                screen={(area, again) => <ManageMembers area={area} again={again} />}
+              />
+            }
+          />
           <Route path="/help" element={<OrganisationPage title="common.help" />} />
           <Route
             path="/account"

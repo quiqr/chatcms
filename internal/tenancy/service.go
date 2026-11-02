@@ -89,9 +89,23 @@ func (s *Service) ListOrganisations(ctx context.Context, who httpapi.Actor) ([]h
 		return nil, err
 	}
 
+	actor, err := s.actor(ctx, who)
+	if err != nil {
+		return nil, err
+	}
+
 	views := make([]httpapi.OrganisationView, 0, len(organisations))
 	for _, organisation := range organisations {
-		views = append(views, httpapi.OrganisationView{Slug: organisation.Slug, Name: organisation.Name})
+		views = append(views, httpapi.OrganisationView{
+			Slug: organisation.Slug,
+			Name: organisation.Name,
+			// What decides whether a way into the organisation's own screens
+			// is offered. Asked of the policy rather than of the role, so
+			// that a platform admin who administers nothing is not offered
+			// one either.
+			YouAdminister: policy.Can(actor, policy.ActionManagePeople,
+				policy.Organisation(organisation.ID.String())),
+		})
 	}
 	return views, nil
 }
@@ -439,7 +453,16 @@ func (s *Service) WhoAmI(ctx context.Context, who httpapi.Actor) (httpapi.WhoAmI
 
 	views := make([]httpapi.OrganisationView, 0, len(organisations))
 	for _, organisation := range organisations {
-		views = append(views, httpapi.OrganisationView{Slug: organisation.Slug, Name: organisation.Name})
+		views = append(views, httpapi.OrganisationView{
+			Slug: organisation.Slug,
+			Name: organisation.Name,
+			// What decides whether a way into the organisation's own screens
+			// is offered. Asked of the policy rather than of the role, so
+			// that a platform admin who administers nothing is not offered
+			// one either.
+			YouAdminister: policy.Can(actor, policy.ActionManagePeople,
+				policy.Organisation(organisation.ID.String())),
+		})
 	}
 
 	answer := httpapi.WhoAmIView{
@@ -694,4 +717,74 @@ func (s *Service) UsageOf(ctx context.Context, who httpapi.Actor, organisationSl
 
 func counted(from Counted) httpapi.CountedView {
 	return httpapi.CountedView{Held: from.Held, Allowed: from.Allowed, Full: from.Full()}
+}
+
+// ManageableOrganisation is one organisation as whoever administers it sees
+// it. One answer rather than three, because every screen in the area needs
+// the counts in its shell whichever one of them is open.
+func (s *Service) ManageableOrganisation(ctx context.Context, who httpapi.Actor, slug string) (httpapi.OrganisationAreaView, error) {
+	organisation, actor, err := s.reach(ctx, who, slug)
+	if err != nil {
+		return httpapi.OrganisationAreaView{}, err
+	}
+
+	// Managing the organisation is the same permission that invites somebody
+	// to it; an organisation its own members cannot manage is still one they
+	// can see the projects of.
+	resource := policy.Organisation(organisation.ID.String())
+	if !policy.Can(actor, policy.ActionManagePeople, resource) {
+		return httpapi.OrganisationAreaView{}, httpapi.ErrNotAllowed
+	}
+
+	usage, err := s.store.UsageFor(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationAreaView{}, err
+	}
+
+	people, err := s.store.MembersWithTheirProjects(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationAreaView{}, err
+	}
+
+	projects, err := s.store.ProjectsIn(ctx, organisation.ID)
+	if err != nil {
+		return httpapi.OrganisationAreaView{}, err
+	}
+
+	area := httpapi.OrganisationAreaView{
+		Slug:     organisation.Slug,
+		Name:     organisation.Name,
+		Usage:    httpapi.UsageView{Members: counted(usage.Members), Projects: counted(usage.Projects)},
+		People:   make([]httpapi.OrganisationPerson, 0, len(people)),
+		Projects: make([]httpapi.ProjectView, 0, len(projects)),
+	}
+
+	for _, person := range people {
+		said := httpapi.OrganisationPerson{
+			PersonID:      person.PersonID.String(),
+			Email:         person.Email,
+			DisplayName:   person.DisplayName,
+			Role:          string(person.Role),
+			StillToAccept: person.StillToAccept,
+			Projects:      make([]httpapi.BelongingView, 0, len(person.Projects)),
+		}
+		if person.EverSeen {
+			seen := person.LastSeen
+			said.LastSeen = &seen
+		}
+		for _, project := range person.Projects {
+			said.Projects = append(said.Projects, httpapi.BelongingView{
+				Slug: project.Slug, Name: project.Name, Role: project.Role,
+			})
+		}
+		area.People = append(area.People, said)
+	}
+
+	for _, project := range projects {
+		view := projectView(project, actor, policy.Project(organisation.ID.String(), project.ID.String()))
+		view.Unpublished = s.unpublishedIn(ctx, project)
+		area.Projects = append(area.Projects, view)
+	}
+
+	return area, nil
 }

@@ -76,6 +76,21 @@ func (s *stubTenancy) CreateOrganisation(_ context.Context, _ Actor, slug, name 
 	return OrganisationView{Slug: slug, Name: name}, s.err
 }
 
+func (s *stubTenancy) ManageableOrganisation(_ context.Context, _ Actor, organisation string) (OrganisationAreaView, error) {
+	s.record("manage " + organisation)
+	return OrganisationAreaView{
+		Slug:  organisation,
+		Name:  "Korenaar Bakery",
+		Usage: UsageView{Members: CountedView{Held: 3}, Projects: CountedView{Held: 1}},
+		People: []OrganisationPerson{{
+			Email:    "joris@example.org",
+			Role:     "admin",
+			Projects: []BelongingView{{Slug: "korenaar", Name: "Korenaar", Role: "implementer"}},
+		}},
+		Projects: s.projects,
+	}, s.err
+}
+
 func (s *stubTenancy) UsageOf(_ context.Context, _ Actor, organisation string) (UsageView, error) {
 	s.record("usage of " + organisation)
 	return UsageView{
@@ -501,5 +516,35 @@ func TestTheProjectsAnswerSaysHowFullTheOrganisationIs(t *testing.T) {
 	}
 	if !strings.Contains(recorder.Body.String(), `"allowed":5`) {
 		t.Errorf("the answer does not say what it is allowed: %s", recorder.Body)
+	}
+}
+
+func TestTheOrganisationAreaIsOneAnswer(t *testing.T) {
+	// The shell needs the counts whichever screen of the area is open, so
+	// one request serves all of it.
+	service := &stubTenancy{projects: []ProjectView{{Slug: "korenaar", Name: "Korenaar"}}}
+	handler := withTenancy(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/organisations/technative/manage", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	body := recorder.Body.String()
+	for _, part := range []string{`"usage"`, `"people"`, `"projects"`, "joris@example.org", "korenaar"} {
+		if !strings.Contains(body, part) {
+			t.Errorf("the answer leaves out %s: %s", part, body)
+		}
+	}
+}
+
+func TestTheOrganisationAreaNeedsSomebody(t *testing.T) {
+	handler := withTenancy(&stubTenancy{}, false)
+
+	recorder := call(t, handler, http.MethodGet, "/api/organisations/technative/manage", nil)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Errorf("status = %d, want 401", recorder.Code)
 	}
 }
