@@ -3,12 +3,15 @@ package tenancy
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/quiqr/chatcms/internal/auth"
+	"github.com/quiqr/chatcms/internal/gitsync"
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
 )
@@ -16,6 +19,8 @@ import (
 // Service answers the HTTP layer's questions about organisations, projects
 // and people. It loads what the policy needs and asks it; it never decides.
 type Service struct {
+	copies  Copies
+	zips    Copies
 	store   *Store
 	inviter *Inviter
 	// waiting answers how much is waiting to be published. It is injected
@@ -382,6 +387,7 @@ func projectView(project Project, actor policy.Actor, resource policy.Resource) 
 		Slug:     project.Slug,
 		Name:     project.Name,
 		Domain:   project.Domain,
+		Archived: project.Archived,
 		YourRole: string(role),
 		YouMay:   names,
 	}
@@ -612,6 +618,149 @@ func (s *Service) RemoveProject(ctx context.Context, who httpapi.Actor, organisa
 		return err
 	}
 	return s.store.RemoveProject(ctx, found.ID)
+}
+
+// Copies is what the service needs to make one site from another. It is an
+// interface so that the service does not have to know how a working copy is
+// kept, and so that a test can watch what was asked for.
+type Copies interface {
+	CopyTo(ctx context.Context, from, to uuid.UUID, remote string, author gitsync.Identity, message string) error
+	Zip(ctx context.Context, projectID uuid.UUID, into io.Writer) error
+}
+
+// MakesCopies gives the service somewhere to ask.
+func (s *Service) MakesCopies(copies Copies) {
+	s.copies = copies
+	s.zips = copies
+}
+
+// Duplicate makes a separate copy of a site in the same organisation.
+//
+// Three things are copied always, because they are what a site is: its
+// pages, its media and its model. Two are copied only if asked for: the
+// people, and where it publishes. Publishing is off by default because a
+// copy that published where the original publishes would overwrite a live
+// website the first time anybody pressed Publish.
+func (s *Service) Duplicate(ctx context.Context, who httpapi.Actor, organisation, project, slug, name string, withPeople, withPublishing bool) (httpapi.ProjectView, error) {
+	original, actor, _, err := s.reachProject(ctx, who, organisation, project, policy.ActionSeeTechnicalDetail)
+	if err != nil {
+		return httpapi.ProjectView{}, err
+	}
+	organisationID := original.OrganisationID
+	if !policy.Can(actor, policy.ActionCreateProject, policy.Organisation(organisationID.String())) {
+		return httpapi.ProjectView{}, httpapi.ErrNotAllowed
+	}
+	if strings.TrimSpace(name) == strings.TrimSpace(original.Name) {
+		return httpapi.ProjectView{}, &httpapi.RefusedError{
+			Key:    "refused.copy-needs-its-own-name",
+			Reason: "that name is already taken; give the copy its own name",
+		}
+	}
+
+	var copy Project
+	if err := s.store.WithRoomForAProject(ctx, organisationID, func(within *Store) error {
+		made, err := within.CreateProject(ctx, organisationID, slug, name, "")
+		if err != nil {
+			return err
+		}
+		copy = made
+		return nil
+	}); err != nil {
+		return httpapi.ProjectView{}, refusal(err)
+	}
+
+	// Where the copy publishes, only if somebody asked for it. Without it
+	// the copy has no remote at all, which is what makes pressing Publish
+	// on a copy harmless until somebody says where it should go.
+	remote := ""
+	if withPublishing {
+		row, err := s.store.db.Queries.GetProject(ctx, pgUUID(original.ID))
+		if err != nil {
+			return httpapi.ProjectView{}, fmt.Errorf("reading where the site publishes failed: %w", err)
+		}
+		remote = row.Remote
+	}
+
+	// The copy's first version is attributed to whoever asked for it,
+	// which is what the history of the copy should say.
+	author := gitsync.Identity{Name: who.Said(), Email: who.Email}
+	if err := s.copies.CopyTo(ctx, original.ID, copy.ID, remote, author,
+		"Copied from "+original.Name); err != nil {
+		// The row would otherwise be a site with no files behind it.
+		_ = s.store.RemoveProject(ctx, copy.ID)
+		return httpapi.ProjectView{}, err
+	}
+
+	if withPeople {
+		if err := s.store.CopyThePeople(ctx, original.ID, copy.ID); err != nil {
+			return httpapi.ProjectView{}, err
+		}
+	} else if err := s.store.SetProjectRole(ctx, copy.ID, mustParse(who.ID), policy.RoleImplementer); err != nil {
+		return httpapi.ProjectView{}, err
+	}
+
+	actor, err = s.actor(ctx, who)
+	if err != nil {
+		return httpapi.ProjectView{}, err
+	}
+	return projectView(copy, actor, policy.Project(organisationID.String(), copy.ID.String())), nil
+}
+
+// MoveTo puts a site in another organisation. Whoever does it administers
+// both, or administers the installation.
+func (s *Service) MoveTo(ctx context.Context, who httpapi.Actor, organisation, project, destination string) error {
+	found, actor, _, err := s.reachProject(ctx, who, organisation, project, policy.ActionSeeTechnicalDetail)
+	if err != nil {
+		return err
+	}
+	from := found.OrganisationID
+
+	to, err := s.store.OrganisationBySlug(ctx, destination)
+	if err != nil {
+		return err
+	}
+	if to.ID == from {
+		return &httpapi.RefusedError{
+			Key:    "refused.already-there",
+			Reason: "that site is already in that organisation",
+		}
+	}
+
+	if !policy.MayMoveTo(actor, policy.Organisation(from.String()), policy.Organisation(to.ID.String())) {
+		return httpapi.ErrNotAllowed
+	}
+
+	return refusal(s.store.MoveProject(ctx, found.ID, to.ID))
+}
+
+// Archive stops a site counting against its organisation's limit of sites.
+// Nothing is removed, and what is published stays published.
+func (s *Service) Archive(ctx context.Context, who httpapi.Actor, organisation, project string, archived bool) error {
+	found, _, _, err := s.reachProject(ctx, who, organisation, project, policy.ActionDeleteProject)
+	if err != nil {
+		return err
+	}
+	if archived {
+		return s.store.Archive(ctx, found.ID)
+	}
+	return refusal(s.store.BringBack(ctx, found.ID))
+}
+
+// WriteZip writes the site's files and answers what the file should be
+// called. Whoever may see a site's technical detail may take a copy of it
+// away; an editor may read a page, which is not the same thing.
+func (s *Service) WriteZip(ctx context.Context, who httpapi.Actor, organisation, project string, to io.Writer) (string, error) {
+	found, _, _, err := s.reachProject(ctx, who, organisation, project, policy.ActionSeeTechnicalDetail)
+	if err != nil {
+		return "", err
+	}
+	if s.zips == nil {
+		return "", fmt.Errorf("nothing here can make a zip")
+	}
+	if err := s.zips.Zip(ctx, found.ID, to); err != nil {
+		return "", err
+	}
+	return found.Slug, nil
 }
 
 // InviteToOrganisation brings somebody into an organisation, which its owner

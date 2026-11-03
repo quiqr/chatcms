@@ -1,8 +1,11 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -24,6 +27,13 @@ type TenancyService interface {
 	ListProjects(ctx context.Context, actor Actor, organisationSlug string) ([]ProjectView, error)
 	UsageOf(ctx context.Context, actor Actor, organisationSlug string) (UsageView, error)
 	ManageableOrganisation(ctx context.Context, actor Actor, organisationSlug string) (OrganisationAreaView, error)
+	Duplicate(ctx context.Context, actor Actor, organisation, project, slug, name string, withPeople, withPublishing bool) (ProjectView, error)
+	MoveTo(ctx context.Context, actor Actor, organisation, project, destination string) error
+	Archive(ctx context.Context, actor Actor, organisation, project string, archived bool) error
+	// WriteZip writes the site's files to w, and answers what the file
+	// should be called. It takes the writer because a zip of a whole site
+	// is not something to hold in memory on the way out.
+	WriteZip(ctx context.Context, actor Actor, organisation, project string, w io.Writer) (string, error)
 	CreateProject(ctx context.Context, actor Actor, organisationSlug, slug, name, domain string) (ProjectView, error)
 	GetProject(ctx context.Context, actor Actor, organisationSlug, projectSlug string) (ProjectView, error)
 	ListPeople(ctx context.Context, actor Actor, organisationSlug, projectSlug string) ([]MemberView, error)
@@ -87,6 +97,9 @@ type ProjectView struct {
 	YourRole    string   `json:"yourRole"`
 	YouMay      []string `json:"youMay"`
 	Unpublished int      `json:"unpublished"`
+	// Archived says it is out of the way and not counting against the
+	// organisation's limit of sites.
+	Archived bool `json:"archived,omitempty"`
 }
 
 // MemberView is one person on a project.
@@ -378,6 +391,92 @@ func removeProjectHandler(service TenancyService) http.Handler {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
+}
+
+type duplicateRequest struct {
+	Slug           string `json:"slug"`
+	Name           string `json:"name"`
+	WithPeople     bool   `json:"withPeople"`
+	WithPublishing bool   `json:"withPublishing"`
+}
+
+type moveRequest struct {
+	To string `json:"to"`
+}
+
+type archiveRequest struct {
+	Archived bool `json:"archived"`
+}
+
+func wholeSiteHandlers(mux *http.ServeMux, service TenancyService) {
+	const project = "/api/organisations/{organisation}/projects/{project}"
+
+	mux.Handle("POST "+project+"/copies", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body duplicateRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			made, err := service.Duplicate(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("project"),
+				body.Slug, body.Name, body.WithPeople, body.WithPublishing)
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			WriteJSON(w, http.StatusCreated, made)
+		})))
+
+	mux.Handle("POST "+project+"/organisation", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body moveRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			if err := service.MoveTo(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("project"), body.To); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("GET "+project+"/zip", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			// The name is asked for before anything is written, so that a
+			// refusal is still a refusal rather than half a file.
+			var body bytes.Buffer
+			name, err := service.WriteZip(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("project"), &body)
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/zip")
+			w.Header().Set("Content-Disposition", `attachment; filename="`+name+`.zip"`)
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write(body.Bytes()); err != nil {
+				slog.Error("writing the zip failed", "error", err)
+			}
+		})))
+
+	mux.Handle("PUT "+project+"/archived", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body archiveRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			if err := service.Archive(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("organisation"), r.PathValue("project"), body.Archived); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
 }
 
 func manageOrganisationHandler(service TenancyService) http.Handler {

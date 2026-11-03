@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -74,6 +75,31 @@ func (s *stubTenancy) OrganisationPeople(context.Context, Actor, string) ([]Memb
 func (s *stubTenancy) CreateOrganisation(_ context.Context, _ Actor, slug, name string) (OrganisationView, error) {
 	s.record("create-organisation")
 	return OrganisationView{Slug: slug, Name: name}, s.err
+}
+
+func (s *stubTenancy) Duplicate(_ context.Context, _ Actor, organisation, project, slug, name string, withPeople, withPublishing bool) (ProjectView, error) {
+	s.record(fmt.Sprintf("copy %s/%s as %s (%s) people:%v publishing:%v",
+		organisation, project, slug, name, withPeople, withPublishing))
+	return ProjectView{Slug: slug, Name: name}, s.err
+}
+
+func (s *stubTenancy) MoveTo(_ context.Context, _ Actor, organisation, project, destination string) error {
+	s.record("move " + organisation + "/" + project + " to " + destination)
+	return s.err
+}
+
+func (s *stubTenancy) Archive(_ context.Context, _ Actor, organisation, project string, archived bool) error {
+	s.record(fmt.Sprintf("archive %s/%s %v", organisation, project, archived))
+	return s.err
+}
+
+func (s *stubTenancy) WriteZip(_ context.Context, _ Actor, organisation, project string, w io.Writer) (string, error) {
+	s.record("zip " + organisation + "/" + project)
+	if s.err != nil {
+		return "", s.err
+	}
+	_, _ = w.Write([]byte("PK-not-really-a-zip"))
+	return project, nil
 }
 
 func (s *stubTenancy) ManageableOrganisation(_ context.Context, _ Actor, organisation string) (OrganisationAreaView, error) {
@@ -546,5 +572,91 @@ func TestTheOrganisationAreaNeedsSomebody(t *testing.T) {
 
 	if recorder.Code != http.StatusUnauthorized {
 		t.Errorf("status = %d, want 401", recorder.Code)
+	}
+}
+
+func TestAWholeSiteIsCopiedMovedZippedAndArchived(t *testing.T) {
+	service := &stubTenancy{}
+	handler := withTenancy(service, true)
+
+	const site = "/api/organisations/technative/projects/korenaar"
+
+	copied := signedInCall(t, handler, http.MethodPost, site+"/copies",
+		map[string]any{"slug": "korenaar-copy", "name": "Korenaar copy", "withPeople": true})
+	if copied.Code != http.StatusCreated {
+		t.Errorf("copying = %d, want 201: %s", copied.Code, copied.Body)
+	}
+
+	moved := signedInCall(t, handler, http.MethodPost, site+"/organisation",
+		map[string]any{"to": "bakkerij"})
+	if moved.Code != http.StatusNoContent {
+		t.Errorf("moving = %d, want 204: %s", moved.Code, moved.Body)
+	}
+
+	archived := signedInCall(t, handler, http.MethodPut, site+"/archived",
+		map[string]any{"archived": true})
+	if archived.Code != http.StatusNoContent {
+		t.Errorf("archiving = %d, want 204: %s", archived.Code, archived.Body)
+	}
+
+	zipped := signedInCall(t, handler, http.MethodGet, site+"/zip", nil)
+	if zipped.Code != http.StatusOK {
+		t.Fatalf("zipping = %d, want 200: %s", zipped.Code, zipped.Body)
+	}
+	// A browser is told to save it rather than to show it, under the name
+	// of the site it came from.
+	if got := zipped.Header().Get("Content-Disposition"); got != `attachment; filename="korenaar.zip"` {
+		t.Errorf("the zip is offered as %q", got)
+	}
+	if got := zipped.Header().Get("Content-Type"); got != "application/zip" {
+		t.Errorf("the zip is sent as %q", got)
+	}
+
+	want := []string{
+		"copy technative/korenaar as korenaar-copy (Korenaar copy) people:true publishing:false",
+		"move technative/korenaar to bakkerij",
+		"archive technative/korenaar true",
+		"zip technative/korenaar",
+	}
+	for index, said := range want {
+		if len(service.calls) <= index || service.calls[index] != said {
+			t.Fatalf("the service was asked %v, want %v", service.calls, want)
+		}
+	}
+}
+
+func TestAWholeSiteNeedsSomebody(t *testing.T) {
+	handler := withTenancy(&stubTenancy{}, false)
+
+	const site = "/api/organisations/technative/projects/korenaar"
+	for _, each := range []struct {
+		method, path string
+		body         any
+	}{
+		{http.MethodPost, site + "/copies", map[string]any{"slug": "a"}},
+		{http.MethodPost, site + "/organisation", map[string]any{"to": "b"}},
+		{http.MethodPut, site + "/archived", map[string]any{"archived": true}},
+		{http.MethodGet, site + "/zip", nil},
+	} {
+		recorder := call(t, handler, each.method, each.path, each.body)
+		if recorder.Code != http.StatusUnauthorized {
+			t.Errorf("%s %s = %d, want 401", each.method, each.path, recorder.Code)
+		}
+	}
+}
+
+// A refusal must arrive as a refusal rather than as half a file: the name is
+// asked for before anything is written.
+func TestARefusedZipIsNotHalfAFile(t *testing.T) {
+	handler := withTenancy(&stubTenancy{err: ErrNotAllowed}, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/organisations/technative/projects/korenaar/zip", nil)
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", recorder.Code)
+	}
+	if recorder.Header().Get("Content-Type") == "application/zip" {
+		t.Error("a refusal was sent as a zip")
 	}
 }

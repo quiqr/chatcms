@@ -51,6 +51,7 @@ type Project struct {
 	Slug           string
 	Name           string
 	Domain         string
+	Archived       bool
 }
 
 // Member is someone on a project, with the role they hold.
@@ -334,6 +335,7 @@ func projectFrom(row store.Project) Project {
 		Slug:           row.Slug,
 		Name:           row.Name,
 		Domain:         row.Domain,
+		Archived:       row.ArchivedAt.Valid,
 	}
 }
 

@@ -117,6 +117,11 @@ export const nl: Strings = {
   "app.workflows": "Workflows",
   "app.your-account": "Je account",
 
+  // archive
+  "archive.archived": "Gearchiveerd",
+  "archive.bring-it-back": "Terughalen",
+  "archive.does-not-count": "telt niet mee voor de limiet",
+
   // body-editor
   "body-editor.how-to-edit-the-text": "Hoe je de tekst bewerkt",
   "body-editor.text-formatting": "Opmaak",
@@ -183,6 +188,20 @@ export const nl: Strings = {
   "content.show-more": "Nog {count} tonen",
   "content.this-is-what-it-is-called": "Zo heet de pagina, en hier wordt het adres van gemaakt.",
   "content.working": "Bezig…",
+
+  // copy
+  "copy.always": "altijd",
+  "copy.duplicate-it": "Site dupliceren",
+  "copy.duplicate-site": "{name} dupliceren",
+  "copy.duplicating": "Dupliceren…",
+  "copy.makes-a-separate-copy": "Maakt een aparte kopie in {organisation}. Wijzigingen aan de kopie raken het origineel nooit.",
+  "copy.name-of-the-copy": "Naam van de kopie",
+  "copy.off-by-default": "Standaard uit, zodat de kopie de live website niet kan overschrijven.",
+  "copy.pages-media-and-model": "Pagina's, afbeeldingen en het contentmodel",
+  "copy.people-and-their-roles": "Mensen en hun rollen",
+  "copy.publishing-settings": "Publicatie-instellingen",
+  "copy.that-name-is-taken": "Deze naam is al in gebruik. Geef de kopie een eigen naam.",
+  "copy.what-to-copy": "Wat je meekopieert",
 
   // editor
   "editor.what-to-show": "Wat je wilt zien",
@@ -264,7 +283,6 @@ export const nl: Strings = {
   "manage.no-sites-in-it-yet": "Nog geen sites erin.",
   "manage.no-sites-yet": "Nog geen",
   "manage.nobody-yet": "Nog niemand.",
-  "manage.not-built-yet": "Nog niet gebouwd",
   "manage.one-person-on-it": "{count} persoon",
   "manage.open": "Openen",
   "manage.organisation": "Organisatie",
@@ -306,6 +324,19 @@ export const nl: Strings = {
   "media.used-on": "Gebruikt op",
   "media.what-is-in-the-picture-for": "Wat er op de afbeelding staat, voor wie hem niet kan zien.",
   "media.which-pictures-to-show": "Welke afbeeldingen je wilt zien",
+
+  // move
+  "move.move-it": "Site verplaatsen",
+  "move.move-site": "{name} verplaatsen",
+  "move.move-to": "Verplaatsen naar",
+  "move.moving": "Verplaatsen…",
+  "move.nowhere-to-move-it": "Er is nergens om hem heen te verplaatsen: je beheert alleen deze organisatie.",
+  "move.the-old-admins-lose-it": "De beheerders van deze organisatie zien hem niet meer.",
+  "move.the-people-come-along": "De mensen die eraan werken houden hun rol, en worden lid van de organisatie waar hij heen gaat.",
+  "move.the-website-moves-along": "De website, waar hij publiceert en zijn geschiedenis gaan ongewijzigd mee.",
+  "move.what-happens": "Wat er gebeurt",
+  "move.you-administer-it": "Jij beheert deze organisatie",
+  "move.you-only-belong": "Je bent hier lid, geen beheerder",
 
   // not-found
   "not-found.go-to-your-projects": "Naar je projecten",
@@ -542,9 +573,11 @@ export const nl: Strings = {
   "refused.address-taken": "Dat adres hoort al bij een account.",
   "refused.already-acting-as-somebody-stop": "Je werkt al als iemand anders; stop daar eerst mee.",
   "refused.already-address": "Dat is al je adres.",
+  "refused.already-there": "Die site zit al in die organisatie.",
   "refused.already-yourself": "Je bent al jezelf.",
   "refused.cannot-delete-own-account": "Je kunt je eigen account niet verwijderen; vraag iemand anders dat te doen.",
   "refused.cannot-turn-off-own-account": "Je kunt je eigen account niet uitzetten; vraag iemand anders dat te doen.",
+  "refused.copy-needs-its-own-name": "Deze naam is al in gebruik. Geef de kopie een eigen naam.",
   "refused.email-address-needed": "Er is een e-mailadres nodig.",
   "refused.every-page-two-people-changed": "Elke pagina die door twee mensen is gewijzigd heeft een antwoord nodig voordat dit af kan.",
   "refused.file-empty": "Dat bestand is leeg.",
@@ -557,6 +590,7 @@ export const nl: Strings = {
   "refused.no-address-waiting": "Er wacht geen adres op bevestiging.",
   "refused.no-room-for-a-member": "Dat maakt {would} leden, en de limiet is {allowed}. Haal er iemand uit, of vraag de platformbeheerder de limiet te verhogen.",
   "refused.no-room-for-a-site": "Dat maakt {would} sites, en de limiet is {allowed}. Archiveer of verwijder er een, of vraag de platformbeheerder de limiet te verhogen.",
+  "refused.no-room-for-the-people": "Dat maakt {would} leden, en de limiet is {allowed}. De mensen die aan de site werken gaan mee.",
   "refused.no-such-field": "Deze pagina heeft geen veld dat “{field}” heet.",
   "refused.no-such-person": "Niemand met dat e-mailadres heeft al een account.",
   "refused.not-a-role": "Dat is geen rol.",

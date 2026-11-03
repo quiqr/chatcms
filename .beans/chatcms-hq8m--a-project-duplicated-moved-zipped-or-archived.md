@@ -1,11 +1,11 @@
 ---
 # chatcms-hq8m
 title: A project duplicated, moved, zipped or archived
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-11-02T20:05:14Z
-updated_at: 2026-11-02T20:05:14Z
+updated_at: 2026-11-03T12:46:48Z
 parent: chatcms-7r0u
 blocked_by:
     - chatcms-qllv

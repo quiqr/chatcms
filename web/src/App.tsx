@@ -55,7 +55,11 @@ export function App() {
           />
           <Route
             path="/o/:organisation/manage/projects"
-            element={<ManageOrganisationPage screen={(area) => <ManageProjects area={area} />} />}
+            element={
+              <ManageOrganisationPage
+                screen={(area, again) => <ManageProjects area={area} again={again} />}
+              />
+            }
           />
           <Route
             path="/o/:organisation/manage/members"

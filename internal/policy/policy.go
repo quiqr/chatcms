@@ -80,6 +80,22 @@ var overTheInstallation = map[Action]bool{
 	ActionAdministerInstallation:   true,
 }
 
+// MayMoveTo says whether an actor may move a site from one organisation to
+// another. Both ends are needed: taking a site out of an organisation is the
+// first organisation's to allow, and putting one into another is the
+// second's. Whoever administers the installation may move a site anywhere,
+// which is the one act over content that administering carries, because
+// where a site lives is the installation's shape rather than its content.
+func MayMoveTo(actor Actor, from, to Resource) bool {
+	if actor.PersonID == "" {
+		return false
+	}
+	if actor.Administers {
+		return true
+	}
+	return Can(actor, ActionMoveProject, from) && Can(actor, ActionCreateProject, to)
+}
+
 // MayBeActedAs says whether somebody may be acted as. Acting as an
 // administrator would be a way of becoming one, so administering is the one
 // thing that makes somebody out of reach. It lives here because it is the

@@ -437,3 +437,44 @@ func TestSomebodyWhoAdministersCannotBeActedAs(t *testing.T) {
 		t.Error("an ordinary person may not be acted as")
 	}
 }
+
+func TestMovingASiteNeedsBothEnds(t *testing.T) {
+	const elsewhere = "org-2"
+
+	both := Actor{
+		PersonID: "person-1",
+		Organisations: map[string]OrganisationRole{
+			anOrganisation: OrganisationAdmin,
+			elsewhere:      OrganisationAdmin,
+		},
+	}
+	onlyHere := Actor{
+		PersonID: "person-2",
+		Organisations: map[string]OrganisationRole{
+			anOrganisation: OrganisationAdmin,
+			elsewhere:      OrganisationMember,
+		},
+	}
+
+	here := Organisation(anOrganisation)
+	there := Organisation(elsewhere)
+
+	if !MayMoveTo(both, here, there) {
+		t.Error("somebody who administers both may not move a site between them")
+	}
+	if MayMoveTo(onlyHere, here, there) {
+		t.Error("somebody who only belongs to the destination may move a site into it")
+	}
+	if MayMoveTo(onlyHere, there, here) {
+		t.Error("somebody who only belongs to the source may move a site out of it")
+	}
+
+	// Where a site lives is the installation's shape rather than its
+	// content, which is the one thing administering carries over a project.
+	if !MayMoveTo(administrator(), here, there) {
+		t.Error("a platform admin may not move a site")
+	}
+	if MayMoveTo(Nobody(), here, there) {
+		t.Error("nobody may move a site")
+	}
+}

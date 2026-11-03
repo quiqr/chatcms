@@ -7,12 +7,15 @@ export type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   hint?: ReactNode;
   action?: ReactNode;
+  /** trouble is what is wrong with what is in the field, said beside it. */
+  trouble?: string;
 };
 
-export function Field({ label, hint, action, className, id, ...props }: FieldProps) {
+export function Field({ label, hint, action, trouble, className, id, ...props }: FieldProps) {
   const generated = useId();
   const fieldId = id ?? generated;
   const hintId = hint ? `${fieldId}-hint` : undefined;
+  const troubleId = trouble ? `${fieldId}-trouble` : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -24,14 +27,21 @@ export function Field({ label, hint, action, className, id, ...props }: FieldPro
       </div>
       <input
         id={fieldId}
-        aria-describedby={hintId}
+        aria-describedby={cn(hintId, troubleId) || undefined}
+        aria-invalid={trouble ? true : undefined}
         className={cn(
-          "h-11 rounded-md border border-input bg-card px-3 text-base sm:text-[15px]",
+          "h-11 rounded-md border bg-card px-3 text-base sm:text-[15px]",
+          trouble ? "border-destructive" : "border-input",
           "focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary-soft",
           className,
         )}
         {...props}
       />
+      {trouble && (
+        <p id={troubleId} className="text-[13px] text-destructive-foreground">
+          {trouble}
+        </p>
+      )}
       {hint && (
         <p id={hintId} className="text-[13px] text-subtle-foreground">
           {hint}

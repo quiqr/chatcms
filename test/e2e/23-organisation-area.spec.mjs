@@ -20,13 +20,13 @@ test("an organisation admin manages the organisation from its own area", async (
     await expect(page.getByText(/Limits are set by the platform admin/)).toBeVisible();
   });
 
-  await test.step("what is not built yet is drawn and disabled", async () => {
+  await test.step("everything the menu offers can be done", async () => {
     await page.getByRole("button", { name: /What can be done with Korenaar Bakery/ }).click();
 
     const menu = page.getByRole("menu");
     await expect(menu.getByRole("menuitem", { name: /People and roles/ })).toBeEnabled();
-    await expect(menu.getByRole("menuitem", { name: /Duplicate/ })).toBeDisabled();
-    await expect(menu.getByText("Not built yet").first()).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: /Duplicate/ })).toBeEnabled();
+    await expect(menu.getByText("Not built yet")).toHaveCount(0);
 
     await page.keyboard.press("Escape");
   });

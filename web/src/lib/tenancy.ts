@@ -13,6 +13,7 @@ export type Project = {
   yourRole: string;
   youMay: string[];
   unpublished: number;
+  archived?: boolean;
 };
 
 export type Member = {
@@ -467,4 +468,25 @@ export type OrganisationArea = {
  */
 export function readOrganisationArea(organisation: string) {
   return get<OrganisationArea>(`/api/organisations/${organisation}/manage`);
+}
+
+export function duplicateProject(
+  organisation: string,
+  project: string,
+  body: { slug: string; name: string; withPeople: boolean; withPublishing: boolean },
+) {
+  return post<Project>(`/api/organisations/${organisation}/projects/${project}/copies`, body);
+}
+
+export function moveProject(organisation: string, project: string, to: string) {
+  return post<void>(`/api/organisations/${organisation}/projects/${project}/organisation`, { to });
+}
+
+export function archiveProject(organisation: string, project: string, archived: boolean) {
+  return put<void>(`/api/organisations/${organisation}/projects/${project}/archived`, { archived });
+}
+
+/** zipPath is where a site's files are downloaded from. */
+export function zipPath(organisation: string, project: string) {
+  return `/api/organisations/${organisation}/projects/${project}/zip`;
 }

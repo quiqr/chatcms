@@ -11,6 +11,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const archiveProject = `-- name: ArchiveProject :exec
+UPDATE projects SET archived_at = now(), updated_at = now() WHERE id = $1
+`
+
+func (q *Queries) ArchiveProject(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, archiveProject, id)
+	return err
+}
+
+const bringProjectBack = `-- name: BringProjectBack :exec
+UPDATE projects SET archived_at = NULL, updated_at = now() WHERE id = $1
+`
+
+func (q *Queries) BringProjectBack(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, bringProjectBack, id)
+	return err
+}
+
 const countOrganisationAdmins = `-- name: CountOrganisationAdmins :one
 SELECT count(*) FROM organisation_members WHERE organisation_id = $1 AND role = 'admin'
 `
@@ -337,6 +355,30 @@ func (q *Queries) ListOrganisationsForPerson(ctx context.Context, personID pgtyp
 	return items, nil
 }
 
+const listProjectMemberIDs = `-- name: ListProjectMemberIDs :many
+SELECT person_id FROM project_members WHERE project_id = $1
+`
+
+func (q *Queries) ListProjectMemberIDs(ctx context.Context, projectID pgtype.UUID) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listProjectMemberIDs, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var person_id pgtype.UUID
+		if err := rows.Scan(&person_id); err != nil {
+			return nil, err
+		}
+		items = append(items, person_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProjectMembers = `-- name: ListProjectMembers :many
 SELECT project_members.role, people.id, people.email, people.display_name,
        (people.password_hash IS NOT NULL)::boolean AS has_password
@@ -452,6 +494,20 @@ func (q *Queries) ListProjectsInOrganisation(ctx context.Context, organisationID
 		return nil, err
 	}
 	return items, nil
+}
+
+const moveProject = `-- name: MoveProject :exec
+UPDATE projects SET organisation_id = $2, updated_at = now() WHERE id = $1
+`
+
+type MoveProjectParams struct {
+	ID             pgtype.UUID `json:"id"`
+	OrganisationID pgtype.UUID `json:"organisation_id"`
+}
+
+func (q *Queries) MoveProject(ctx context.Context, arg MoveProjectParams) error {
+	_, err := q.db.Exec(ctx, moveProject, arg.ID, arg.OrganisationID)
+	return err
 }
 
 const organisationUsage = `-- name: OrganisationUsage :one

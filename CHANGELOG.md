@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A whole site duplicated, moved, downloaded or archived. A copy carries the
+  pages, the media and the content model, takes a name of its own and
+  publishes nowhere unless that was asked for. Moving a site to another
+  organisation takes its people along and needs both organisations. A site
+  comes down as a zip of its files, with nothing of how versions are kept in
+  it, and an archived site stops counting against the organisation's limit
+  until it is brought back.
+
 - Every user account, and what may be done to one. An account is invited,
   active or blocked rather than on or off, and the platform admin can put
   right a name or an address typed wrong, send a password reset, add somebody

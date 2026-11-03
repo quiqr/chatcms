@@ -37,6 +37,7 @@ import (
 	"github.com/quiqr/chatcms/internal/tenancy"
 	"github.com/quiqr/chatcms/internal/version"
 	"github.com/quiqr/chatcms/internal/webui"
+	"github.com/quiqr/chatcms/internal/wholesite"
 	"github.com/quiqr/chatcms/internal/workflows"
 )
 
@@ -114,6 +115,7 @@ func NewServer(ctx context.Context, cfg Config, logger *slog.Logger) (*Server, e
 	server.auth = auth.NewService(db, logger, cfg.BaseURL)
 	tenancyStore := tenancy.NewStore(db)
 	server.tenancy = tenancy.NewService(tenancyStore, server.auth)
+	server.tenancy.MakesCopies(wholesite.NewCopier(server.sites))
 	server.tenancy.KnowsWhatTheyChose(server.auth)
 
 	adminStore := admin.NewStore(db)

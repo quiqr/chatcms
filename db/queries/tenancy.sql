@@ -146,3 +146,15 @@ ORDER BY lower(p.email);
 DELETE FROM project_members
 WHERE person_id = $2
   AND project_id IN (SELECT id FROM projects WHERE organisation_id = $1);
+
+-- name: MoveProject :exec
+UPDATE projects SET organisation_id = $2, updated_at = now() WHERE id = $1;
+
+-- name: ArchiveProject :exec
+UPDATE projects SET archived_at = now(), updated_at = now() WHERE id = $1;
+
+-- name: BringProjectBack :exec
+UPDATE projects SET archived_at = NULL, updated_at = now() WHERE id = $1;
+
+-- name: ListProjectMemberIDs :many
+SELECT person_id FROM project_members WHERE project_id = $1;

@@ -114,6 +114,11 @@ export const en = {
   "app.workflows": "Workflows",
   "app.your-account": "Your account",
 
+  // archive
+  "archive.archived": "Archived",
+  "archive.bring-it-back": "Bring it back",
+  "archive.does-not-count": "doesn’t count toward the limit",
+
   // body-editor
   "body-editor.how-to-edit-the-text": "How to edit the text",
   "body-editor.text-formatting": "Text formatting",
@@ -180,6 +185,20 @@ export const en = {
   "content.show-more": "Show {count} more",
   "content.this-is-what-it-is-called": "This is what it is called, and what its address is made from.",
   "content.working": "Working…",
+
+  // copy
+  "copy.always": "always",
+  "copy.duplicate-it": "Duplicate site",
+  "copy.duplicate-site": "Duplicate {name}",
+  "copy.duplicating": "Duplicating…",
+  "copy.makes-a-separate-copy": "Makes a separate copy in {organisation}. Changes to the copy never affect the original.",
+  "copy.name-of-the-copy": "Name of the copy",
+  "copy.off-by-default": "Off by default, so the copy can’t overwrite the live website.",
+  "copy.pages-media-and-model": "Pages, media and content model",
+  "copy.people-and-their-roles": "People and their roles",
+  "copy.publishing-settings": "Publishing settings",
+  "copy.that-name-is-taken": "This name is already taken. Give the copy its own name.",
+  "copy.what-to-copy": "What to copy",
 
   // editor
   "editor.what-to-show": "What to show",
@@ -261,7 +280,6 @@ export const en = {
   "manage.no-sites-in-it-yet": "No sites in it yet.",
   "manage.no-sites-yet": "None yet",
   "manage.nobody-yet": "Nobody yet.",
-  "manage.not-built-yet": "Not built yet",
   "manage.one-person-on-it": "{count} person",
   "manage.open": "Open",
   "manage.organisation": "Organisation",
@@ -303,6 +321,19 @@ export const en = {
   "media.used-on": "Used on",
   "media.what-is-in-the-picture-for": "What is in the picture, for somebody who cannot see it.",
   "media.which-pictures-to-show": "Which pictures to show",
+
+  // move
+  "move.move-it": "Move site",
+  "move.move-site": "Move {name}",
+  "move.move-to": "Move to",
+  "move.moving": "Moving…",
+  "move.nowhere-to-move-it": "There is nowhere to move it: you administer only this organisation.",
+  "move.the-old-admins-lose-it": "This organisation’s admins no longer see it.",
+  "move.the-people-come-along": "The people on it keep their roles, and become members of the organisation it moves to.",
+  "move.the-website-moves-along": "The website, where it publishes and its history move along unchanged.",
+  "move.what-happens": "What happens",
+  "move.you-administer-it": "You administer this organisation",
+  "move.you-only-belong": "You’re a member here, not an admin",
 
   // not-found
   "not-found.go-to-your-projects": "Go to your projects",
@@ -539,9 +570,11 @@ export const en = {
   "refused.address-taken": "That address already belongs to an account.",
   "refused.already-acting-as-somebody-stop": "You are already acting as somebody; stop that first.",
   "refused.already-address": "That is already your address.",
+  "refused.already-there": "That site is already in that organisation.",
   "refused.already-yourself": "You are already yourself.",
   "refused.cannot-delete-own-account": "You cannot delete your own account; ask somebody else to.",
   "refused.cannot-turn-off-own-account": "You cannot turn off your own account; ask somebody else to.",
+  "refused.copy-needs-its-own-name": "This name is already taken. Give the copy its own name.",
   "refused.email-address-needed": "An email address is needed.",
   "refused.every-page-two-people-changed": "Every page that two people changed needs an answer before this can finish.",
   "refused.file-empty": "That file is empty.",
@@ -554,6 +587,7 @@ export const en = {
   "refused.no-address-waiting": "There is no address waiting to be confirmed.",
   "refused.no-room-for-a-member": "That makes {would} members, and the limit is {allowed}. Remove somebody, or ask the platform admin to raise the limit.",
   "refused.no-room-for-a-site": "That makes {would} sites, and the limit is {allowed}. Archive or remove one, or ask the platform admin to raise the limit.",
+  "refused.no-room-for-the-people": "That makes {would} members, and the limit is {allowed}. The people on the site come with it.",
   "refused.no-such-field": "This page has no field called “{field}”.",
   "refused.no-such-person": "Nobody with that email address has an account yet.",
   "refused.not-a-role": "That is not a role.",
