@@ -1,12 +1,13 @@
 ---
 # chatcms-tr45
 title: 'The platform admin area, redrawn: a dark shell, organisations and one organisation'
-status: in-progress
+status: completed
 type: epic
 priority: high
 created_at: 2026-11-02T20:05:43Z
-updated_at: 2026-11-03T11:05:17Z
+updated_at: 2026-11-03T01:30:00Z
 parent: chatcms-7r0u
+openspec-link: openspec/changes/archive/2026-11-03-add-platform-admin-area
 blocked_by:
     - chatcms-civ6
     - chatcms-qllv
@@ -66,3 +67,45 @@ organisation work.
   `admin-organisation.html`, `admin-organisation-delete.html`.
 - What exists now: `web/src/routes/AdministrationPage.tsx`,
   `AdministeredOrganisationPage.tsx`, `internal/admin/`.
+
+## Summary of Changes
+
+The platform admin has an area rather than a page. The stacked screen that
+grew an epic at a time is gone.
+
+- **A dark shell** that says you are in it, with Organisations, Users and
+  History beside their counts, and the way back. It has tokens of its own
+  that sit outside the light and dark blocks, because an area whose point is
+  that it looks different must not follow the theme into looking the same.
+- **Organisations**: search and filter chips answered by the server ("at a
+  limit", "no admin yet"), and a table with who administers each one, what it
+  holds against its limits, and when it was made and by whom.
+- **One organisation**: its details, its limits with a checkbox and a stepper
+  (a limit is a number or nothing, never zero), its sites, its members, and
+  removing it.
+- **Removing an organisation takes its sites and memberships with it.** This
+  reverses what `chatcms-d4f3` decided. The hand-off draws the dialog
+  instead: it lists what goes, says live websites and what is in git keep
+  working, and will not act until the organisation's name is typed. Nothing
+  in git is touched either way.
+- **Who made an organisation** is a column now, null for the ones made before
+  it, because a record is a list of acts and the screen wants a fact about a
+  thing.
+- **The counts come with the answer that says you may be here**, so moving
+  between the screens of the area is one request rather than three.
+- Proved by five handler tests, three integration tests over listing,
+  filtering and removal, and
+  `test/e2e/24-platform-admin-area.spec.mjs` at 1440 px and at 390 px.
+
+### What the gate caught
+
+A 500 on the seeded database: the subquery for who made an organisation was
+typed non-null by sqlc, and every organisation made before the column existed
+has none. My own test had passed because it only made organisations the way
+that fills the column in. It is a COALESCE now, and the test makes one with no
+maker on purpose.
+
+Then ten acceptance failures from the move itself: starting an organisation
+is behind a button, the record is its own screen, and a search box was 42 px
+tall on a phone because it sat in a bordered form rather than a label. The
+fixtures gained `startsAnOrganisation` so the first of those is written once.
