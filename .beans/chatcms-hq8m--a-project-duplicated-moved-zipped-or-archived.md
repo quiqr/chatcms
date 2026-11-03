@@ -1,12 +1,13 @@
 ---
 # chatcms-hq8m
 title: A project duplicated, moved, zipped or archived
-status: in-progress
+status: completed
 type: epic
 priority: normal
 created_at: 2026-11-02T20:05:14Z
-updated_at: 2026-11-03T12:46:48Z
+updated_at: 2026-11-03T14:30:00Z
 parent: chatcms-7r0u
+openspec-link: openspec/changes/archive/2026-11-03-add-project-duplication-and-moving
 blocked_by:
     - chatcms-qllv
 ---
@@ -56,3 +57,54 @@ about what travels with it.
 - `docs/design/DESIGN.md` 5.13; the four dialogs in
   `docs/design/reference/html/`.
 - `internal/gitsync`, which owns everything that touches git.
+
+## Summary of Changes
+
+Shipped as
+`openspec/changes/archive/2026-11-03-add-project-duplication-and-moving`.
+
+### What a whole site can now be put through
+
+- **Duplicated.** `internal/wholesite` copies the files of one site into a new
+  one, with `.git` hidden from the copy, so a duplicate carries the pages, the
+  media and the content model but none of the original's history and no
+  remote. A copy takes a name of its own: the same name is refused with
+  `refused.copy-needs-its-own-name`. People and publishing settings travel
+  only when they are asked for, and the copy is taken under the same room
+  check as a new site, with the row removed again when the files fail.
+- **Moved.** `tenancy.MoveTo` moves the database row alone: the files and the
+  history are untouched. Its people come with it and become members of the
+  organisation it moves into, counted against that organisation's seats before
+  anything moves. `policy.MayMoveTo` needs both ends, because taking a site
+  out is the first organisation's to allow and putting one in is the second's.
+  Whoever administers the installation may move a site anywhere, which is the
+  one act over content that administering carries.
+- **Downloaded.** A zip of the site's files, gated on seeing technical detail,
+  buffered whole before a byte is written so a refusal is never half a file.
+- **Archived.** A site out of the way stops counting against the
+  organisation's limit of sites, and comes back only when there is room for it
+  again.
+
+### The screens
+
+The four menu items in the organisation's site list stopped saying "Not built
+yet": two open the dialogs the design draws, one is a plain download link so
+the browser saves the file rather than the screen holding it, and one archives
+in place. Archived sites sit in their own group below, which says it does not
+count toward the limit.
+
+### What the gate caught
+
+The enforcement test `TestOnlyGitsyncRunsGit` failed on the new integration
+test, which ran `git remote` to prove a copy publishes nowhere. The check is
+right: nothing outside `internal/gitsync` runs git. The test reads `.git/config`
+for a `[remote ` section instead, which proves the same thing without a second
+place knowing how git is invoked.
+
+### Proved by
+
+Seven integration tests against a real git remote on disk, handler tests for
+the four endpoints, six frontend tests over the dialogs and the archived
+group, and `test/e2e/26-a-whole-site.spec.mjs` at 1440 px and at 390 px:
+duplicated with a name of its own, moved to a second organisation, archived
+and brought back, and downloaded as a zip that begins with `PK`.

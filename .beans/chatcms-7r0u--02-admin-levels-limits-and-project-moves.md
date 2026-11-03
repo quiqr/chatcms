@@ -1,11 +1,11 @@
 ---
 # chatcms-7r0u
 title: 02 Admin levels, limits and project moves
-status: in-progress
+status: completed
 type: milestone
 priority: high
 created_at: 2026-11-02T20:04:17Z
-updated_at: 2026-11-02T20:04:17Z
+updated_at: 2026-11-03T14:35:00Z
 ---
 
 ## Goal
@@ -39,3 +39,33 @@ the model; it is a reference board, not a screen to build.
 
 Nothing in milestone 01's content, editing, publishing, history, media or sync
 work changes. This milestone is about who may do what, and where projects live.
+
+## Summary of Changes
+
+All six epics are shipped and archived.
+
+| Epic | What it added |
+| ------------- | -------------------------------------------------------- |
+| chatcms-civ6  | Three levels of role, replacing the flatter model of milestone 01 |
+| chatcms-qllv  | Optional limits per organisation, refused before anything runs |
+| chatcms-ufd3  | The organisation admin area: its own shell, members and projects |
+| chatcms-tr45  | The platform admin area redrawn: a dark shell, organisations and one organisation |
+| chatcms-503w  | Every user account, and what may be done to one |
+| chatcms-hq8m  | A site duplicated, moved, downloaded or archived |
+
+### What the milestone settled
+
+- **Administering is not editing.** Whoever administers the installation or an
+  organisation holds nothing over content. Acting as somebody is the one
+  announced exception, and moving a site is the one act over content that
+  administering carries, because where a site lives is the installation's
+  shape rather than its content.
+- **One decision point.** `policy.Can` answers the permission table in
+  `docs/design/DESIGN.md` section 6, and enforcement tests walk the sources so
+  no second place can name a role or read `.Administers` to decide something.
+- **A limit is refused before anything runs**, inside the transaction that
+  would take the last seat, with a refusal that names the limit, the numbers
+  and the ways out, in both languages.
+
+Milestone 01's content, editing, publishing, history, media and sync are
+untouched, as the milestone said they would be.
