@@ -96,11 +96,40 @@ func (q *Queries) ListAdministrators(ctx context.Context) ([]Person, error) {
 }
 
 const listEveryOrganisation = `-- name: ListEveryOrganisation :many
-SELECT o.id, o.slug, o.name, o.created_at, o.updated_at, o.max_members, o.max_projects, (SELECT count(*) FROM projects p WHERE p.organisation_id = o.id) AS project_count,
-            (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS people_count
+SELECT o.id, o.slug, o.name, o.created_at, o.updated_at, o.max_members, o.max_projects, o.created_by,
+       (SELECT count(*) FROM projects p
+        WHERE p.organisation_id = o.id AND p.archived_at IS NULL) AS project_count,
+       (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS people_count,
+       COALESCE((SELECT json_agg(json_build_object('email', ap.email, 'displayName', ap.display_name)
+                                 ORDER BY lower(ap.email))
+                 FROM organisation_members am
+                 JOIN people ap ON ap.id = am.person_id
+                 WHERE am.organisation_id = o.id AND am.role = 'admin'), '[]')::json AS admins,
+       -- Coalesced, because nobody wrote down who made the organisations
+       -- that existed before the column did, and a null read into a string
+       -- is an error rather than an empty answer.
+       COALESCE((SELECT p.display_name FROM people p WHERE p.id = o.created_by), '')::text AS made_by
 FROM organisations o
+WHERE ($1::text = ''
+       OR o.name ILIKE '%' || $1::text || '%'
+       OR o.slug ILIKE '%' || $1::text || '%')
+  AND (NOT $2::boolean
+       OR (o.max_members IS NOT NULL
+           AND (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) >= o.max_members)
+       OR (o.max_projects IS NOT NULL
+           AND (SELECT count(*) FROM projects p
+                WHERE p.organisation_id = o.id AND p.archived_at IS NULL) >= o.max_projects))
+  AND (NOT $3::boolean
+       OR NOT EXISTS (SELECT 1 FROM organisation_members m
+                      WHERE m.organisation_id = o.id AND m.role = 'admin'))
 ORDER BY lower(o.name)
 `
+
+type ListEveryOrganisationParams struct {
+	Search      string `json:"search"`
+	AtALimit    bool   `json:"at_a_limit"`
+	WithNoAdmin bool   `json:"with_no_admin"`
+}
 
 type ListEveryOrganisationRow struct {
 	ID           pgtype.UUID        `json:"id"`
@@ -110,12 +139,19 @@ type ListEveryOrganisationRow struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 	MaxMembers   *int32             `json:"max_members"`
 	MaxProjects  *int32             `json:"max_projects"`
+	CreatedBy    pgtype.UUID        `json:"created_by"`
 	ProjectCount int64              `json:"project_count"`
 	PeopleCount  int64              `json:"people_count"`
+	Admins       []byte             `json:"admins"`
+	MadeBy       string             `json:"made_by"`
 }
 
-func (q *Queries) ListEveryOrganisation(ctx context.Context) ([]ListEveryOrganisationRow, error) {
-	rows, err := q.db.Query(ctx, listEveryOrganisation)
+// Every organisation with what it holds, who administers it and who made it,
+// read in one query. Searching and filtering are answered here rather than in
+// a browser, because a thousand organisations are not a thing to send
+// somewhere to be counted.
+func (q *Queries) ListEveryOrganisation(ctx context.Context, arg ListEveryOrganisationParams) ([]ListEveryOrganisationRow, error) {
+	rows, err := q.db.Query(ctx, listEveryOrganisation, arg.Search, arg.AtALimit, arg.WithNoAdmin)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +167,11 @@ func (q *Queries) ListEveryOrganisation(ctx context.Context) ([]ListEveryOrganis
 			&i.UpdatedAt,
 			&i.MaxMembers,
 			&i.MaxProjects,
+			&i.CreatedBy,
 			&i.ProjectCount,
 			&i.PeopleCount,
+			&i.Admins,
+			&i.MadeBy,
 		); err != nil {
 			return nil, err
 		}
@@ -482,6 +521,8 @@ const removeOrganisation = `-- name: RemoveOrganisation :exec
 DELETE FROM organisations WHERE id = $1
 `
 
+// The projects and memberships go with it, by the foreign keys that already
+// cascade. What is in git is not the database's to touch.
 func (q *Queries) RemoveOrganisation(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, removeOrganisation, id)
 	return err
@@ -499,7 +540,7 @@ func (q *Queries) RemoveProject(ctx context.Context, id pgtype.UUID) error {
 const renameOrganisation = `-- name: RenameOrganisation :one
 UPDATE organisations SET name = $2, updated_at = now()
 WHERE id = $1
-RETURNING id, slug, name, created_at, updated_at, max_members, max_projects
+RETURNING id, slug, name, created_at, updated_at, max_members, max_projects, created_by
 `
 
 type RenameOrganisationParams struct {
@@ -518,8 +559,23 @@ func (q *Queries) RenameOrganisation(ctx context.Context, arg RenameOrganisation
 		&i.UpdatedAt,
 		&i.MaxMembers,
 		&i.MaxProjects,
+		&i.CreatedBy,
 	)
 	return i, err
+}
+
+const setOrganisationMadeBy = `-- name: SetOrganisationMadeBy :exec
+UPDATE organisations SET created_by = $2 WHERE id = $1
+`
+
+type SetOrganisationMadeByParams struct {
+	ID        pgtype.UUID `json:"id"`
+	CreatedBy pgtype.UUID `json:"created_by"`
+}
+
+func (q *Queries) SetOrganisationMadeBy(ctx context.Context, arg SetOrganisationMadeByParams) error {
+	_, err := q.db.Exec(ctx, setOrganisationMadeBy, arg.ID, arg.CreatedBy)
+	return err
 }
 
 const stopAdministrating = `-- name: StopAdministrating :one

@@ -7,6 +7,9 @@ export type AdministeredOrganisation = {
   projects: number;
   people: number;
   usage: Usage;
+  admins: { email: string; displayName: string }[];
+  madeBy?: string;
+  madeOn?: string;
 };
 
 export type Administrator = {
@@ -23,8 +26,15 @@ export type AdministrationRecord = {
   at: string;
 };
 
-export function listEveryOrganisation() {
-  return get<{ organisations: AdministeredOrganisation[] }>("/api/administration/organisations");
+export function listEveryOrganisation(search = "", filter = "") {
+  const asked = new URLSearchParams();
+  if (search.trim() !== "") asked.set("search", search.trim());
+  if (filter !== "") asked.set("filter", filter);
+  const question = asked.toString();
+
+  return get<{ organisations: AdministeredOrganisation[] }>(
+    `/api/administration/organisations${question === "" ? "" : `?${question}`}`,
+  );
 }
 
 export function makeOrganisation(body: { slug: string; name: string; ownerEmail: string }) {
@@ -58,7 +68,9 @@ export function listRecords() {
 }
 
 export function mayAdminister() {
-  return get<{ administers: boolean }>("/api/administration/me");
+  return get<{ administers: boolean; organisations?: number; users?: number }>(
+    "/api/administration/me",
+  );
 }
 
 export function turnAccountOff(email: string) {

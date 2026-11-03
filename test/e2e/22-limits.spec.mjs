@@ -54,7 +54,7 @@ test("a site is refused when the organisation has no room for one", async ({
 });
 
 test("a seat is refused when they are all held", async ({ administering: page, chatcms }) => {
-  await page.goto(`${chatcms.url}/administration/o/technative`);
+  await page.goto(`${chatcms.url}/administration/organisations/technative`);
 
   // The seeded organisation holds one member: whoever administers it. The
   // people on its sites hold a role there rather than a seat here.
@@ -82,7 +82,7 @@ test("an organisation with no limits says nothing about room", async ({
 }) => {
   // Nothing has been set on the seeded organisation, which is the state
   // every organisation starts in.
-  await page.goto(`${chatcms.url}/administration/o/technative`);
+  await page.goto(`${chatcms.url}/administration/organisations/technative`);
 
   await expect(page.getByText(/no limit/).first()).toBeVisible();
   await expect(page.getByText(/seats are in use/)).toHaveCount(0);

@@ -12,6 +12,7 @@ test("an administrator starts an organisation and somebody is invited to it", as
   });
 
   await test.step("an organisation is started, owned by somebody else", async () => {
+    await page.getByRole("button", { name: /New organisation/ }).click();
     await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
     await expect(page.getByText("Its address will be /o/bakkerij-zuid")).toBeVisible();
 
@@ -23,6 +24,10 @@ test("an administrator starts an organisation and somebody is invited to it", as
   });
 
   await test.step("what was done is written down", async () => {
+    // The record is a screen of the area now rather than a card under the
+    // organisations.
+    await page.goto(`${chatcms.url}/administration/history`);
+
     await expect(page.getByText(/made an organisation/)).toBeVisible();
     await expect(page.getByText(/owned by owner@example.org/)).toBeVisible();
   });

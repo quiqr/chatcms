@@ -7,11 +7,10 @@ import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
 import { useAsync } from "../lib/useAsync";
 import { when } from "../lib/when";
-import { plural, say } from "../lib/say";
+import { say } from "../lib/say";
 import {
   appoint,
   listAdministrators,
-  listEveryOrganisation,
   listEveryPerson,
   listRecords,
   makeOrganisation,
@@ -28,7 +27,7 @@ function slugFrom(name: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function NewOrganisation({ onMade }: { onMade: () => void }) {
+export function NewOrganisation({ onMade }: { onMade: () => void }) {
   const [name, setName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,7 +89,7 @@ function NewOrganisation({ onMade }: { onMade: () => void }) {
   );
 }
 
-function Administrators({ onChanged }: { onChanged: () => void }) {
+export function Administrators({ onChanged }: { onChanged: () => void }) {
   const [people, again] = useAsync(listAdministrators, []);
   const [email, setEmail] = useState("");
   const [trouble, setTrouble] = useState("");
@@ -186,7 +185,7 @@ function Administrators({ onChanged }: { onChanged: () => void }) {
  * and what can they reach" without a database client, and is the way to one
  * person's own screen, where their account is turned off.
  */
-function People() {
+export function People() {
   const [search, setSearch] = useState("");
   const [asked, setAsked] = useState("");
   const [people] = useAsync(() => listEveryPerson(asked), [asked]);
@@ -302,7 +301,7 @@ function People() {
   );
 }
 
-function NewPerson({ onMade }: { onMade: () => void }) {
+export function NewPerson({ onMade }: { onMade: () => void }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [said, setSaid] = useState("");
@@ -370,7 +369,7 @@ function NewPerson({ onMade }: { onMade: () => void }) {
   );
 }
 
-function What({ since }: { since: number }) {
+export function What({ since }: { since: number }) {
   // since changes whenever something was done on this screen, so that what
   // you just did appears without reloading the page.
   const [records] = useAsync(listRecords, [since]);
@@ -408,68 +407,34 @@ function What({ since }: { since: number }) {
   );
 }
 
-export function AdministrationPage() {
+/**
+ * The screens of the platform admin area. They were one stacked page once;
+ * what is here now is the people half of it, which chatcms-503w redraws.
+ *
+ * chatcms-audience: implementer
+ */
+export function PlatformUsers() {
   const [done, setDone] = useState(0);
   const somethingWasDone = () => setDone((count) => count + 1);
-  const [organisations, again] = useAsync(listEveryOrganisation, [done]);
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">{say("administration.organisations")}</h2>
-
-        {organisations.state === "loading" && (
-          <p className="text-[15px] text-muted-foreground">{say("common.looking")}</p>
-        )}
-
-        {organisations.state === "failed" && (
-          <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
-            {organisations.message}
-          </p>
-        )}
-
-        {organisations.state === "ready" && (
-          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr))]">
-            {organisations.value.organisations.map((organisation) => (
-              <NavLink
-                key={organisation.slug}
-                to={`/administration/o/${organisation.slug}`}
-                className="rounded-xl border border-border bg-card p-4 hover:border-input"
-              >
-                <p className="text-[15px] font-semibold">{organisation.name}</p>
-                {/* chatcms-not-a-string: an address */}
-                <p className="text-[13px] text-subtle-foreground">/o/{organisation.slug}</p>
-                <p className="mt-2 text-[13px] text-subtle-foreground">
-                  {plural(organisation.projects, "common.site-one", "common.site-many")} ·{" "}
-                  {plural(organisation.people, "common.person-one", "common.person-many")}
-                </p>
-              </NavLink>
-            ))}
-
-            {organisations.value.organisations.length === 0 && (
-              <p className="text-[15px] text-subtle-foreground">{say("administration.there-are-none-yet")}</p>
-            )}
-          </div>
-        )}
-      </section>
-
-      <NewOrganisation
-        onMade={() => {
-          again();
-          somethingWasDone();
-        }}
-      />
+      <h1 className="text-[28px] font-semibold tracking-tight">{say("platform.users")}</h1>
 
       <Administrators onChanged={somethingWasDone} />
 
       <People key={done} />
 
       <NewPerson onMade={somethingWasDone} />
+    </div>
+  );
+}
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">{say("administration.what-has-been-done")}</h2>
-        <What since={done} />
-      </section>
+export function PlatformHistory() {
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-[28px] font-semibold tracking-tight">{say("platform.history")}</h1>
+      <What since={0} />
     </div>
   );
 }

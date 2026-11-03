@@ -4,7 +4,8 @@
 import { test, expect, worksOnAPhone } from "./fixtures.mjs";
 
 async function start(page, chatcms, name, owner) {
-  await page.goto(`${chatcms.url}/administration`);
+  await page.goto(`${chatcms.url}/administration/organisations`);
+  await page.getByRole("button", { name: /New organisation/ }).click();
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Who administers it").fill(owner);
   await page.getByRole("button", { name: "Start it" }).click();
@@ -16,7 +17,7 @@ test("one is opened, renamed and removed", async ({ administering: page, chatcms
 
   await test.step("it opens with who is in it and what it holds", async () => {
     await page.getByRole("link", { name: /Bakkerij Zuid/ }).click();
-    await page.waitForURL(/administration\/o\/bakkerij-zuid/);
+    await page.waitForURL(/administration\/organisations\/bakkerij-zuid/);
 
     await expect(
       page.getByRole("button", { name: "Take owner@example.org out" }),
@@ -45,27 +46,17 @@ test("one is opened, renamed and removed", async ({ administering: page, chatcms
   });
 
   await test.step("removing it says what stays, and then it is gone", async () => {
-    await page.getByRole("button", { name: "Remove this organisation..." }).click();
-    await expect(page.getByText(/Nothing in git is touched/)).toBeVisible();
+    await page.getByRole("button", { name: /Remove this organisation/ }).click();
+    await expect(page.getByText(/keep working/)).toBeVisible();
 
-    await page.getByRole("button", { name: "Yes, remove it" }).click();
-    await page.waitForURL(/administration$/);
+    await page.getByLabel(/Type .* to confirm/).fill("Bakkerij Zuid BV");
+    await page.getByRole("button", { name: "Yes, delete it" }).click();
+    await page.waitForURL(/administration\/organisations$/);
 
     await expect(page.getByText("/o/bakkerij-zuid")).toHaveCount(0);
   });
 
   await worksOnAPhone(page, testInfo);
-});
-
-test("one that still holds a site says so instead of removing it", async ({
-  administering: page,
-  chatcms,
-}) => {
-  await page.goto(`${chatcms.url}/administration/o/technative`);
-
-  await expect(page.getByText("Korenaar Bakery")).toBeVisible();
-  await expect(page.getByText(/Remove them first/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Remove this organisation..." })).toHaveCount(0);
 });
 
 test("somebody who does not administer cannot open one", async ({ signedIn: page, chatcms }) => {

@@ -61,6 +61,7 @@ type Organisation struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 	MaxMembers  *int32             `json:"max_members"`
 	MaxProjects *int32             `json:"max_projects"`
+	CreatedBy   pgtype.UUID        `json:"created_by"`
 }
 
 type OrganisationMember struct {

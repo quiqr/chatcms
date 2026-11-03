@@ -1,11 +1,11 @@
 ---
 # chatcms-tr45
 title: 'The platform admin area, redrawn: a dark shell, organisations and one organisation'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-11-02T20:05:43Z
-updated_at: 2026-11-02T20:05:43Z
+updated_at: 2026-11-03T11:05:17Z
 parent: chatcms-7r0u
 blocked_by:
     - chatcms-civ6

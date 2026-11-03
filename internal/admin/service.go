@@ -24,6 +24,7 @@ type Tenancy interface {
 	OrganisationMembers(ctx context.Context, organisationID uuid.UUID) ([]tenancy.OrganisationMember, error)
 	ProjectsIn(ctx context.Context, organisationID uuid.UUID) ([]tenancy.Project, error)
 	RemoveOrganisation(ctx context.Context, organisationID uuid.UUID) error
+	SetOrganisationMadeBy(ctx context.Context, organisationID, personID uuid.UUID) error
 	CreateOrganisation(ctx context.Context, slug, name string, ownerID uuid.UUID) (tenancy.Organisation, error)
 	OrganisationBySlug(ctx context.Context, slug string) (tenancy.Organisation, error)
 	SetOrganisationRole(ctx context.Context, organisationID, personID uuid.UUID, role policy.OrganisationRole) error
@@ -93,6 +94,12 @@ func (s *Service) MakeOrganisation(ctx context.Context, who httpapi.Actor, slug,
 	organisation, err := s.tenancy.CreateOrganisation(ctx, slug, name, owner.id)
 	if err != nil {
 		return httpapi.OrganisationView{}, refusal(err)
+	}
+
+	// Who made it, kept as a fact about the organisation rather than only as
+	// an act in the record.
+	if err := s.tenancy.SetOrganisationMadeBy(ctx, organisation.ID, mustParse(who.ID)); err != nil {
+		return httpapi.OrganisationView{}, err
 	}
 
 	s.record(ctx, who, MadeAnOrganisation, organisation.ID.String(), organisation.Name, map[string]any{
@@ -346,9 +353,16 @@ func (s *Service) Organisation(ctx context.Context, who httpapi.Actor, slug stri
 	return whole, nil
 }
 
-// RemoveOrganisation forgets one. It is refused while the organisation still
-// holds projects: removing one with sites in it would make several
-// customers' work unreachable through a single confirmation.
+// RemoveOrganisation forgets one, with the sites and the memberships it
+// holds. Nothing in git is touched: what a customer's site is made of is
+// theirs, and ChatCMS forgetting an organisation must never be a way to lose
+// one.
+//
+// It used to be refused while any site remained, so that letting go of
+// several customers' work could not be one confirmation. The hand-off of
+// 2 November asks for the opposite, and puts the protection in the dialog
+// instead: it says how many sites go and asks for the organisation's name to
+// be typed.
 func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slug string) error {
 	if _, err := s.mayAdminister(ctx, who, policy.ActionRemoveOrganisation); err != nil {
 		return err
@@ -363,24 +377,13 @@ func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slu
 	if err != nil {
 		return err
 	}
-	if len(projects) > 0 {
-		names := make([]string, 0, len(projects))
-		for _, project := range projects {
-			names = append(names, project.Name)
-		}
-		return &httpapi.RefusedError{
-			Key: "refused.organisation-still-holds",
-			Reason: "this organisation still holds " + strings.Join(names, ", ") +
-				"; remove them first",
-			Detail: map[string]any{"sites": strings.Join(names, ", ")},
-		}
-	}
 
 	if err := s.tenancy.RemoveOrganisation(ctx, organisation.ID); err != nil {
 		return err
 	}
 
-	s.record(ctx, who, RemovedAnOrganisation, organisation.ID.String(), organisation.Name, nil)
+	s.record(ctx, who, RemovedAnOrganisation, organisation.ID.String(), organisation.Name,
+		map[string]any{"sites": len(projects)})
 	return nil
 }
 
@@ -528,4 +531,10 @@ func said(limit *int) string {
 		return "no limit"
 	}
 	return strconv.Itoa(*limit)
+}
+
+// mustParse is an identifier the server put there itself.
+func mustParse(id string) uuid.UUID {
+	parsed, _ := uuid.Parse(id)
+	return parsed
 }

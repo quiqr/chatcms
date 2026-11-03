@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { Ban } from "lucide-react";
 
 import { Badge } from "../components/ui/badge";
-import { HowFull, whyThereIsNoRoom } from "../components/ui/usage";
+import { HowFull, whyThereIsNoRoom, type Usage } from "../components/ui/usage";
 import { Button } from "../components/ui/button";
 import { Field } from "../components/ui/field";
 import { Table, TableCell, TableHeaderCell, TableWrapper } from "../components/ui/table";
@@ -12,6 +12,7 @@ import {
   putSomebodyInto,
   readOrganisation,
   removeOrganisation,
+  setLimits,
   takeSomebodyOut,
 } from "../lib/administration";
 import { useAsync } from "../lib/useAsync";
@@ -37,6 +38,7 @@ export function AdministeredOrganisationPage() {
   const [trouble, setTrouble] = useState("");
   const [busy, setBusy] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [typed, setTyped] = useState("");
 
   async function run(what: () => Promise<unknown>) {
     setBusy(true);
@@ -215,38 +217,61 @@ export function AdministeredOrganisationPage() {
         )}
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold">{say("administered-organisation.remove-this-organisation")}</h2>
+      <Limits organisation={organisation} usage={here.usage} onSaved={again} />
 
-        {projects.length > 0 ? (
-          <p className="text-[15px] text-muted-foreground">
-            {say("administered-organisation.it-still-holds-sites", {
-              sites: plural(projects.length, "common.site-one", "common.site-many"),
-            })}
-          </p>
-        ) : removing ? (
+      <section className="flex flex-col gap-4 rounded-xl border border-destructive-soft p-4">
+        <h2 className="text-[15px] font-semibold text-destructive-foreground">
+          {say("platform.delete-organisation")}
+        </h2>
+
+        <p className="text-[15px] text-muted-foreground">
+          {say("platform.delete-says-what-goes", {
+            name: here.name,
+            sites: plural(projects.length, "common.site-one", "common.site-many"),
+            members: plural(people.length, "common.person-one", "common.person-many"),
+          })}
+        </p>
+
+        {removing ? (
           <div className="flex flex-col gap-3">
-            <p className="text-[15px]">
-              {say("administered-organisation.this-removes-it", { name: here.name })}
-            </p>
-            <p className="text-[15px]">
-              {say("administered-organisation.nothing-in-git-is-touched-every")}
-            </p>
+            <h3 className="text-base font-semibold">
+              {say("platform.delete-organisation-asked", { name: here.name })}
+            </h3>
+            <ul className="flex flex-col gap-1 text-[15px]">
+              <li>
+                {say("platform.sites-are-removed", {
+                  sites: plural(projects.length, "common.site-one", "common.site-many"),
+                })}
+              </li>
+              <li>
+                {say("platform.members-lose-access", {
+                  members: plural(people.length, "common.person-one", "common.person-many"),
+                })}
+              </li>
+              <li>{say("platform.websites-keep-working")}</li>
+            </ul>
+
+            <Field
+              label={say("platform.type-to-confirm", { name: here.name })}
+              value={typed}
+              onChange={(event) => setTyped(event.target.value)}
+            />
+
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="destructive"
-                disabled={busy}
+                disabled={busy || typed.trim() !== here.name}
                 onClick={() => {
                   setBusy(true);
                   void removeOrganisation(organisation)
-                    .then(() => goTo("/administration"))
+                    .then(() => goTo("/administration/organisations"))
                     .catch((error: unknown) => {
                       setTrouble(whatWentWrong(error));
                       setBusy(false);
                     });
                 }}
               >
-                {say("common.yes-remove-it")}
+                {say("platform.yes-delete-it")}
               </Button>
               <Button variant="outline" onClick={() => setRemoving(false)}>
                 {say("common.keep-it")}
@@ -254,11 +279,137 @@ export function AdministeredOrganisationPage() {
             </div>
           </div>
         ) : (
-          <Button variant="outline" onClick={() => setRemoving(true)}>
-            {say("administered-organisation.remove-this-organisation-2")}
-          </Button>
+          <div>
+            <Button variant="outline" onClick={() => setRemoving(true)}>
+              {say("administered-organisation.remove-this-organisation-2")}
+            </Button>
+          </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/**
+ * What an organisation is allowed. A limit is a number or nothing at all,
+ * which is why each one is a checkbox beside a stepper rather than a number
+ * with zero meaning something.
+ *
+ * chatcms-audience: implementer
+ */
+function Limits({
+  organisation,
+  usage,
+  onSaved,
+}: {
+  organisation: string;
+  usage: Usage;
+  onSaved: () => void;
+}) {
+  const [members, setMembers] = useState<number | null>(usage.members.allowed ?? null);
+  const [projects, setProjects] = useState<number | null>(usage.projects.allowed ?? null);
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [trouble, setTrouble] = useState("");
+
+  function save() {
+    setBusy(true);
+    setTrouble("");
+    setSaved(false);
+    void setLimits(organisation, members, projects)
+      .then(() => {
+        setSaved(true);
+        onSaved();
+      })
+      .catch((error: unknown) => setTrouble(whatWentWrong(error)))
+      .finally(() => setBusy(false));
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="text-[15px] font-semibold">{say("platform.limits")}</h2>
+
+      {trouble && (
+        <p role="alert" className="rounded-md bg-destructive-soft px-3 py-2 text-sm text-destructive-foreground">
+          {trouble}
+        </p>
+      )}
+
+      <Stepper
+        label={say("platform.limit-members")}
+        value={members}
+        held={usage.members.held}
+        onChange={setMembers}
+      />
+      <Stepper
+        label={say("platform.limit-sites")}
+        value={projects}
+        held={usage.projects.held}
+        onChange={setProjects}
+      />
+
+      <p className="text-[13px] text-subtle-foreground">{say("platform.limits-are-optional-untick")}</p>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Button onClick={save} disabled={busy}>
+          {say("platform.save-changes")}
+        </Button>
+        {saved && (
+          <p role="status" className="text-[15px] text-muted-foreground">
+            {say("common.saved")}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Stepper({
+  label,
+  value,
+  held,
+  onChange,
+}: {
+  label: string;
+  value: number | null;
+  held: number;
+  onChange: (next: number | null) => void;
+}) {
+  const limited = value !== null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <label className="flex min-h-11 items-center gap-2 text-[15px]">
+        {/* chatcms-target: the label around this one carries the hit area */}
+        <input
+          type="checkbox"
+          checked={limited}
+          onChange={(event) => onChange(event.target.checked ? Math.max(held, 1) : null)}
+          className="size-4"
+        />
+        {label}
+      </label>
+
+      {limited ? (
+        <span className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            aria-label={say("platform.fewer")}
+            disabled={value <= 1}
+            onClick={() => onChange(Math.max(1, value - 1))}
+          >
+            −
+          </Button>
+          <span className="min-w-8 text-center text-[15px] tabular-nums">{value}</span>
+          <Button variant="outline" aria-label={say("platform.more")} onClick={() => onChange(value + 1)}>
+            +
+          </Button>
+        </span>
+      ) : (
+        <span className="text-[13px] text-subtle-foreground">
+          {say("limits.no-limit", { held })}
+        </span>
+      )}
     </div>
   );
 }

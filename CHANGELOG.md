@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The platform admin has an area rather than a page. A dark shell that says
+  where you are, every organisation with who administers it, what it holds
+  against its limits and when it was made, and one organisation opened on a
+  screen with its details, its limits, its sites, its members and its
+  removal. Searching and the filters are answered by the server. Removing an
+  organisation now takes its sites and memberships with it, behind a dialog
+  that lists what goes and asks for the organisation's name to be typed;
+  nothing in git is touched, as before.
+
 ### Added
 
 - An organisation has screens of its own. Whoever administers one reaches

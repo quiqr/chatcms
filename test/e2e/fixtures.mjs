@@ -184,3 +184,15 @@ export async function asksFor(page, method, url, body) {
     failOnStatusCode: false,
   });
 }
+
+/**
+ * startsAnOrganisation fills in the form the platform admin area keeps behind
+ * its New organisation button, which is where starting one lives now.
+ */
+export async function startsAnOrganisation(page, chatcms, name, administeredBy) {
+  await page.goto(`${chatcms.url}/administration/organisations`);
+  await page.getByRole("button", { name: /New organisation/ }).click();
+  await page.getByLabel("Name", { exact: true }).fill(name);
+  await page.getByLabel("Who administers it").fill(administeredBy);
+  await page.getByRole("button", { name: "Start it" }).click();
+}

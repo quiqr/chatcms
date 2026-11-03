@@ -18,7 +18,7 @@ type AdministrationService interface {
 	StandDown(ctx context.Context, who Actor, email string) error
 	Records(ctx context.Context, who Actor, most int32) ([]RecordView, error)
 	Administrators(ctx context.Context, who Actor) ([]AdministratorView, error)
-	Organisations(ctx context.Context, who Actor) ([]OrganisationSummaryView, error)
+	Organisations(ctx context.Context, who Actor, asked OrganisationsAsked) ([]OrganisationSummaryView, error)
 	// MayAdminister answers the one question the interface needs in order to
 	// know whether to offer any of this, without making it guess from a
 	// refusal.
@@ -33,6 +33,7 @@ type AdministrationService interface {
 	ActAs(ctx context.Context, who Actor, token, email string) error
 	StopActingAs(ctx context.Context, who Actor, token string) error
 	MayAdminister(ctx context.Context, who Actor) bool
+	HowMuchThereIs(ctx context.Context, who Actor) (organisations, users int64, err error)
 }
 
 // RecordView is one thing an administrator did.
@@ -100,6 +101,27 @@ type OrganisationSummaryView struct {
 	Projects int64     `json:"projects"`
 	People   int64     `json:"people"`
 	Usage    UsageView `json:"usage"`
+	// Admins is who administers it, which is empty for one nobody does: the
+	// screen says so in the colour it gives a warning.
+	Admins []WhoView  `json:"admins"`
+	MadeBy string     `json:"madeBy,omitempty"`
+	MadeOn *time.Time `json:"madeOn,omitempty"`
+}
+
+// WhoView is somebody named in passing, with no more about them than the
+// screen shows.
+type WhoView struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"displayName"`
+}
+
+// OrganisationsAsked is what the list was asked for. The server answers it,
+// because a thousand organisations are not a thing to send to a browser to
+// be counted there.
+type OrganisationsAsked struct {
+	Search      string
+	AtALimit    bool
+	WithNoAdmin bool
 }
 
 // CountedView is one of the two things an organisation can run out of: what
@@ -146,14 +168,34 @@ type makePersonRequest struct {
 func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 	mux.Handle("GET /api/administration/me", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
+			who := ActorFrom(r.Context())
+			if !service.MayAdminister(r.Context(), who) {
+				WriteJSON(w, http.StatusOK, map[string]any{"administers": false})
+				return
+			}
+
+			// The counts the area's shell shows beside its nav, so that the
+			// shell is not two requests of its own on every navigation.
+			organisations, users, err := service.HowMuchThereIs(r.Context(), who)
+			if err != nil {
+				writeTenancyError(w, err)
+				return
+			}
 			WriteJSON(w, http.StatusOK, map[string]any{
-				"administers": service.MayAdminister(r.Context(), ActorFrom(r.Context())),
+				"administers":   true,
+				"organisations": organisations,
+				"users":         users,
 			})
 		})))
 
 	mux.Handle("GET /api/administration/organisations", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			organisations, err := service.Organisations(r.Context(), ActorFrom(r.Context()))
+			asked := OrganisationsAsked{
+				Search:      r.URL.Query().Get("search"),
+				AtALimit:    r.URL.Query().Get("filter") == "at-a-limit",
+				WithNoAdmin: r.URL.Query().Get("filter") == "no-admin",
+			}
+			organisations, err := service.Organisations(r.Context(), ActorFrom(r.Context()), asked)
 			if err != nil {
 				writeTenancyError(w, err)
 				return

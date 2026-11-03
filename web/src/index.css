@@ -45,6 +45,16 @@
   --secondary: #18181B;
   --secondary-foreground: #FFFFFF;
 
+  /* The platform admin area is dark in every appearance, which is the point
+     of it: everything done there is done to somebody else's organisation, so
+     it must not be a place anybody can be without noticing. These do not
+     appear in the dark block below, because they are not the theme's. */
+  --admin-area: #18181B;
+  --admin-area-raised: #27272A;
+  --admin-area-active: #3F3F46;
+  --admin-area-foreground: #FAFAFA;
+  --admin-area-muted-foreground: #A1A1AA;
+
   /* Status — always as soft background + dark text, plus a dot where useful */
   --success: #16A34A;  --success-soft: #EAF6EE;  --success-foreground: #166534;
   --warning: #D97706;  --warning-soft: #FEF3E2;  --warning-foreground: #92400E;   /* "Changed", unpublished */
@@ -160,6 +170,11 @@
   --color-ring: var(--ring);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-admin-area: var(--admin-area);
+  --color-admin-area-raised: var(--admin-area-raised);
+  --color-admin-area-active: var(--admin-area-active);
+  --color-admin-area-foreground: var(--admin-area-foreground);
+  --color-admin-area-muted-foreground: var(--admin-area-muted-foreground);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-success-foreground: var(--success-foreground);

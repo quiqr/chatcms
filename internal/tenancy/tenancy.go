@@ -343,7 +343,7 @@ func pgUUID(id uuid.UUID) pgtype.UUID {
 
 // EveryOrganisation is all of them, which only an administrator is shown.
 func (s *Store) EveryOrganisation(ctx context.Context) ([]Organisation, error) {
-	rows, err := s.db.Queries.ListEveryOrganisation(ctx)
+	rows, err := s.db.Queries.ListEveryOrganisation(ctx, store.ListEveryOrganisationParams{})
 	if err != nil {
 		return nil, fmt.Errorf("reading the organisations failed: %w", err)
 	}
@@ -436,4 +436,12 @@ func (s *Store) RemoveOrganisation(ctx context.Context, organisationID uuid.UUID
 		return fmt.Errorf("removing the organisation failed: %w", err)
 	}
 	return nil
+}
+
+// SetOrganisationMadeBy writes down who made an organisation.
+func (s *Store) SetOrganisationMadeBy(ctx context.Context, organisationID, personID uuid.UUID) error {
+	return s.db.Queries.SetOrganisationMadeBy(ctx, store.SetOrganisationMadeByParams{
+		ID:        pgUUID(organisationID),
+		CreatedBy: pgUUID(personID),
+	})
 }

@@ -17,7 +17,9 @@ import { ProjectPage } from "./routes/ProjectPage";
 import { AccountPage } from "./routes/AccountPage";
 import { AdministeredOrganisationPage } from "./routes/AdministeredOrganisationPage";
 import { AdministeredPersonPage } from "./routes/AdministeredPersonPage";
-import { AdministrationPage } from "./routes/AdministrationPage";
+import { PlatformHistory, PlatformUsers } from "./routes/AdministrationPage";
+import { PlatformAdminPage } from "./routes/PlatformAdminPage";
+import { PlatformOrganisationsScreen } from "./routes/PlatformOrganisationsScreen";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
 import { PreferencesPage } from "./routes/PreferencesPage";
 import { ProjectSettingsPage } from "./routes/ProjectSettingsPage";
@@ -71,19 +73,28 @@ export function App() {
             path="/preferences"
             element={<OrganisationPage title="app.preferences" body={<PreferencesPage />} />}
           />
+          {/* The platform admin area: its own dark shell, and the screens
+              inside it. */}
+          <Route path="/administration" element={<Navigate to="/administration/organisations" replace />} />
           <Route
-            path="/administration"
-            element={<OrganisationPage title="app.administration" body={<AdministrationPage />} />}
+            path="/administration/organisations"
+            element={<PlatformAdminPage screen={<PlatformOrganisationsScreen />} />}
+          />
+          <Route
+            path="/administration/organisations/:organisation"
+            element={<PlatformAdminPage screen={<AdministeredOrganisationPage />} />}
+          />
+          <Route
+            path="/administration/users"
+            element={<PlatformAdminPage screen={<PlatformUsers />} />}
           />
           <Route
             path="/administration/people/:email"
-            element={<OrganisationPage title="common.person" body={<AdministeredPersonPage />} />}
+            element={<PlatformAdminPage screen={<AdministeredPersonPage />} />}
           />
           <Route
-            path="/administration/o/:organisation"
-            element={
-              <OrganisationPage title="app.organisation" body={<AdministeredOrganisationPage />} />
-            }
+            path="/administration/history"
+            element={<PlatformAdminPage screen={<PlatformHistory />} />}
           />
         </Route>
 

@@ -1,16 +1,13 @@
 // Organisations: the address says which one, switching shows each one's own
 // work, and nothing from one appears in the other.
-import { test, expect, worksOnAPhone } from "./fixtures.mjs";
+import { test, expect, startsAnOrganisation, worksOnAPhone } from "./fixtures.mjs";
 
 test("an administrator starts a second organisation and the two stay apart", async ({
   administering: page,
   chatcms,
 }, testInfo) => {
   await test.step("a second organisation, owned by the same person", async () => {
-    await page.goto(`${chatcms.url}/administration`);
-    await page.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
-    await page.getByLabel("Who administers it").fill("owner@example.org");
-    await page.getByRole("button", { name: "Start it" }).click();
+    await startsAnOrganisation(page, chatcms, "Bakkerij Zuid", "owner@example.org");
 
     await expect(page.getByText("/o/bakkerij-zuid")).toBeVisible();
   });
@@ -24,10 +21,7 @@ test("somebody in two organisations sees each one's own projects", async ({
   administering,
 }, testInfo) => {
   // The administrator makes the second one; the owner is put in it.
-  await administering.goto(`${chatcms.url}/administration`);
-  await administering.getByLabel("Name", { exact: true }).fill("Bakkerij Zuid");
-  await administering.getByLabel("Who administers it").fill("owner@example.org");
-  await administering.getByRole("button", { name: "Start it" }).click();
+  await startsAnOrganisation(administering, chatcms, "Bakkerij Zuid", "owner@example.org");
   await expect(administering.getByText("/o/bakkerij-zuid")).toBeVisible();
 
   await test.step("the first one holds the seeded sites", async () => {

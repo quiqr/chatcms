@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AdministrationPage } from "../AdministrationPage";
+import { NewOrganisation, PlatformHistory, PlatformUsers } from "../AdministrationPage";
+import { PlatformOrganisations } from "../PlatformOrganisations";
 
 function answers(byPath: Record<string, unknown>) {
   return vi.fn((path: string) => {
@@ -23,9 +24,13 @@ const empty = {
 };
 
 function renderPage() {
+  // The stacked screen became an area; what it did is these two screens.
   return render(
     <MemoryRouter>
-      <AdministrationPage />
+      <NewOrganisation onMade={() => {}} />
+      <PlatformOrganisations onNew={() => {}} />
+      <PlatformUsers />
+      <PlatformHistory />
     </MemoryRouter>,
   );
 }
@@ -43,8 +48,28 @@ describe("the administration screen", () => {
         ...empty,
         "/api/administration/organisations": {
           organisations: [
-            { slug: "bakery", name: "Korenaar Bakery", projects: 2, people: 3 },
-            { slug: "studio", name: "Studio Noord", projects: 1, people: 1 },
+            {
+              slug: "bakery",
+              name: "Korenaar Bakery",
+              projects: 2,
+              people: 3,
+              usage: {
+                members: { held: 3, full: false },
+                projects: { held: 2, full: false },
+              },
+              admins: [{ email: "joris@example.org", displayName: "Joris Bakker" }],
+            },
+            {
+              slug: "studio",
+              name: "Studio Noord",
+              projects: 1,
+              people: 1,
+              usage: {
+                members: { held: 1, allowed: 5, full: false },
+                projects: { held: 1, full: false },
+              },
+              admins: [],
+            },
           ],
         },
       }),
@@ -54,8 +79,11 @@ describe("the administration screen", () => {
 
     expect(await screen.findByText("Korenaar Bakery")).toBeInTheDocument();
     expect(screen.getByText("Studio Noord")).toBeInTheDocument();
-    expect(screen.getByText(/2 sites · 3 people/)).toBeInTheDocument();
-    expect(screen.getByText(/1 site · 1 person/)).toBeInTheDocument();
+    // What it holds, how full it is, and who administers it.
+    expect(screen.getByText("Joris Bakker")).toBeInTheDocument();
+    expect(screen.getByText("1 of 5 seats used")).toBeInTheDocument();
+    // The chip that filters by it says the same words as the badge.
+    expect(screen.getAllByText("No admin yet").length).toBeGreaterThan(0);
   });
 
   it("says that starting one does not put you in it", async () => {

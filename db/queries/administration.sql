@@ -37,9 +37,36 @@ ORDER BY at DESC, id DESC
 LIMIT $1;
 
 -- name: ListEveryOrganisation :many
-SELECT o.*, (SELECT count(*) FROM projects p WHERE p.organisation_id = o.id) AS project_count,
-            (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS people_count
+-- Every organisation with what it holds, who administers it and who made it,
+-- read in one query. Searching and filtering are answered here rather than in
+-- a browser, because a thousand organisations are not a thing to send
+-- somewhere to be counted.
+SELECT o.*,
+       (SELECT count(*) FROM projects p
+        WHERE p.organisation_id = o.id AND p.archived_at IS NULL) AS project_count,
+       (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) AS people_count,
+       COALESCE((SELECT json_agg(json_build_object('email', ap.email, 'displayName', ap.display_name)
+                                 ORDER BY lower(ap.email))
+                 FROM organisation_members am
+                 JOIN people ap ON ap.id = am.person_id
+                 WHERE am.organisation_id = o.id AND am.role = 'admin'), '[]')::json AS admins,
+       -- Coalesced, because nobody wrote down who made the organisations
+       -- that existed before the column did, and a null read into a string
+       -- is an error rather than an empty answer.
+       COALESCE((SELECT p.display_name FROM people p WHERE p.id = o.created_by), '')::text AS made_by
 FROM organisations o
+WHERE (sqlc.arg('search')::text = ''
+       OR o.name ILIKE '%' || sqlc.arg('search')::text || '%'
+       OR o.slug ILIKE '%' || sqlc.arg('search')::text || '%')
+  AND (NOT sqlc.arg('at_a_limit')::boolean
+       OR (o.max_members IS NOT NULL
+           AND (SELECT count(*) FROM organisation_members m WHERE m.organisation_id = o.id) >= o.max_members)
+       OR (o.max_projects IS NOT NULL
+           AND (SELECT count(*) FROM projects p
+                WHERE p.organisation_id = o.id AND p.archived_at IS NULL) >= o.max_projects))
+  AND (NOT sqlc.arg('with_no_admin')::boolean
+       OR NOT EXISTS (SELECT 1 FROM organisation_members m
+                      WHERE m.organisation_id = o.id AND m.role = 'admin'))
 ORDER BY lower(o.name);
 
 -- name: RenameOrganisation :one
@@ -48,7 +75,12 @@ WHERE id = $1
 RETURNING *;
 
 -- name: RemoveOrganisation :exec
+-- The projects and memberships go with it, by the foreign keys that already
+-- cascade. What is in git is not the database's to touch.
 DELETE FROM organisations WHERE id = $1;
+
+-- name: SetOrganisationMadeBy :exec
+UPDATE organisations SET created_by = $2 WHERE id = $1;
 
 -- name: ListOrganisationMembers :many
 SELECT m.person_id, m.role, p.email, p.display_name, p.password_hash

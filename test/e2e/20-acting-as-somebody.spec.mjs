@@ -57,7 +57,7 @@ test("an administrator acts as a customer, and the trail says both", async ({
     await page.waitForURL(/administration/);
 
     await expect(page.getByRole("status")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "People" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Organisations" })).toBeVisible();
   });
 
   await worksOnAPhone(page, testInfo);
@@ -67,6 +67,10 @@ test("beginning and ending are both written down", async ({ administering: page,
   await actAs(page, chatcms, "sam@korenaar.example");
   await page.getByRole("button", { name: "Be myself again" }).click();
   await page.waitForURL(/administration/);
+
+  // What was done is a screen of the area now, rather than a card at the
+  // bottom of one.
+  await page.goto(`${chatcms.url}/administration/history`);
 
   // The history is fetched after the screen is drawn, so this waits for it
   // rather than reading the page while it still says it is looking.

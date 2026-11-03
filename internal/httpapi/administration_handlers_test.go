@@ -54,9 +54,13 @@ func (s *stubAdministration) Administrators(context.Context, Actor) ([]Administr
 	return []AdministratorView{{Email: "pim@example.org", Yourself: true}}, s.err
 }
 
-func (s *stubAdministration) Organisations(context.Context, Actor) ([]OrganisationSummaryView, error) {
-	s.note("organisations")
-	return []OrganisationSummaryView{{Slug: "bakery", Name: "Bakery", Projects: 2, People: 3}}, s.err
+func (s *stubAdministration) Organisations(_ context.Context, _ Actor, asked OrganisationsAsked) ([]OrganisationSummaryView, error) {
+	s.note("organisations " + asked.Search + " at-a-limit:" + strconv.FormatBool(asked.AtALimit) +
+		" no-admin:" + strconv.FormatBool(asked.WithNoAdmin))
+	return []OrganisationSummaryView{{
+		Slug: "bakery", Name: "Bakery", Projects: 2, People: 3,
+		Admins: []WhoView{{Email: "owner@example.org", DisplayName: "Joris Bakker"}},
+	}}, s.err
 }
 
 func (s *stubAdministration) Organisation(_ context.Context, _ Actor, slug string) (OrganisationWholeView, error) {
@@ -129,6 +133,11 @@ func (s *stubAdministration) ActAs(_ context.Context, _ Actor, token, email stri
 func (s *stubAdministration) StopActingAs(_ context.Context, _ Actor, token string) error {
 	s.note("stop acting on " + token)
 	return s.err
+}
+
+func (s *stubAdministration) HowMuchThereIs(context.Context, Actor) (int64, int64, error) {
+	s.note("how much there is")
+	return 6, 46, s.err
 }
 
 func (s *stubAdministration) MayAdminister(context.Context, Actor) bool {
@@ -543,5 +552,66 @@ func TestTheLimitsAreSetAndNoLimitIsSaidOutLoud(t *testing.T) {
 	// answers, and a body that leaves one out means the one it leaves out.
 	if len(service.asked) == 0 || service.asked[0] != "limits on bakery: 10 members, no limit sites" {
 		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestTheOrganisationsAreFilteredByTheServer(t *testing.T) {
+	// "At a limit" is a question about every organisation; a thousand of
+	// them are not sent to a browser to be counted there.
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet,
+		"/api/administration/organisations?search=bak&filter=at-a-limit", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	if len(service.asked) == 0 || service.asked[0] != "organisations bak at-a-limit:true no-admin:false" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+	if !strings.Contains(recorder.Body.String(), "Joris Bakker") {
+		t.Errorf("the answer does not say who administers it: %s", recorder.Body)
+	}
+}
+
+func TestOrganisationsWithNoAdminAreTheirOwnFilter(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	signedInCall(t, handler, http.MethodGet,
+		"/api/administration/organisations?filter=no-admin", nil)
+
+	if len(service.asked) == 0 || service.asked[0] != "organisations  at-a-limit:false no-admin:true" {
+		t.Errorf("the service was asked %v", service.asked)
+	}
+}
+
+func TestWhoIsAskingIsToldHowMuchThereIs(t *testing.T) {
+	// The area's shell shows a count beside each item of its nav; asking for
+	// them here keeps the shell from being two requests of its own on every
+	// navigation.
+	service := &stubAdministration{administers: true}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet, "/api/administration/me", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
+	}
+	body := recorder.Body.String()
+	if !strings.Contains(body, `"organisations":6`) || !strings.Contains(body, `"users":46`) {
+		t.Errorf("the answer does not carry the counts: %s", body)
+	}
+}
+
+func TestSomebodyWhoDoesNotAdministerIsToldNothingElse(t *testing.T) {
+	service := &stubAdministration{administers: false}
+	handler := withAdministration(service, true)
+
+	recorder := signedInCall(t, handler, http.MethodGet, "/api/administration/me", nil)
+
+	if strings.Contains(recorder.Body.String(), "organisations") {
+		t.Errorf("somebody who administers nothing was told how much there is: %s", recorder.Body)
 	}
 }

@@ -170,7 +170,7 @@ func TestAnAdministratorSeesEveryOrganisationAndOthersDoNot(t *testing.T) {
 		}
 	}
 
-	seen, err := h.web.Organisations(t.Context(), boss)
+	seen, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{})
 	if err != nil {
 		t.Fatalf("Organisations() error = %v, want nil", err)
 	}
@@ -178,7 +178,7 @@ func TestAnAdministratorSeesEveryOrganisationAndOthersDoNot(t *testing.T) {
 		t.Errorf("an administrator sees %d organisations, want 2", len(seen))
 	}
 
-	if _, err := h.web.Organisations(t.Context(), customer); !errors.Is(err, httpapi.ErrNotAllowed) {
+	if _, err := h.web.Organisations(t.Context(), customer, httpapi.OrganisationsAsked{}); !errors.Is(err, httpapi.ErrNotAllowed) {
 		t.Errorf("Organisations() as the customer error = %v, want ErrNotAllowed", err)
 	}
 }
@@ -433,7 +433,7 @@ func TestOpeningOneNeedsAdministering(t *testing.T) {
 	}
 }
 
-func TestOneThatStillHoldsSitesStays(t *testing.T) {
+func TestRemovingOneTakesItsSitesAndSaysHowMany(t *testing.T) {
 	h := newHarness(t)
 	boss := h.administrator(t, "boss@example.org")
 	owner := h.person(t, "owner@example.org")
@@ -449,17 +449,36 @@ func TestOneThatStillHoldsSitesStays(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = h.web.RemoveOrganisation(t.Context(), boss, "bakery")
-	var refused *httpapi.RefusedError
-	if !errors.As(err, &refused) {
-		t.Fatalf("RemoveOrganisation() with a site still in it error = %v, want a refusal", err)
-	}
-	if !strings.Contains(refused.Reason, "The shop") {
-		t.Errorf("the refusal says %q, want it to name The shop", refused.Reason)
+	// It used to be refused while a site remained. The hand-off of
+	// 2 November puts that protection in the dialog instead.
+	if err := h.web.RemoveOrganisation(t.Context(), boss, "bakery"); err != nil {
+		t.Fatalf("RemoveOrganisation() with a site in it error = %v, want nil", err)
 	}
 
-	if _, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery"); err != nil {
-		t.Errorf("after the refusal the organisation is gone: %v", err)
+	if _, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery"); err == nil {
+		t.Error("the organisation is still there after it was removed")
+	}
+	if _, err := h.tenancy.ProjectBySlug(t.Context(), "bakery", "shop"); err == nil {
+		t.Error("its site is still there after the organisation was removed")
+	}
+
+	// The account of whoever was in it stays; what they lost is the way in.
+	if _, err := h.people.ByEmail(t.Context(), owner.Email); err != nil {
+		t.Errorf("removing the organisation took the account with it: %v", err)
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, record := range records {
+		if record.Did == string(admin.RemovedAnOrganisation) && record.Detail["sites"] == float64(1) {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("the record does not say how many sites went with it: %+v", records)
 	}
 }
 
@@ -513,7 +532,7 @@ func TestAnEmptyOneIsRemovedAndTheGitRemoteStays(t *testing.T) {
 		t.Errorf("the git remote was touched: %v", err)
 	}
 
-	seen, err := h.web.Organisations(t.Context(), boss)
+	seen, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -832,7 +851,7 @@ func TestActingAsSomebodyIsTheirPermissionsAndBothNames(t *testing.T) {
 
 	// The administration screen is refused while acting, so the band is the
 	// way back rather than a second door.
-	if _, err := h.web.Organisations(t.Context(), acting); !errors.Is(err, httpapi.ErrNotAllowed) {
+	if _, err := h.web.Organisations(t.Context(), acting, httpapi.OrganisationsAsked{}); !errors.Is(err, httpapi.ErrNotAllowed) {
 		t.Errorf("Organisations() while acting error = %v, want ErrNotAllowed", err)
 	}
 
@@ -1051,5 +1070,116 @@ func TestAPlatformAdminIsNotAboveTheLimitTheySet(t *testing.T) {
 	}
 	if err := h.web.PutSomebodyInto(t.Context(), boss, "bakery", another.Email, "member"); err != nil {
 		t.Errorf("after raising the limit, putting somebody in error = %v, want nil", err)
+	}
+}
+
+func TestTheOrganisationsAreSearchedAndFilteredByTheServer(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	for _, slug := range []string{"bakery", "studio", "atelier"} {
+		if _, err := h.web.MakeOrganisation(t.Context(), boss, slug, slug, owner.Email); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// One at a limit, and one with nobody to administer it.
+	bakery, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	one := 1
+	if err := h.tenancy.SetLimits(t.Context(), bakery.ID, &one, nil); err != nil {
+		t.Fatal(err)
+	}
+	atelier, err := h.tenancy.OrganisationBySlug(t.Context(), "atelier")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.tenancy.SetOrganisationRole(t.Context(), atelier.ID, mustParse(t, owner.ID),
+		policy.OrganisationMember); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{Search: "bak"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Slug != "bakery" {
+		t.Errorf("searching for bak found %+v", found)
+	}
+
+	full, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{AtALimit: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(full) != 1 || full[0].Slug != "bakery" {
+		t.Errorf("at a limit found %+v", full)
+	}
+
+	nobody, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{WithNoAdmin: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(nobody) != 1 || nobody[0].Slug != "atelier" {
+		t.Errorf("with no admin found %+v", nobody)
+	}
+
+	// And each one says who administers it, and who made it.
+	all, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	by := map[string]httpapi.OrganisationSummaryView{}
+	for _, organisation := range all {
+		by[organisation.Slug] = organisation
+	}
+	if len(by["studio"].Admins) != 1 || by["studio"].Admins[0].Email != owner.Email {
+		t.Errorf("studio is administered by %+v", by["studio"].Admins)
+	}
+	if len(by["atelier"].Admins) != 0 {
+		t.Errorf("atelier has an admin after all: %+v", by["atelier"].Admins)
+	}
+	if by["studio"].MadeBy != boss.DisplayName && by["studio"].MadeBy != boss.Email {
+		t.Errorf("studio says it was made by %q", by["studio"].MadeBy)
+	}
+	if by["studio"].MadeOn == nil {
+		t.Error("studio does not say when it was made")
+	}
+}
+
+func TestHowMuchThereIsIsWhatTheShellShows(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	// An organisation that nobody wrote down the maker of, which is every
+	// organisation made before the column existed.
+	if _, err := h.tenancy.CreateOrganisation(t.Context(), "older", "Older", mustParse(t, owner.ID)); err != nil {
+		t.Fatal(err)
+	}
+
+	listed, err := h.web.Organisations(t.Context(), boss, httpapi.OrganisationsAsked{})
+	if err != nil {
+		t.Fatalf("listing with an organisation nobody made error = %v, want nil", err)
+	}
+	if len(listed) != 2 {
+		t.Errorf("%d organisations listed, want both", len(listed))
+	}
+
+	organisations, users, err := h.web.HowMuchThereIs(t.Context(), boss)
+	if err != nil {
+		t.Fatalf("HowMuchThereIs() error = %v, want nil", err)
+	}
+	if organisations != 2 {
+		t.Errorf("%d organisations, want both", organisations)
+	}
+	if users != 2 {
+		t.Errorf("%d users, want the administrator and the owner", users)
 	}
 }

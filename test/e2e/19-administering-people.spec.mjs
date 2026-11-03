@@ -5,7 +5,7 @@ test("everybody is listed with where they belong", async ({
   administering: page,
   chatcms,
 }, testInfo) => {
-  await page.goto(`${chatcms.url}/administration`);
+  await page.goto(`${chatcms.url}/administration/users`);
 
   await test.step("the seeded people are all there", async () => {
     await expect(page.getByRole("link", { name: "Joris Bakker" })).toBeVisible();
@@ -46,7 +46,7 @@ test("a person is made and sent a way in, with no password set for them", async 
   administering: page,
   chatcms,
 }) => {
-  await page.goto(`${chatcms.url}/administration`);
+  await page.goto(`${chatcms.url}/administration/users`);
 
   await page.getByLabel("Email").fill("nieuw@example.org");
   await page.getByLabel("Their name").fill("Nieuwe Collega");
@@ -61,7 +61,7 @@ test("a person is made and sent a way in, with no password set for them", async 
   });
 
   await test.step("the same address again is refused", async () => {
-    await page.goto(`${chatcms.url}/administration`);
+    await page.goto(`${chatcms.url}/administration/users`);
     await page.getByLabel("Email").fill("nieuw@example.org");
     await page.getByRole("button", { name: "Make them" }).click();
 

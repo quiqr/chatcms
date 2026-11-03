@@ -2,11 +2,14 @@ package admin
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/quiqr/chatcms/internal/httpapi"
 	"github.com/quiqr/chatcms/internal/policy"
+	"github.com/quiqr/chatcms/internal/store"
 	"github.com/quiqr/chatcms/internal/tenancy"
 )
 
@@ -109,12 +112,16 @@ func (w *Web) MayAdminister(ctx context.Context, who httpapi.Actor) bool {
 	return err == nil
 }
 
-func (w *Web) Organisations(ctx context.Context, who httpapi.Actor) ([]httpapi.OrganisationSummaryView, error) {
+func (w *Web) Organisations(ctx context.Context, who httpapi.Actor, asked httpapi.OrganisationsAsked) ([]httpapi.OrganisationSummaryView, error) {
 	if _, err := w.service.mayAdminister(ctx, who, policy.ActionSeeEveryOrganisation); err != nil {
 		return nil, err
 	}
 
-	rows, err := w.service.store.db.Queries.ListEveryOrganisation(ctx)
+	rows, err := w.service.store.db.Queries.ListEveryOrganisation(ctx, store.ListEveryOrganisationParams{
+		Search:      strings.TrimSpace(asked.Search),
+		AtALimit:    asked.AtALimit,
+		WithNoAdmin: asked.WithNoAdmin,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -125,13 +132,21 @@ func (w *Web) Organisations(ctx context.Context, who httpapi.Actor) ([]httpapi.O
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, httpapi.OrganisationSummaryView{
+		admins := []httpapi.WhoView{}
+		_ = json.Unmarshal(row.Admins, &admins)
+
+		made := row.CreatedAt.Time
+		said := httpapi.OrganisationSummaryView{
 			Slug:     row.Slug,
 			Name:     row.Name,
 			Projects: row.ProjectCount,
 			People:   row.PeopleCount,
 			Usage:    usageView(usage),
-		})
+			Admins:   admins,
+			MadeOn:   &made,
+		}
+		said.MadeBy = row.MadeBy
+		out = append(out, said)
 	}
 	return out, nil
 }
@@ -224,4 +239,23 @@ func countedView(counted tenancy.Counted) httpapi.CountedView {
 		Allowed: counted.Allowed,
 		Full:    counted.Full(),
 	}
+}
+
+// HowMuchThereIs is what the area's shell says beside its nav.
+func (w *Web) HowMuchThereIs(ctx context.Context, who httpapi.Actor) (int64, int64, error) {
+	if _, err := w.service.mayAdminister(ctx, who, policy.ActionSeeEveryOrganisation); err != nil {
+		return 0, 0, err
+	}
+
+	organisations, err := w.service.store.db.Queries.ListEveryOrganisation(ctx,
+		store.ListEveryOrganisationParams{})
+	if err != nil {
+		return 0, 0, err
+	}
+
+	_, users, err := w.service.People(ctx, who, "", 1)
+	if err != nil {
+		return 0, 0, err
+	}
+	return int64(len(organisations)), users, nil
 }
