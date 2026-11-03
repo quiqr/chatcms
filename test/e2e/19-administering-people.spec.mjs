@@ -12,14 +12,19 @@ test("everybody is listed with where they belong", async ({
     await expect(page.getByRole("link", { name: "marieke@korenaar.example" })).toBeVisible();
   });
 
-  await test.step("and it says where each of them belongs", async () => {
-    const row = page.getByRole("row").filter({ hasText: "marieke@korenaar.example" });
-    await expect(row).toContainText("Korenaar Bakery (Editor)");
+  await test.step("and it says which organisations each is in", async () => {
+    // The list says organisations; the sites somebody reaches are on their
+    // own screen, which is what the design draws.
+    const theirs = page.getByRole("row").filter({ hasText: "Joris Bakker" });
+    await expect(theirs).toContainText("TechNative");
+
+    const invited = page.getByRole("row").filter({ hasText: "marieke@korenaar.example" });
+    await expect(invited).toContainText("Not in any organisation");
   });
 
   await test.step("somebody is found by part of their address", async () => {
-    await page.getByLabel("Find somebody").fill("marieke");
-    await page.getByRole("button", { name: "Find" }).click();
+    await page.getByLabel("Search by name or email").fill("marieke");
+    await page.keyboard.press("Enter");
 
     await expect(page.getByRole("link", { name: "marieke@korenaar.example" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Joris Bakker" })).toHaveCount(0);
@@ -46,7 +51,7 @@ test("a person is made and sent a way in, with no password set for them", async 
   administering: page,
   chatcms,
 }) => {
-  await page.goto(`${chatcms.url}/administration/users`);
+  await page.goto(`${chatcms.url}/administration/users/new`);
 
   await page.getByLabel("Email").fill("nieuw@example.org");
   await page.getByLabel("Their name").fill("Nieuwe Collega");
@@ -61,7 +66,7 @@ test("a person is made and sent a way in, with no password set for them", async 
   });
 
   await test.step("the same address again is refused", async () => {
-    await page.goto(`${chatcms.url}/administration/users`);
+    await page.goto(`${chatcms.url}/administration/users/new`);
     await page.getByLabel("Email").fill("nieuw@example.org");
     await page.getByRole("button", { name: "Make them" }).click();
 

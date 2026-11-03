@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { NewOrganisation, PlatformHistory, PlatformUsers } from "../AdministrationPage";
+import { InviteAUser, NewOrganisation, PlatformHistory } from "../AdministrationPage";
 import { PlatformOrganisations } from "../PlatformOrganisations";
 
 function answers(byPath: Record<string, unknown>) {
@@ -29,7 +29,7 @@ function renderPage() {
     <MemoryRouter>
       <NewOrganisation onMade={() => {}} />
       <PlatformOrganisations onNew={() => {}} />
-      <PlatformUsers />
+      <InviteAUser />
       <PlatformHistory />
     </MemoryRouter>,
   );
@@ -224,40 +224,6 @@ describe("the administration screen", () => {
     await user.click(screen.getByRole("button", { name: "Start it" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("That address is already taken.");
-  });
-
-  it("lists people with where they belong, and what it is not showing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      answers({
-        ...empty,
-        "/api/administration/people": {
-          people: [
-            {
-              personId: "p1",
-              email: "marieke@korenaar.example",
-              displayName: "Marieke de Vries",
-              administers: false,
-              accountOn: true,
-              stillToAccept: false,
-              organisations: [{ slug: "bakery", name: "Korenaar Bakery", role: "member" }],
-              projects: [
-                { slug: "korenaar", name: "The site", organisation: "bakery", role: "editor" },
-              ],
-            },
-          ],
-          shown: 1,
-          altogether: 12,
-        },
-      }),
-    );
-
-    renderPage();
-
-    expect(await screen.findByText("Marieke de Vries")).toBeInTheDocument();
-    expect(screen.getByText(/Korenaar Bakery \(Member\)/)).toBeInTheDocument();
-    expect(screen.getByText(/The site \(Editor\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Showing 1 of 12/)).toBeInTheDocument();
   });
 
   it("says a person was sent a way in, rather than a password", async () => {

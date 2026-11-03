@@ -413,19 +413,14 @@ export function What({ since }: { since: number }) {
  *
  * chatcms-audience: implementer
  */
-export function PlatformUsers() {
-  const [done, setDone] = useState(0);
-  const somethingWasDone = () => setDone((count) => count + 1);
-
+export function InviteAUser() {
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-[28px] font-semibold tracking-tight">{say("platform.users")}</h1>
+    <div className="flex max-w-[520px] flex-col gap-8">
+      <h1 className="text-[28px] font-semibold tracking-tight">{say("users.invite-user")}</h1>
 
-      <Administrators onChanged={somethingWasDone} />
+      <NewPerson onMade={() => {}} />
 
-      <People key={done} />
-
-      <NewPerson onMade={somethingWasDone} />
+      <Administrators onChanged={() => {}} />
     </div>
   );
 }

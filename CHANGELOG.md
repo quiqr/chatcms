@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Every user account, and what may be done to one. An account is invited,
+  active or blocked rather than on or off, and the platform admin can put
+  right a name or an address typed wrong, send a password reset, add somebody
+  to an organisation, make or unmake a platform admin, block or unblock, and
+  delete an account. Deleting takes the account and its memberships; what
+  that person wrote stays on the sites they worked on, in their name. The
+  list is searched, filtered and paged by the server, a page at a time.
+
 ### Changed
 
 - The platform admin has an area rather than a page. A dark shell that says

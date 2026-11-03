@@ -17,7 +17,8 @@ import { ProjectPage } from "./routes/ProjectPage";
 import { AccountPage } from "./routes/AccountPage";
 import { AdministeredOrganisationPage } from "./routes/AdministeredOrganisationPage";
 import { AdministeredPersonPage } from "./routes/AdministeredPersonPage";
-import { PlatformHistory, PlatformUsers } from "./routes/AdministrationPage";
+import { InviteAUser, PlatformHistory } from "./routes/AdministrationPage";
+import { PlatformUsers } from "./routes/PlatformUsers";
 import { PlatformAdminPage } from "./routes/PlatformAdminPage";
 import { PlatformOrganisationsScreen } from "./routes/PlatformOrganisationsScreen";
 import { OrganisationSettingsPage } from "./routes/OrganisationSettingsPage";
@@ -87,6 +88,10 @@ export function App() {
           <Route
             path="/administration/users"
             element={<PlatformAdminPage screen={<PlatformUsers />} />}
+          />
+          <Route
+            path="/administration/users/new"
+            element={<PlatformAdminPage screen={<InviteAUser />} />}
           />
           <Route
             path="/administration/people/:email"

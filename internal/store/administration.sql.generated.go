@@ -22,6 +22,18 @@ func (q *Queries) CountAdministrators(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const deletePerson = `-- name: DeletePerson :exec
+DELETE FROM people WHERE id = $1
+`
+
+// Their memberships go by the foreign keys that cascade. What they wrote is
+// in git, carrying the name and the address it carried at the time, and is
+// not this database's to rewrite.
+func (q *Queries) DeletePerson(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deletePerson, id)
+	return err
+}
+
 const listAdministrationRecords = `-- name: ListAdministrationRecords :many
 SELECT id, person_id, person_said, did, subject, subject_said, detail, at FROM administration_records
 ORDER BY at DESC, id DESC
@@ -207,16 +219,27 @@ SELECT p.id,
                  WHERE pm.person_id = p.id), '[]')::json AS projects,
        count(*) OVER () AS altogether
 FROM people p
-WHERE $1::text = ''
-   OR p.email ILIKE '%' || $1::text || '%'
-   OR p.display_name ILIKE '%' || $1::text || '%'
+WHERE ($1::text = ''
+       OR p.email ILIKE '%' || $1::text || '%'
+       OR p.display_name ILIKE '%' || $1::text || '%')
+  AND (NOT $2::boolean OR p.administers)
+  AND (NOT $3::boolean OR p.password_hash IS NULL)
+  AND (NOT $4::boolean OR p.disabled_at IS NOT NULL)
+  AND (NOT $5::boolean
+       OR NOT EXISTS (SELECT 1 FROM organisation_members m WHERE m.person_id = p.id))
+  AND ($6::text = '' OR lower(p.email) > lower($6::text))
 ORDER BY lower(p.email)
-LIMIT $2::int
+LIMIT $7::int
 `
 
 type ListEveryPersonParams struct {
-	Search string `json:"search"`
-	Most   int32  `json:"most"`
+	Search           string `json:"search"`
+	AdministersOnly  bool   `json:"administers_only"`
+	InvitedOnly      bool   `json:"invited_only"`
+	BlockedOnly      bool   `json:"blocked_only"`
+	InNoOrganisation bool   `json:"in_no_organisation"`
+	After            string `json:"after"`
+	Most             int32  `json:"most"`
 }
 
 type ListEveryPersonRow struct {
@@ -234,8 +257,20 @@ type ListEveryPersonRow struct {
 
 // Where somebody belongs is read with the list, so that fifty people cost
 // one query rather than a hundred and fifty.
+//
+// The page is asked for by what came before it rather than by an offset: a
+// person made while a platform admin is reading must not make a row appear
+// twice or not at all.
 func (q *Queries) ListEveryPerson(ctx context.Context, arg ListEveryPersonParams) ([]ListEveryPersonRow, error) {
-	rows, err := q.db.Query(ctx, listEveryPerson, arg.Search, arg.Most)
+	rows, err := q.db.Query(ctx, listEveryPerson,
+		arg.Search,
+		arg.AdministersOnly,
+		arg.InvitedOnly,
+		arg.BlockedOnly,
+		arg.InNoOrganisation,
+		arg.After,
+		arg.Most,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -576,6 +611,39 @@ type SetOrganisationMadeByParams struct {
 func (q *Queries) SetOrganisationMadeBy(ctx context.Context, arg SetOrganisationMadeByParams) error {
 	_, err := q.db.Exec(ctx, setOrganisationMadeBy, arg.ID, arg.CreatedBy)
 	return err
+}
+
+const setPersonNameAndAddress = `-- name: SetPersonNameAndAddress :one
+UPDATE people SET display_name = $2, email = $3, updated_at = now()
+WHERE id = $1
+RETURNING id, email, display_name, password_hash, disabled_at, created_at, updated_at, administers, picture, picture_kind, email_waiting, appearance, language
+`
+
+type SetPersonNameAndAddressParams struct {
+	ID          pgtype.UUID `json:"id"`
+	DisplayName string      `json:"display_name"`
+	Email       string      `json:"email"`
+}
+
+func (q *Queries) SetPersonNameAndAddress(ctx context.Context, arg SetPersonNameAndAddressParams) (Person, error) {
+	row := q.db.QueryRow(ctx, setPersonNameAndAddress, arg.ID, arg.DisplayName, arg.Email)
+	var i Person
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.DisplayName,
+		&i.PasswordHash,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Administers,
+		&i.Picture,
+		&i.PictureKind,
+		&i.EmailWaiting,
+		&i.Appearance,
+		&i.Language,
+	)
+	return i, err
 }
 
 const stopAdministrating = `-- name: StopAdministrating :one

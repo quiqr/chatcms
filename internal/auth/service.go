@@ -332,6 +332,40 @@ func (s *Service) MakeSomebody(ctx context.Context, email, displayName string) (
 	return person, nil
 }
 
+// ChangeNameAndAddress puts right what somebody typed wrong when the account
+// was made. It is the service's because everything an administrator does to
+// an account goes through one door.
+func (s *Service) ChangeNameAndAddress(ctx context.Context, personID uuid.UUID, displayName, email string) error {
+	return s.people.ChangeNameAndAddress(ctx, personID, displayName, email)
+}
+
+// SendAPasswordReset sends the link somebody uses to set their own password.
+// It is the same link the product sends when somebody asks for one, and it
+// says nothing about whether the address was known, because here it is.
+func (s *Service) SendAPasswordReset(ctx context.Context, personID uuid.UUID) error {
+	person, err := s.people.ByID(ctx, personID)
+	if err != nil {
+		return err
+	}
+
+	token, expires, err := s.credentials.Issue(ctx, KindPasswordReset, personID)
+	if err != nil {
+		return err
+	}
+
+	s.send(ctx, "password reset", person, token, expires,
+		mail.PasswordReset(s.linkFor(token)))
+	return nil
+}
+
+// Forget removes an account and the memberships that hang off it.
+func (s *Service) Forget(ctx context.Context, personID uuid.UUID) error {
+	if err := s.sessions.RevokeAll(ctx, personID); err != nil {
+		return err
+	}
+	return s.people.Forget(ctx, personID)
+}
+
 // TurnAccountOn lets it be used again, with the password it had.
 func (s *Service) TurnAccountOn(ctx context.Context, personID uuid.UUID) error {
 	return s.people.TurnOn(ctx, personID)

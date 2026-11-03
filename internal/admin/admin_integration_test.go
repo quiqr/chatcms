@@ -615,7 +615,7 @@ func TestEverybodyIsListedWithWhereTheyBelong(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listed, err := h.web.People(t.Context(), boss, "", 0)
+	listed, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Search: "", Most: 0})
 	if err != nil {
 		t.Fatalf("People() error = %v, want nil", err)
 	}
@@ -653,7 +653,7 @@ func TestSomebodyIsFoundByNameOrAddress(t *testing.T) {
 	h.person(t, "marieke@korenaar.example")
 	h.person(t, "sam@korenaar.example")
 
-	found, err := h.web.People(t.Context(), boss, "marieke", 0)
+	found, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Search: "marieke", Most: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -661,7 +661,7 @@ func TestSomebodyIsFoundByNameOrAddress(t *testing.T) {
 		t.Errorf("searching for marieke found %+v", found.People)
 	}
 
-	none, err := h.web.People(t.Context(), boss, "nobody-is-called-this", 0)
+	none, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Search: "nobody-is-called-this", Most: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -675,7 +675,7 @@ func TestOnlyAnAdministratorReadsThePeople(t *testing.T) {
 	h.administrator(t, "boss@example.org")
 	ordinary := h.person(t, "ordinary@example.org")
 
-	if _, err := h.web.People(t.Context(), ordinary, "", 0); !errors.Is(err, httpapi.ErrNotAllowed) {
+	if _, err := h.web.People(t.Context(), ordinary, httpapi.PeopleAsked{Search: "", Most: 0}); !errors.Is(err, httpapi.ErrNotAllowed) {
 		t.Errorf("People() as an ordinary person error = %v, want ErrNotAllowed", err)
 	}
 	if _, err := h.web.Person(t.Context(), ordinary, "ordinary@example.org"); !errors.Is(err, httpapi.ErrNotAllowed) {
@@ -1181,5 +1181,170 @@ func TestHowMuchThereIsIsWhatTheShellShows(t *testing.T) {
 	}
 	if users != 2 {
 		t.Errorf("%d users, want the administrator and the owner", users)
+	}
+}
+
+func TestAnAccountIsPutRightAndResetAndDeleted(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	wrong := h.person(t, "sma@example.org")
+
+	post := &postbox{}
+	h.identity.SendsWith(post)
+
+	// A name and an address typed wrong when the account was made.
+	if err := h.web.ChangeAnAccount(t.Context(), boss, wrong.Email, "Sam Dekker", "sam@example.org"); err != nil {
+		t.Fatalf("ChangeAnAccount() error = %v, want nil", err)
+	}
+	put, err := h.web.Person(t.Context(), boss, "sam@example.org")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if put.DisplayName != "Sam Dekker" {
+		t.Errorf("the account is %+v, want Sam Dekker", put)
+	}
+
+	// An address another account already holds is refused rather than taken.
+	taken := h.person(t, "taken@example.org")
+	err = h.web.ChangeAnAccount(t.Context(), boss, "sam@example.org", "Sam", taken.Email)
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("changing to a taken address error = %v, want a refusal", err)
+	}
+
+	if err := h.web.SendAPasswordReset(t.Context(), boss, "sam@example.org"); err != nil {
+		t.Fatalf("SendAPasswordReset() error = %v, want nil", err)
+	}
+	if len(post.sent) != 1 || post.sent[0] != "sam@example.org" {
+		t.Errorf("the reset went to %v", post.sent)
+	}
+
+	if err := h.web.DeleteAnAccount(t.Context(), boss, "sam@example.org"); err != nil {
+		t.Fatalf("DeleteAnAccount() error = %v, want nil", err)
+	}
+	if _, err := h.web.Person(t.Context(), boss, "sam@example.org"); err == nil {
+		t.Error("the account is still there after it was deleted")
+	}
+
+	records, err := h.web.Records(t.Context(), boss, 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	did := map[string]bool{}
+	for _, record := range records {
+		did[record.Did] = true
+	}
+	for _, what := range []admin.What{admin.ChangedAnAccount, admin.SentAPasswordReset, admin.DeletedAnAccount} {
+		if !did[string(what)] {
+			t.Errorf("%q is not in the record", what)
+		}
+	}
+}
+
+func TestNobodyDeletesTheirOwnAccount(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+
+	// An installation whose last platform admin deleted themselves is one
+	// only SQL can repair, which is the same reason the last one cannot
+	// stand down.
+	err := h.web.DeleteAnAccount(t.Context(), boss, boss.Email)
+	var refused *httpapi.RefusedError
+	if !errors.As(err, &refused) {
+		t.Fatalf("deleting your own account error = %v, want a refusal", err)
+	}
+}
+
+func TestDeletingAnAccountLeavesWhatThePersonWrote(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	owner := h.person(t, "owner@example.org")
+
+	if _, err := h.web.MakeOrganisation(t.Context(), boss, "bakery", "Bakery", owner.Email); err != nil {
+		t.Fatal(err)
+	}
+	organisation, err := h.tenancy.OrganisationBySlug(t.Context(), "bakery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	project, err := h.tenancy.CreateProject(t.Context(), organisation.ID, "shop", "The shop", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.tenancy.SetProjectRole(t.Context(), project.ID, mustParse(t, owner.ID),
+		policy.RoleEditor); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.web.DeleteAnAccount(t.Context(), boss, owner.Email); err != nil {
+		t.Fatalf("DeleteAnAccount() error = %v, want nil", err)
+	}
+
+	// The memberships go with the account...
+	people, err := h.tenancy.Members(t.Context(), project.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, person := range people {
+		if person.Email == owner.Email {
+			t.Error("the deleted account still holds a role on a site")
+		}
+	}
+
+	// ...and the site it belonged to is untouched.
+	if _, err := h.tenancy.ProjectBySlug(t.Context(), "bakery", "shop"); err != nil {
+		t.Errorf("deleting an account took a site with it: %v", err)
+	}
+}
+
+func TestThePeopleAreFilteredAndPaged(t *testing.T) {
+	h := newHarness(t)
+	boss := h.administrator(t, "boss@example.org")
+	for _, email := range []string{"anna@example.org", "bert@example.org", "cees@example.org"} {
+		h.person(t, email)
+	}
+	blocked := h.person(t, "dirk@example.org")
+	if err := h.web.TurnAccountOff(t.Context(), boss, blocked.Email); err != nil {
+		t.Fatal(err)
+	}
+
+	admins, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Only: "platform-admins"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(admins.People) != 1 || admins.People[0].Email != boss.Email {
+		t.Errorf("the platform admins are %+v", admins.People)
+	}
+
+	stopped, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Only: "blocked"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stopped.People) != 1 || stopped.People[0].Email != blocked.Email {
+		t.Errorf("the blocked are %+v", stopped.People)
+	}
+
+	// A page at a time, asked for by what came before it.
+	first, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Most: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(first.People) != 2 || first.Altogether != 5 {
+		t.Fatalf("the first page is %d of %d", len(first.People), first.Altogether)
+	}
+	if first.After != first.People[1].Email {
+		t.Errorf("the next page is asked for with %q", first.After)
+	}
+
+	next, err := h.web.People(t.Context(), boss, httpapi.PeopleAsked{Most: 2, After: first.After})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, person := range next.People {
+		for _, already := range first.People {
+			if person.Email == already.Email {
+				t.Errorf("%s is on both pages", person.Email)
+			}
+		}
 	}
 }

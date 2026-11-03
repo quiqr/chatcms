@@ -1,11 +1,11 @@
 ---
 # chatcms-503w
 title: 'The platform admin area: every user account, and what may be done to one'
-status: todo
+status: in-progress
 type: epic
 priority: high
 created_at: 2026-11-02T20:05:43Z
-updated_at: 2026-11-02T20:05:43Z
+updated_at: 2026-11-03T12:17:34Z
 parent: chatcms-7r0u
 blocked_by:
     - chatcms-civ6

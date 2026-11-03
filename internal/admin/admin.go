@@ -46,6 +46,9 @@ const (
 	BeganActingAs         What = "began acting as somebody"
 	StoppedActingAs       What = "stopped acting as somebody"
 	SetTheLimits          What = "set what an organisation is allowed"
+	ChangedAnAccount      What = "changed an account"
+	SentAPasswordReset    What = "sent a password reset"
+	DeletedAnAccount      What = "deleted an account"
 )
 
 // Record is one act, with who did it and what it was done to. The names are
@@ -204,17 +207,45 @@ type PersonWithReach struct {
 	Projects      []Belonging
 }
 
+// Only narrows the list to one kind of account. Empty is all of them.
+type Only string
+
+const (
+	Everybody            Only = ""
+	OnlyPlatformAdmins   Only = "platform-admins"
+	OnlyInvited          Only = "invited"
+	OnlyBlocked          Only = "blocked"
+	OnlyInNoOrganisation Only = "in-no-organisation"
+)
+
+// Asked is what the list was asked for: what to search, what kind, how many,
+// and what the last page ended with. The page is asked for by what came
+// before it rather than by an offset, so that somebody made while a platform
+// admin is reading cannot make a row appear twice or not at all.
+type Asked struct {
+	Search string
+	Only   Only
+	After  string
+	Most   int32
+}
+
 // People is every person on the installation, with where each belongs read
 // in the same query. The search is matched against name and address; an
 // empty one matches everybody.
-func (s *Store) People(ctx context.Context, search string, most int32) ([]PersonWithReach, int64, error) {
+func (s *Store) People(ctx context.Context, asked Asked) ([]PersonWithReach, int64, error) {
+	most := asked.Most
 	if most <= 0 || most > 500 {
 		most = 100
 	}
 
 	rows, err := s.db.Queries.ListEveryPerson(ctx, store.ListEveryPersonParams{
-		Search: strings.TrimSpace(search),
-		Most:   most,
+		Search:           strings.TrimSpace(asked.Search),
+		AdministersOnly:  asked.Only == OnlyPlatformAdmins,
+		InvitedOnly:      asked.Only == OnlyInvited,
+		BlockedOnly:      asked.Only == OnlyBlocked,
+		InNoOrganisation: asked.Only == OnlyInNoOrganisation,
+		After:            strings.TrimSpace(asked.After),
+		Most:             most,
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("reading the people failed: %w", err)

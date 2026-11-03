@@ -116,11 +116,32 @@ export type PersonWhole = {
   projects: Belonging[];
 };
 
-export function listEveryPerson(search: string) {
-  const asked = search.trim() === "" ? "" : `?search=${encodeURIComponent(search.trim())}`;
-  return get<{ people: PersonWhole[]; shown: number; altogether: number }>(
-    `/api/administration/people${asked}`,
+export function listEveryPerson(search: string, only = "", after = "", most = 0) {
+  const asked = new URLSearchParams();
+  if (search.trim() !== "") asked.set("search", search.trim());
+  if (only !== "") asked.set("only", only);
+  if (after !== "") asked.set("after", after);
+  if (most > 0) asked.set("most", String(most));
+  const question = asked.toString();
+
+  return get<{ people: PersonWhole[]; shown: number; altogether: number; after?: string }>(
+    `/api/administration/people${question === "" ? "" : `?${question}`}`,
   );
+}
+
+export function changeAnAccount(email: string, displayName: string, address: string) {
+  return put<void>(`/api/administration/people/${encodeURIComponent(email)}`, {
+    displayName,
+    email: address,
+  });
+}
+
+export function sendAPasswordReset(email: string) {
+  return post<void>(`/api/administration/people/${encodeURIComponent(email)}/password-reset`);
+}
+
+export function deleteAnAccount(email: string) {
+  return remove<void>(`/api/administration/people/${encodeURIComponent(email)}`);
 }
 
 export function readPerson(email: string) {

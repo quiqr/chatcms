@@ -49,6 +49,9 @@ type Accounts interface {
 	TurnAccountOff(ctx context.Context, who httpapi.Actor, personID uuid.UUID) error
 	TurnAccountOn(ctx context.Context, personID uuid.UUID) error
 	MakeSomebody(ctx context.Context, email, displayName string) (auth.Person, error)
+	ChangeNameAndAddress(ctx context.Context, personID uuid.UUID, displayName, email string) error
+	SendAPasswordReset(ctx context.Context, personID uuid.UUID) error
+	Forget(ctx context.Context, personID uuid.UUID) error
 	ActAs(ctx context.Context, token string, personID uuid.UUID) error
 	StopActingAs(ctx context.Context, token string) error
 }
@@ -390,11 +393,11 @@ func (s *Service) RemoveOrganisation(ctx context.Context, who httpapi.Actor, slu
 // People is everybody on the installation, with where each one belongs. The
 // search narrows it by name or address, and how many are answered is capped
 // so that a list cannot become a way to read the whole database in one go.
-func (s *Service) People(ctx context.Context, who httpapi.Actor, search string, most int32) ([]PersonWithReach, int64, error) {
+func (s *Service) People(ctx context.Context, who httpapi.Actor, asked Asked) ([]PersonWithReach, int64, error) {
 	if _, err := s.mayAdminister(ctx, who, policy.ActionSeeEveryPerson); err != nil {
 		return nil, 0, err
 	}
-	return s.store.People(ctx, search, most)
+	return s.store.People(ctx, asked)
 }
 
 // Person is one of them, with everything they can reach and nothing about
@@ -537,4 +540,81 @@ func said(limit *int) string {
 func mustParse(id string) uuid.UUID {
 	parsed, _ := uuid.Parse(id)
 	return parsed
+}
+
+// ChangeAnAccount puts right what somebody typed wrong: a name, an address,
+// or both. An address that already belongs to another account is refused,
+// because two accounts at one address is a way to sign in as the wrong
+// person.
+func (s *Service) ChangeAnAccount(ctx context.Context, who httpapi.Actor, email, displayName, address string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionMakeAPerson); err != nil {
+		return err
+	}
+
+	person, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	if err := s.accounts.ChangeNameAndAddress(ctx, person.id, displayName, address); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, ChangedAnAccount, person.id.String(), person.email, map[string]any{
+		"name":    displayName,
+		"address": address,
+	})
+	return nil
+}
+
+// SendAPasswordReset sends the link the product already sends. No
+// administrator sets anybody's password; that was settled when making a
+// person was built, and this does not revisit it.
+func (s *Service) SendAPasswordReset(ctx context.Context, who httpapi.Actor, email string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionMakeAPerson); err != nil {
+		return err
+	}
+
+	person, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	if err := s.accounts.SendAPasswordReset(ctx, person.id); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, SentAPasswordReset, person.id.String(), person.email, nil)
+	return nil
+}
+
+// DeleteAnAccount removes it and the memberships it held. What that person
+// wrote stays: a version in git carries the name and address it carried at
+// the time, and is not this database's to rewrite.
+//
+// Deleting and blocking are both offered because they answer different
+// questions: blocking is for somebody who has left, deleting is for an
+// account that should never have existed.
+func (s *Service) DeleteAnAccount(ctx context.Context, who httpapi.Actor, email string) error {
+	if _, err := s.mayAdminister(ctx, who, policy.ActionMakeAPerson); err != nil {
+		return err
+	}
+
+	person, err := s.personByEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if person.id.String() == who.ID {
+		return &httpapi.RefusedError{
+			Key:    "refused.cannot-delete-own-account",
+			Reason: "you cannot delete your own account; ask somebody else to",
+		}
+	}
+
+	if err := s.accounts.Forget(ctx, person.id); err != nil {
+		return err
+	}
+
+	s.record(ctx, who, DeletedAnAccount, person.id.String(), person.email, nil)
+	return nil
 }

@@ -88,8 +88,24 @@ func (s *stubAdministration) TurnAccountOn(_ context.Context, _ Actor, email str
 	return s.err
 }
 
-func (s *stubAdministration) People(_ context.Context, _ Actor, search string, most int32) (PeopleView, error) {
-	s.note("people " + search + " " + strconv.Itoa(int(most)))
+func (s *stubAdministration) ChangeAnAccount(_ context.Context, _ Actor, email, displayName, address string) error {
+	s.note("change " + email + " to " + displayName + " at " + address)
+	return s.err
+}
+
+func (s *stubAdministration) SendAPasswordReset(_ context.Context, _ Actor, email string) error {
+	s.note("reset " + email)
+	return s.err
+}
+
+func (s *stubAdministration) DeleteAnAccount(_ context.Context, _ Actor, email string) error {
+	s.note("delete " + email)
+	return s.err
+}
+
+func (s *stubAdministration) People(_ context.Context, _ Actor, asked PeopleAsked) (PeopleView, error) {
+	s.note("people " + asked.Search + " only:" + asked.Only + " after:" + asked.After +
+		" " + strconv.Itoa(int(asked.Most)))
 	return PeopleView{
 		People: []PersonWholeView{{
 			Email:         "marieke@example.org",
@@ -183,6 +199,9 @@ func TestEveryAdministrationEndpointNeedsSomebody(t *testing.T) {
 		{http.MethodGet, "/api/administration/people", nil},
 		{http.MethodPost, "/api/administration/people", map[string]any{"email": "a@b.c"}},
 		{http.MethodGet, "/api/administration/people/a@b.c", nil},
+		{http.MethodPut, "/api/administration/people/a@b.c", map[string]any{"email": "a@b.c"}},
+		{http.MethodDelete, "/api/administration/people/a@b.c", nil},
+		{http.MethodPost, "/api/administration/people/a@b.c/password-reset", nil},
 		{http.MethodPost, "/api/administration/people/a@b.c/act-as", nil},
 		{http.MethodDelete, "/api/acting-as", nil},
 		{http.MethodPut, "/api/administration/organisations/bakery/limits", map[string]any{"members": 5}},
@@ -419,7 +438,7 @@ func TestThePeopleAreListedWithWhatWasAsked(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
 	}
-	if len(service.asked) == 0 || service.asked[0] != "people marieke 25" {
+	if len(service.asked) == 0 || service.asked[0] != "people marieke only: after: 25" {
 		t.Errorf("the service was asked %v", service.asked)
 	}
 	if !strings.Contains(recorder.Body.String(), "\"altogether\":1") {
@@ -439,7 +458,7 @@ func TestANonsensePageSizeIsStillAPage(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200: %s", recorder.Code, recorder.Body)
 	}
-	if len(service.asked) == 0 || service.asked[0] != "people  0" {
+	if len(service.asked) == 0 || service.asked[0] != "people  only: after: 0" {
 		t.Errorf("the service was asked %v, want the default page", service.asked)
 	}
 }
@@ -613,5 +632,53 @@ func TestSomebodyWhoDoesNotAdministerIsToldNothingElse(t *testing.T) {
 
 	if strings.Contains(recorder.Body.String(), "organisations") {
 		t.Errorf("somebody who administers nothing was told how much there is: %s", recorder.Body)
+	}
+}
+
+func TestAnAccountIsChangedResetAndDeleted(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	changed := signedInCall(t, handler, http.MethodPut, "/api/administration/people/old@example.org",
+		map[string]any{"displayName": "Sam Dekker", "email": "sam@example.org"})
+	if changed.Code != http.StatusNoContent {
+		t.Errorf("changing = %d, want 204: %s", changed.Code, changed.Body)
+	}
+
+	reset := signedInCall(t, handler, http.MethodPost,
+		"/api/administration/people/sam@example.org/password-reset", nil)
+	if reset.Code != http.StatusNoContent {
+		t.Errorf("resetting = %d, want 204: %s", reset.Code, reset.Body)
+	}
+
+	gone := signedInCall(t, handler, http.MethodDelete,
+		"/api/administration/people/sam@example.org", nil)
+	if gone.Code != http.StatusNoContent {
+		t.Errorf("deleting = %d, want 204: %s", gone.Code, gone.Body)
+	}
+
+	want := []string{
+		"change old@example.org to Sam Dekker at sam@example.org",
+		"reset sam@example.org",
+		"delete sam@example.org",
+	}
+	for index, said := range want {
+		if len(service.asked) <= index || service.asked[index] != said {
+			t.Errorf("the service was asked %v, want %v", service.asked, want)
+			break
+		}
+	}
+}
+
+func TestThePeopleAreFilteredAndPagedByTheServer(t *testing.T) {
+	service := &stubAdministration{}
+	handler := withAdministration(service, true)
+
+	signedInCall(t, handler, http.MethodGet,
+		"/api/administration/people?only=blocked&after=marieke%40example.org&most=8", nil)
+
+	if len(service.asked) == 0 ||
+		service.asked[0] != "people  only:blocked after:marieke@example.org 8" {
+		t.Errorf("the service was asked %v", service.asked)
 	}
 }

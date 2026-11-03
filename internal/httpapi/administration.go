@@ -27,9 +27,12 @@ type AdministrationService interface {
 	Organisation(ctx context.Context, who Actor, slug string) (OrganisationWholeView, error)
 	RemoveOrganisation(ctx context.Context, who Actor, slug string) error
 	SetLimits(ctx context.Context, who Actor, slug string, members, projects *int) error
-	People(ctx context.Context, who Actor, search string, most int32) (PeopleView, error)
+	People(ctx context.Context, who Actor, asked PeopleAsked) (PeopleView, error)
 	Person(ctx context.Context, who Actor, email string) (PersonWholeView, error)
 	MakePerson(ctx context.Context, who Actor, email, displayName string) (PersonWholeView, error)
+	ChangeAnAccount(ctx context.Context, who Actor, email, displayName, address string) error
+	SendAPasswordReset(ctx context.Context, who Actor, email string) error
+	DeleteAnAccount(ctx context.Context, who Actor, email string) error
 	ActAs(ctx context.Context, who Actor, token, email string) error
 	StopActingAs(ctx context.Context, who Actor, token string) error
 	MayAdminister(ctx context.Context, who Actor) bool
@@ -91,6 +94,17 @@ type PeopleView struct {
 	People     []PersonWholeView `json:"people"`
 	Shown      int64             `json:"shown"`
 	Altogether int64             `json:"altogether"`
+	// After is what the next page is asked for, and is empty on the last
+	// one.
+	After string `json:"after,omitempty"`
+}
+
+// PeopleAsked is what the list was asked for.
+type PeopleAsked struct {
+	Search string
+	Only   string
+	After  string
+	Most   int32
 }
 
 // OrganisationSummaryView is one organisation as an administrator sees it,
@@ -163,6 +177,11 @@ type administratorRequest struct {
 type makePersonRequest struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"displayName"`
+}
+
+type changeAccountRequest struct {
+	DisplayName string `json:"displayName"`
+	Email       string `json:"email"`
 }
 
 func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
@@ -340,8 +359,12 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 
 	mux.Handle("GET /api/administration/people", RequireActor(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			people, err := service.People(r.Context(), ActorFrom(r.Context()),
-				r.URL.Query().Get("search"), howMany(r.URL.Query().Get("most")))
+			people, err := service.People(r.Context(), ActorFrom(r.Context()), PeopleAsked{
+				Search: r.URL.Query().Get("search"),
+				Only:   r.URL.Query().Get("only"),
+				After:  r.URL.Query().Get("after"),
+				Most:   howMany(r.URL.Query().Get("most")),
+			})
 			if err != nil {
 				writeTenancyError(w, err)
 				return
@@ -375,6 +398,41 @@ func administrationHandlers(mux *http.ServeMux, service AdministrationService) {
 				return
 			}
 			WriteJSON(w, http.StatusOK, person)
+		})))
+
+	mux.Handle("PUT /api/administration/people/{email}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			var body changeAccountRequest
+			if err := Decode(w, r, &body); err != nil {
+				WriteDecodeError(w, err)
+				return
+			}
+			if err := service.ChangeAnAccount(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("email"), body.DisplayName, body.Email); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("DELETE /api/administration/people/{email}", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.DeleteAnAccount(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("email")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})))
+
+	mux.Handle("POST /api/administration/people/{email}/password-reset", RequireActor(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := service.SendAPasswordReset(r.Context(), ActorFrom(r.Context()),
+				r.PathValue("email")); err != nil {
+				writeTenancyError(w, err)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
 		})))
 
 	mux.HandleFunc("/api/administration/people/{email}", MethodNotAllowed)

@@ -151,8 +151,13 @@ func (w *Web) Organisations(ctx context.Context, who httpapi.Actor, asked httpap
 	return out, nil
 }
 
-func (w *Web) People(ctx context.Context, who httpapi.Actor, search string, most int32) (httpapi.PeopleView, error) {
-	people, altogether, err := w.service.People(ctx, who, search, most)
+func (w *Web) People(ctx context.Context, who httpapi.Actor, asked httpapi.PeopleAsked) (httpapi.PeopleView, error) {
+	people, altogether, err := w.service.People(ctx, who, Asked{
+		Search: asked.Search,
+		Only:   Only(asked.Only),
+		After:  asked.After,
+		Most:   asked.Most,
+	})
 	if err != nil {
 		return httpapi.PeopleView{}, err
 	}
@@ -164,6 +169,11 @@ func (w *Web) People(ctx context.Context, who httpapi.Actor, search string, most
 	}
 	for _, person := range people {
 		out.People = append(out.People, personView(person))
+	}
+	// What the next page is asked for: the last address on this one. An
+	// empty answer has no next page, which is how the screen knows.
+	if len(people) > 0 && int64(len(people)) < altogether {
+		out.After = people[len(people)-1].Email
 	}
 	return out, nil
 }
@@ -253,9 +263,21 @@ func (w *Web) HowMuchThereIs(ctx context.Context, who httpapi.Actor) (int64, int
 		return 0, 0, err
 	}
 
-	_, users, err := w.service.People(ctx, who, "", 1)
+	_, users, err := w.service.People(ctx, who, Asked{Most: 1})
 	if err != nil {
 		return 0, 0, err
 	}
 	return int64(len(organisations)), users, nil
+}
+
+func (w *Web) ChangeAnAccount(ctx context.Context, who httpapi.Actor, email, displayName, address string) error {
+	return w.service.ChangeAnAccount(ctx, who, email, displayName, address)
+}
+
+func (w *Web) SendAPasswordReset(ctx context.Context, who httpapi.Actor, email string) error {
+	return w.service.SendAPasswordReset(ctx, who, email)
+}
+
+func (w *Web) DeleteAnAccount(ctx context.Context, who httpapi.Actor, email string) error {
+	return w.service.DeleteAnAccount(ctx, who, email)
 }

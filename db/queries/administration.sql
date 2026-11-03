@@ -105,6 +105,10 @@ ORDER BY lower(name);
 -- name: ListEveryPerson :many
 -- Where somebody belongs is read with the list, so that fifty people cost
 -- one query rather than a hundred and fifty.
+--
+-- The page is asked for by what came before it rather than by an offset: a
+-- person made while a platform admin is reading must not make a row appear
+-- twice or not at all.
 SELECT p.id,
        p.email,
        p.display_name,
@@ -128,9 +132,15 @@ SELECT p.id,
                  WHERE pm.person_id = p.id), '[]')::json AS projects,
        count(*) OVER () AS altogether
 FROM people p
-WHERE sqlc.arg('search')::text = ''
-   OR p.email ILIKE '%' || sqlc.arg('search')::text || '%'
-   OR p.display_name ILIKE '%' || sqlc.arg('search')::text || '%'
+WHERE (sqlc.arg('search')::text = ''
+       OR p.email ILIKE '%' || sqlc.arg('search')::text || '%'
+       OR p.display_name ILIKE '%' || sqlc.arg('search')::text || '%')
+  AND (NOT sqlc.arg('administers_only')::boolean OR p.administers)
+  AND (NOT sqlc.arg('invited_only')::boolean OR p.password_hash IS NULL)
+  AND (NOT sqlc.arg('blocked_only')::boolean OR p.disabled_at IS NOT NULL)
+  AND (NOT sqlc.arg('in_no_organisation')::boolean
+       OR NOT EXISTS (SELECT 1 FROM organisation_members m WHERE m.person_id = p.id))
+  AND (sqlc.arg('after')::text = '' OR lower(p.email) > lower(sqlc.arg('after')::text))
 ORDER BY lower(p.email)
 LIMIT sqlc.arg('most')::int;
 
@@ -158,3 +168,14 @@ SELECT p.id,
                  WHERE pm.person_id = p.id), '[]')::json AS projects
 FROM people p
 WHERE p.id = $1;
+
+-- name: SetPersonNameAndAddress :one
+UPDATE people SET display_name = $2, email = $3, updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: DeletePerson :exec
+-- Their memberships go by the foreign keys that cascade. What they wrote is
+-- in git, carrying the name and the address it carried at the time, and is
+-- not this database's to rewrite.
+DELETE FROM people WHERE id = $1;

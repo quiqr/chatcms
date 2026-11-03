@@ -11,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/quiqr/chatcms/internal/httpapi"
+
 	"github.com/quiqr/chatcms/internal/store"
 )
 
@@ -180,4 +182,49 @@ func (p *People) LastSeen(ctx context.Context, personID uuid.UUID) (time.Time, b
 		return time.Time{}, false, nil
 	}
 	return seen.Time, true, nil
+}
+
+// Forget removes an account. What the person wrote is in git, carrying the
+// name and the address it carried at the time; this takes the account and
+// the memberships that hang off it, and nothing else.
+func (p *People) Forget(ctx context.Context, personID uuid.UUID) error {
+	if err := p.db.Queries.DeletePerson(ctx, pgUUID(personID)); err != nil {
+		return fmt.Errorf("deleting the account failed: %w", err)
+	}
+	return nil
+}
+
+// ChangeNameAndAddress puts right what was typed wrong. An address another
+// account already holds is refused by the unique index, which is said in
+// words rather than as a constraint name.
+func (p *People) ChangeNameAndAddress(ctx context.Context, personID uuid.UUID, displayName, email string) error {
+	address := strings.ToLower(strings.TrimSpace(email))
+	if address == "" {
+		return &httpapi.RefusedError{
+			Key:    "refused.address-cannot-empty",
+			Reason: "an address cannot be empty",
+		}
+	}
+
+	if _, err := p.db.Queries.SetPersonNameAndAddress(ctx, store.SetPersonNameAndAddressParams{
+		ID:          pgUUID(personID),
+		DisplayName: strings.TrimSpace(displayName),
+		Email:       address,
+	}); err != nil {
+		if isUniqueViolation(err) {
+			return &httpapi.RefusedError{
+				Key:    "refused.address-has-an-account",
+				Reason: address + " already has an account",
+				Detail: map[string]any{"address": address},
+			}
+		}
+		return fmt.Errorf("changing the account failed: %w", err)
+	}
+	return nil
+}
+
+// An address another account already holds comes back as a unique violation,
+// which is said in words rather than as a constraint name.
+func isUniqueViolation(err error) bool {
+	return strings.Contains(err.Error(), "SQLSTATE 23505")
 }
