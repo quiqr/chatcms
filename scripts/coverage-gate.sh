@@ -11,8 +11,9 @@
 # exclusion is by filename pattern, not by package, so hand-written code living
 # beside generated code is still measured. And packages that exist only to
 # support development: the test-support package, which exists to run the tests
-# that do the measuring, and cmd/seed, which fills a development database and
-# is not part of the server.
+# that do the measuring, cmd/seed, which fills a development database, and
+# cmd/reference, which answers questions about a site mounted in the reference
+# instance. None of the three is part of the server.
 set -euo pipefail
 
 PROFILE="${1:?usage: coverage-gate.sh <coverage.out>}"
@@ -28,7 +29,7 @@ CORE_PACKAGES=(
 )
 
 GENERATED_PATTERN='[.]generated[.]go$'
-EXCLUDED_PACKAGES='/internal/testsupport$|/cmd/seed$'
+EXCLUDED_PACKAGES='/internal/testsupport$|/cmd/seed$|/cmd/reference$'
 
 if [[ ! -s "$PROFILE" ]]; then
   echo "coverage-gate: $PROFILE is missing or empty" >&2

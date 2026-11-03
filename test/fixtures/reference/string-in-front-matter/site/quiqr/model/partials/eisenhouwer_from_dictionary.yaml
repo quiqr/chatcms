@@ -1,0 +1,19 @@
+---
+title: Eisenhouwer WAF Improvements
+description: Well Architected Improvements
+file: eisenhouwer_from_dictionary.yaml
+fields:
+
+  - key: well_architected_improvements
+    type: eisenhouwer
+    xScaleTitle: Cost of Mitigation
+    yScaleTitle: Risk Importance
+    labelDoNow: DO NOW
+    labelToPlan: TO PLAN
+    labelDelegate: DELEGATE
+    labelDelete: DELETE
+    dataSetsKeyToLabel: true
+    dataSetsDataPointsKeyToItem: true
+    dataSetsDataPointPosXPath: .REPORT.importance_number_of_100
+    dataSetsDataPointPosYPath: .REPORT.cost_number_of_100
+    dataSetsDataPointLabelTemplate: "${point.RiskCode}\n${point.QuestionTitle}"

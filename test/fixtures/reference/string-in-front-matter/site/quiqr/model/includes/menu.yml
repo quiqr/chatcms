@@ -1,0 +1,20 @@
+- title: Fields
+  menuItems:
+    - key: simpleDataFields
+    - key: advancedDataFields
+    - key: layoutFields
+    - key: containerFields
+    - key: visualSelects
+
+- title: Complex Data Fields
+  menuItems:
+    - key: eisenhouwer_from_array
+    - key: eisenhouwer_from_dictionary
+
+- title: Example Cases
+  menuItems:
+    - key: mainConfig
+    - key: images
+    - key: pages
+    - key: singlePage
+

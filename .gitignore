@@ -19,3 +19,4 @@ test-results/
 .golden-tools/
 shots/
 .acceptance-seed
+.reference-state/

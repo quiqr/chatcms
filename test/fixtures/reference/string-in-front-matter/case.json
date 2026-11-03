@@ -1,0 +1,15 @@
+{
+  "single": "simpleDataFields",
+  "field": "string",
+  "value": "A line the reference typed",
+  "file": "dataFields.md",
+  "quiqr": "51b24ce9d7daaf7903383af487ae80b164077f66",
+  "site": "20ef718c088137014b55317c66386309dffb0b9f",
+  "divergences": [
+    {
+      "kind": "line-added",
+      "line": "hidden: some value",
+      "why": "The old Quiqr writes a hidden field's default into the file on any save, even when nothing touched it. ChatCMS writes what somebody edited and leaves the rest of the file alone, so it does not put a value in a repository that nobody typed."
+    }
+  ]
+}

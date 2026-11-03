@@ -177,6 +177,59 @@ Neither regeneration runs during a normal test run, so a changed golden always
 fails the gate first. Read the diff before committing it: a golden that changes
 without a reason in the commit message is a behaviour change nobody noticed.
 
+## The reference instance: the application, not its libraries
+
+The goldens above settle how a value is written down, because they run the two
+libraries the old Quiqr serialises with. They say nothing about what the value
+has become by the time those libraries see it, which is decided by the old
+application's own form. Only the application can answer that, so there is a way
+to run it:
+
+```bash
+bash scripts/reference.sh up        # start it, setting it up the first time
+bash scripts/reference.sh fields    # what the mounted model declares
+bash scripts/reference.sh stop      # stop it
+bash scripts/reference.sh fresh     # throw it all away and set up again
+```
+
+It clones `quiqr/quiqr-desktop` and the kitchen sink template at the commits
+pinned in `scripts/reference-pins.env`, builds the standalone edition inside
+that checkout's own `nix develop`, and mounts the template as a site. The
+template is a checkout, so `git -C .reference-state/site diff` says exactly
+what an edit did. Everything lives under `.reference-state/`, which is ignored
+and which `fresh` removes.
+
+Making a recording needs the network and npm, so `scripts/reference.sh` is
+never part of `nix flake check`, for the same reason
+`scripts/generate-goldens.sh` is not. Checking a recording is an ordinary
+`go test` and is in the gate like everything else.
+
+To record what the application did to a value:
+
+```bash
+bash scripts/reference.sh record <case> <single> <field> <value>
+```
+
+That writes `test/fixtures/reference/<case>/`: the model and the file as they
+were under `site/`, the file the application wrote under `after/`, and
+`case.json` saying which field was set to what, and by which versions.
+`TestRecordedEditsMatchTheReference` in `internal/forms` then performs the
+same edit and asserts byte equality, plus that no value the edit did not name
+moved.
+
+Where the two applications deliberately differ, `case.json` names the
+difference and says why. A difference nothing names fails the test, and so
+does a named difference the old Quiqr has stopped making, so the list cannot
+quietly rot. One difference is named today: the old Quiqr writes a hidden
+field's default into the file on any save, and ChatCMS does not put a value
+in a repository that nobody typed.
+
+**One field type is covered by a recording: `string`.** A green gate says that
+ChatCMS writes a string the way the old Quiqr writes it, in a file surrounded
+by twenty values of other kinds. It says nothing about the other 27 types. Each
+of those is one more `record` and costs nothing else, which is why the harness
+exists.
+
 ## Conventions
 
 - Table-driven tests, with the case name as the map key.

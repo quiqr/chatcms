@@ -1,0 +1,283 @@
+- key: eisenhouwer_from_dictionary
+  _mergePartial: eisenhouwer_from_dictionary
+
+- key: eisenhouwer_from_array
+  _mergePartial: eisenhouwer_from_array
+
+- key: mainConfig
+  title: Site Configuration
+  file: config.yaml
+  fields:
+    - key: title
+      title: Site Title
+      type: string
+      tip: Your page title.
+
+    - key: baseURL
+      title: Base URL
+      type: string
+      tip: Your site URL.
+
+- key: layoutFields
+  title: Layout Fields
+  file: layoutFields.yaml
+  fields:
+
+    - key: info
+      size: small
+      type: info
+      content: |-
+        ## I love Quiqr!
+
+        * it's smart
+        * it's fast
+        * it has Quiqr One"
+
+        below this info fields is an empty line field with for creating extra space
+
+    - key: empty_line
+      amount: 2
+      type: empty-line
+
+    - key: image
+      type: bundle-manager
+      path: "/static/images"
+      extensions:
+        - svg
+        - png
+        - jpg
+        - gif
+      fields:
+        - key: thumb
+          title: Thumb
+          type: bundle-image-thumbnail
+
+- key: containerFields
+  title: Container Fields
+  file: containerFields.yaml
+  fields:
+    - key: nest
+      type: nest
+      groupdata: true
+      fields:
+        - key: field1
+          type: string
+          arrayTitle: true
+
+        - key: field2
+          type: string
+
+    - key: accordion
+      type: accordion
+      fields:
+        - key: field1
+          type: string
+          arrayTitle: true
+
+        - key: field2
+          type: string
+
+    - key: pull
+      fields:
+      - key: author
+        title: Author
+        type: string
+      - key: description
+        multiLine: true
+        title: Description
+        type: string
+      group: params
+      type: pull
+
+    - key: section
+      fields:
+      - key: some_child_field
+        title: Some chield field
+        type: date
+      groupdata: true
+      type: section
+
+    - key: leaf_array
+      type: leaf-array
+      field:
+        key: some_child_field
+        type: string
+
+- key: advancedDataFields
+  title: Advanced Data Fields
+  file: dataFields.md
+  fields:
+    - key: date
+      type: date
+      dateFormat: "MM dd yyyy"
+      tip: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas consequat diam sit amet turpis bibendum hendrerit. Quisque a imperdiet augue. Aliquam pellentesque laoreet nisi non vestibulum. Curabitur a felis mi. Maecenas at blandit elit, sagittis efficitur neque. Aliquam dapibus, nulla eget auctor condimentum, libero risus posuere est, ac tincidunt enim quam in nisl. Nulla sit amet tincidunt nunc.
+
+    - key: chips
+      type: chips
+
+    - key: uniq
+      type: uniq
+
+    - key: color
+      type: color
+
+    - key: fonticon-picker
+      type: fonticon-picker
+
+    - key: font-picker
+      limit: 40
+      categories:
+        - sans-serif
+      families:
+      - roboto
+      - roboto condensed
+      - lato
+      - open sans
+      type: font-picker
+
+    - key: select-from-query
+      multiple: false
+      query_glob: data/system_data.json
+      query_string: .weekday[]
+      type: select-from-query
+
+    - key: image_select
+      buttonTitle: select image
+      path: /static/images
+      type: image-select
+
+    - key: slider
+      max: 800
+      min: 0
+      step: 10
+      type: slider
+
+- key: visualSelects
+  title: Visual Selects (Quiqr >= 0.18)
+  file: visualSelects.md
+  fields:
+
+    - key: select-from-query-with-images
+      multiple: false
+      query_string: "#file_base_name[]"
+      query_glob: quiqr/model/select_images/open_iconic_icons/*.svg
+      type: select-from-query
+      option_image_path: quiqr/model/select_images/open_iconic_icons
+      option_image_width: 50
+      option_image_extension: svg
+
+    - key: select-with-images
+      multiple: false
+      type: select
+      option_image_path: quiqr/model/select_images/open_iconic_icons
+      option_image_width: 20
+      option_image_extension: svg
+      options:
+        - value: arrow-circle-left
+          text: left
+        - value: arrow-circle-right
+          text: right
+        - value: arrow-circle-top
+          text: top
+        - value: arrow-circle-bottom
+          text: bottom
+
+- key: simpleDataFields
+  title: Simple Data Fields
+  file: dataFields.md
+  fields:
+
+    - key: select_single
+      default: 2
+      multiple: false
+      type: select
+      options:
+      - text: Option 1
+        value: 1
+      - text: Option 2
+        value: 2
+      - text: Option 3
+        value: 3
+
+    - key: select_multiple
+      multiple: true
+      type: select
+      options:
+      - text: Option 1
+        value: 1
+      - text: Option 2
+        value: 2
+      - text: Option 3
+        value: 3
+
+    - key: hidden
+      type: hidden
+      default: some value
+
+
+    - key: number
+      type: number
+
+    - key: string
+      type: string
+
+    - key: info_about_next_field
+      type: info
+      content: the next field is `disabled`
+
+    - key: disabled_field
+      type: info
+      disabled: true
+      content: this field is disabled and thus hidden
+
+    - key: Multiline String
+      type: string
+      multiLine: true
+      tip: Enter more then one line
+
+    - key: readonly
+      type: readonly
+      default: some preset value
+
+    - key: boolean
+      type: boolean
+
+
+- key: images
+  title: Images
+  hidePreviewIcon: false
+  hideExternalEditIcon: false
+  hideSaveButton: false
+  file: static/.pogo-images-logo.md
+  fields:
+    - key: image
+      type: bundle-manager
+      path: "/static/images"
+      extensions:
+        - svg
+        - png
+        - jpg
+        - gif
+      fields:
+        - key: thumb
+          title: Thumb
+          type: bundle-image-thumbnail
+
+- key: singlePage
+  title: A Single Page
+  file: content/single/index.md
+  previewUrl: /single/
+  dataformat: yaml
+  fields:
+    - key: mainContentInfo
+      type: info
+      size: small
+      content: |-
+        I love Quiqr!
+
+        * it's smart
+        * it's fast
+
+    - key: mainContent
+      type: markdown
+

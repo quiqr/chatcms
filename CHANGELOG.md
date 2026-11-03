@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A reference instance of the old Quiqr, set up by one script, and one field
+  carried all the way round the circle. `scripts/reference.sh` clones the old
+  application and the kitchen sink template at pinned commits, builds the
+  standalone edition inside that checkout's own dev shell, and mounts the
+  template as a site, so a question about what a field does is answered by
+  running the application rather than by reading its source. `record` keeps
+  what an edit did as files, and a test in the gate replays the same edit and
+  asserts byte equality, plus that no value the edit did not name moved. One
+  field type is recorded so far: a string, in front matter surrounded by
+  twenty values of other kinds.
+
 - A whole site duplicated, moved, downloaded or archived. A copy carries the
   pages, the media and the content model, takes a name of its own and
   publishes nowhere unless that was asked for. Moving a site to another

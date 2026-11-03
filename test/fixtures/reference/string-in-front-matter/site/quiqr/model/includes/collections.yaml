@@ -1,0 +1,19 @@
+- key: pages
+  title: Pages
+  folder: content/pages/
+  previewUrlBase: /pages/
+  extension: md
+  dataformat: yaml
+  itemtitle: Page
+  fields:
+    - key: mainContentInfo
+      type: info
+      size: small
+      content: |-
+        I love Quiqr!
+
+        * it's smart
+        * it's fast
+
+    - key: mainContent
+      type: markdown

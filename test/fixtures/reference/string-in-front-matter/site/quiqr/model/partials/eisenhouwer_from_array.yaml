@@ -1,0 +1,17 @@
+---
+title: Simple Eisenhouwer Matrix
+description: eisenhouwer
+file: eisenhouwer_from_array.yaml
+fields:
+  - key: garden_tasks
+    type: eisenhouwer
+    xScaleTitle: More Sweat
+    yScaleTitle: Happy Wild Life
+    dataSetsPath: .datasets
+    dataSetsKeyToLabel: false
+    dataSetsLabelPath: .label
+    dataSetsDataPointsPath: .data
+    dataSetsDataPointsKeyToItem: false
+    dataSetsDataPointPosXPath: .x
+    dataSetsDataPointPosYPath: .y
+    dataSetsDataPointLabelTemplate: "${point.task}"
