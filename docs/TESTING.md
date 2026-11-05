@@ -170,8 +170,20 @@ That script installs `js-yaml` and `tomlify-j0.4`, the two packages the Quiqr
 desktop app serialises with, and runs them over the table in
 `scripts/goldens/cases.json`. It needs the network the first time, so it is
 never part of `nix flake check`; its output is committed and the versions it
-used are recorded in `test/fixtures/content/golden/index.json`. When the Go
-emitter and the reference disagree, the reference is right.
+used are recorded in `test/fixtures/content/golden/index.json`.
+
+When the Go emitter and the reference disagree about **how a value is written
+down**, the reference is right: that is the promise, and adopting ChatCMS must
+not rewrite a customer's repository.
+
+Every other difference is a decision, not a defect to fix by copying. The old
+Quiqr is a desktop application from 2024 and some of what it does is a habit
+nobody chose: it writes a hidden field's default into the file on every save,
+and it adds two newlines to the end of the body each time, so a file saved ten
+times carries twenty of them. Reproducing the second would make every
+customer's files grow for as long as they are edited. Before matching an old
+behaviour, say why that behaviour is wanted here; where it is not, name the
+difference and the reason, as `case.json` does below.
 
 Neither regeneration runs during a normal test run, so a changed golden always
 fails the gate first. Read the diff before committing it: a golden that changes
