@@ -47,7 +47,7 @@ credentials and job state. Content stays in git.
 | `nix/`              | The NixOS module and other Nix glue                        |
 | `scripts/`          | Shipping, coverage gate, dev database                      |
 | `docs/design/`      | UI design hand-off, reference material, never imported      |
-| `docs/`             | Briefing, architecture, testing strategy                   |
+| `docs/`             | Briefings, architecture, testing strategy                  |
 | `openspec/`         | Change proposals and specs                                 |
 | `.beans/`           | Milestones and epics                                       |
 | `test/e2e/`         | Playwright acceptance tests                                |
