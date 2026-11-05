@@ -44,6 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Building the server no longer runs the frontend's tests. They ran inside
+  the build that the server embeds, so a deployment ran the whole suite again
+  under the load of building a machine, and one test timing out stopped a
+  deploy the gate had already passed. `nix flake check` still runs every one
+  of them.
+
 - The platform admin has an area rather than a page. A dark shell that says
   where you are, every organisation with who administers it, what it holds
   against its limits and when it was made, and one organisation opened on a

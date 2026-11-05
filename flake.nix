@@ -51,7 +51,7 @@
 
       vendorHash = "sha256-iPidfJoWbvcLbSqecx8hCrA60T25InEnNuhAGrfAe84=";
 
-      mkWeb = { pkgs, ... }: pkgs.buildNpmPackage {
+      mkWeb = { pkgs, checked ? false, ... }: pkgs.buildNpmPackage {
         pname = "chatcms-web";
         inherit version;
         src = webSource;
@@ -62,7 +62,7 @@
         env.ESBUILD_BINARY_PATH = pkgs.lib.getExe pkgs.esbuild;
         env.ROLLUP_SKIP_NODEJS_NATIVE = "1";
 
-        doCheck = true;
+        doCheck = checked;
         checkPhase = ''
           runHook preCheck
           npm run typecheck
@@ -247,7 +247,7 @@
         go-build = mkServer args;
         go-test = mkGoTests args;
         integration = mkIntegrationTests args;
-        frontend = mkWeb args;
+        frontend = mkWeb (args // { checked = true; });
         sqlc = mkSqlcCheck args;
       } // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         # A virtual machine can only be booted on Linux, so this check exists
