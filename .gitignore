@@ -11,6 +11,7 @@ coverage.out
 coverage.html
 /chatcmsd
 /seed
+/reference
 /tmp/
 .env
 .env.local
