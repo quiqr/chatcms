@@ -19,6 +19,7 @@ function renderPage(at = "/sign-in") {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   document.cookie = "chatcms_request_token=; max-age=0; path=/";
 });
 
@@ -186,5 +187,49 @@ describe("the sign-in screen", () => {
 
     expect(screen.queryByText("You have signed out.")).toBeNull();
     expect(screen.getByText(/No technical knowledge needed/)).toBeInTheDocument();
+  });
+
+  it("signs in as the seeded editor with one press in development", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: "3", email: "marieke@korenaar.example", displayName: "Marieke" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Editor" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/sign-in",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          email: "marieke@korenaar.example",
+          password: "a long enough passphrase",
+          remember: false,
+        }),
+      }),
+    );
+    expect(await screen.findByText("the projects")).toBeInTheDocument();
+  });
+
+  it("offers a button for every seeded role in development", async () => {
+    renderPage();
+
+    for (const role of ["Platform admin", "Implementer", "Editor", "Viewer"]) {
+      expect(await screen.findByRole("button", { name: role })).toBeInTheDocument();
+    }
+  });
+
+  it("offers no development sign-in outside development", async () => {
+    vi.stubEnv("DEV", false);
+    renderPage();
+
+    await screen.findByRole("button", { name: "Sign in" });
+    expect(screen.queryByText("Development only")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Editor" })).toBeNull();
   });
 });

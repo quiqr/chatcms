@@ -14,6 +14,9 @@
 #
 #   cd web && npm run dev
 #
+# Its sign-in screen has a button for each seeded role: administrator,
+# implementer, editor and viewer. A built binary does not.
+#
 # To reach it from another machine, such as a phone on the same network, give
 # it an address to listen on and the address that machine will use:
 #
@@ -187,6 +190,8 @@ cat <<NOTICE
 ==> ChatCMS on http://$reachable:$port${instance:+  (instance: $instance)}
     sign in as owner@example.org with: a long enough passphrase
     admin@example.org administers the installation, same passphrase
+    marieke@korenaar.example edits korenaar, sam@korenaar.example views it,
+    same passphrase; the sign-in screen has a button for each of the four
 
     korenaar      has a site, unpublished work, and somewhere to publish to
     studio-noord  has no site, so the setup screen has something to do

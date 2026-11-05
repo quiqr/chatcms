@@ -68,6 +68,7 @@
           npm run typecheck
           npm run check:interface
           npm run check:strings
+          npm run check:bundle
           npm run test
           runHook postCheck
         '';

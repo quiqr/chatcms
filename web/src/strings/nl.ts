@@ -203,6 +203,10 @@ export const nl: Strings = {
   "copy.that-name-is-taken": "Deze naam is al in gebruik. Geef de kopie een eigen naam.",
   "copy.what-to-copy": "Wat je meekopieert",
 
+  // dev-sign-in
+  "dev-sign-in.development-only": "Alleen in ontwikkeling",
+  "dev-sign-in.sign-in-as-a-seeded": "Meld je aan als een van de testgebruikers, een per rol.",
+
   // editor
   "editor.what-to-show": "Wat je wilt zien",
 

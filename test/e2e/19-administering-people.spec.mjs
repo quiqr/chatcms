@@ -37,9 +37,9 @@ test("one person opens with everything they can reach", async ({
   administering: page,
   chatcms,
 }, testInfo) => {
-  await page.goto(`${chatcms.url}/administration/people/marieke%40korenaar.example`);
+  await page.goto(`${chatcms.url}/administration/people/noor%40korenaar.example`);
 
-  await expect(page.getByRole("heading", { name: /marieke@korenaar.example/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /noor@korenaar.example/ })).toBeVisible();
   await expect(page.getByText("Still to accept")).toBeVisible();
   await expect(page.getByText("Has never been here")).toBeVisible();
   await expect(page.getByText("/o/technative/p/korenaar · editor")).toBeVisible();

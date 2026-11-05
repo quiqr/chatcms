@@ -200,6 +200,10 @@ export const en = {
   "copy.that-name-is-taken": "This name is already taken. Give the copy its own name.",
   "copy.what-to-copy": "What to copy",
 
+  // dev-sign-in
+  "dev-sign-in.development-only": "Development only",
+  "dev-sign-in.sign-in-as-a-seeded": "Sign in as a seeded person, one per role.",
+
   // editor
   "editor.what-to-show": "What to show",
 

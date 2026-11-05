@@ -1,4 +1,4 @@
-// Command seed puts one organisation, two projects and three people into a
+// Command seed puts one organisation, two projects and five people into a
 // database, and gives one project a real site with a remote of its own on
 // disk, so that every screen can be looked at with something on it. It is a
 // development tool and is not part of the server.
@@ -41,32 +41,48 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := db.Migrate(ctx); err != nil {
+	if err := seed(ctx, db, logger); err != nil {
 		fail(err)
+	}
+
+	fmt.Println("seeded: owner@example.org with " + passphrase)
+	fmt.Println("        admin@example.org administers the installation, same passphrase")
+	fmt.Println("        marieke@korenaar.example edits korenaar, same passphrase")
+	fmt.Println("        sam@korenaar.example views korenaar, same passphrase")
+	fmt.Println("        noor@korenaar.example is invited to korenaar and has not accepted")
+	fmt.Println("korenaar has a site with a remote under " + stateDir() + "/dev-remotes")
+	fmt.Println("studio-noord has none, so the onboarding screen has something to do")
+}
+
+const passphrase = "a long enough passphrase"
+
+func seed(ctx context.Context, db *store.DB, logger *slog.Logger) error {
+	if err := db.Migrate(ctx); err != nil {
+		return err
 	}
 
 	identity := auth.NewService(db, logger, "http://127.0.0.1:18090")
 	tenancyStore := tenancy.NewStore(db)
 	service := tenancy.NewService(tenancyStore, identity)
 
-	owner, err := identity.People().Create(ctx, "owner@example.org", "Joris Bakker", "a long enough passphrase")
+	owner, err := identity.People().Create(ctx, "owner@example.org", "Joris Bakker", passphrase)
 	if err != nil {
-		fail(err)
+		return err
 	}
 
 	// Somebody who administers the installation and belongs to no
 	// organisation, which is what whoever runs the service looks like.
-	boss, err := identity.People().Create(ctx, "admin@example.org", "Pim Snel", "a long enough passphrase")
+	boss, err := identity.People().Create(ctx, "admin@example.org", "Pim Snel", passphrase)
 	if err != nil {
-		fail(err)
+		return err
 	}
 	if err := admin.NewStore(db).MakeAdministrator(ctx, boss.ID); err != nil {
-		fail(err)
+		return err
 	}
 
 	organisation, err := tenancyStore.CreateOrganisation(ctx, "technative", "TechNative", owner.ID)
 	if err != nil {
-		fail(err)
+		return err
 	}
 
 	for _, site := range []struct {
@@ -78,36 +94,45 @@ func main() {
 	} {
 		project, err := tenancyStore.CreateProject(ctx, organisation.ID, site.slug, site.name, site.domain)
 		if err != nil {
-			fail(err)
+			return err
 		}
 		if err := tenancyStore.SetProjectRole(ctx, project.ID, owner.ID, policy.RoleImplementer); err != nil {
-			fail(err)
+			return err
 		}
 		if site.withASite {
 			if err := bringASiteIn(ctx, db, project.ID, owner); err != nil {
-				fail(err)
+				return err
 			}
 		}
 	}
 
 	who := httpActor(owner)
 	for _, invited := range []struct {
-		email string
-		role  policy.Role
+		email    string
+		role     policy.Role
+		accepted bool
 	}{
-		{"marieke@korenaar.example", policy.RoleEditor},
-		{"sam@korenaar.example", policy.RoleViewer},
+		{"marieke@korenaar.example", policy.RoleEditor, true},
+		{"sam@korenaar.example", policy.RoleViewer, true},
+		{"noor@korenaar.example", policy.RoleEditor, false},
 	} {
-		if _, err := service.InvitePerson(ctx, who, "technative", "korenaar",
-			invited.email, string(invited.role)); err != nil {
-			fail(err)
+		member, err := service.InvitePerson(ctx, who, "technative", "korenaar",
+			invited.email, string(invited.role))
+		if err != nil {
+			return err
+		}
+		if !invited.accepted {
+			continue
+		}
+		id, err := uuid.Parse(member.PersonID)
+		if err != nil {
+			return err
+		}
+		if err := identity.People().SetPassword(ctx, id, passphrase); err != nil {
+			return err
 		}
 	}
-
-	fmt.Println("seeded: owner@example.org with a long enough passphrase")
-	fmt.Println("        admin@example.org administers the installation, same passphrase")
-	fmt.Println("korenaar has a site with a remote under " + stateDir() + "/dev-remotes")
-	fmt.Println("studio-noord has none, so the onboarding screen has something to do")
+	return nil
 }
 
 func stateDir() string {

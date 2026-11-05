@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Signing in as each role in one press during development. Under
+  `npm run dev` the sign-in screen offers a button for the platform admin,
+  the implementer, the editor and the viewer, and each goes through the
+  ordinary password sign-in. The seed now gives the editor and the viewer the
+  same passphrase as the other two, so all four can sign in. A production
+  build carries none of it, and the frontend check fails when the seeded
+  passphrase or addresses reach the bundle.
 - A reference instance of the old Quiqr, set up by one script, and one field
   carried all the way round the circle. `scripts/reference.sh` clones the old
   application and the kitchen sink template at pinned commits, builds the

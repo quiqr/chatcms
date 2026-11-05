@@ -78,6 +78,7 @@ goose -dir db/migrations postgres "$CHATCMS_DATABASE_URL" up
 cd web && npm run dev              # frontend dev server, proxies /api to the Go server
 cd web && npm run typecheck        # what the frontend check runs
 cd web && npm run check:strings    # no string written where it is shown
+cd web && npm run check:bundle     # after a build: no seeded sign-in in dist
 cd web && npm run test             # Vitest
 
 bash scripts/ship-change.sh <change> "<commit subject>"
@@ -92,6 +93,11 @@ stale and the build fails. Regenerate it with:
 ```bash
 nix develop --command prefetch-npm-deps web/package-lock.json
 ```
+
+Under `npm run dev` the sign-in screen has a button for each seeded role:
+platform admin, implementer, editor and viewer. A production build leaves the
+block out, and `check:bundle` fails when the seeded passphrase or addresses
+reach `dist`.
 
 The server embeds `internal/webui/dist`, which holds only a placeholder in a
 checkout. `nix build .#chatcmsd` fills it from the frontend build; a plain

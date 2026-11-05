@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { lazy, Suspense, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { Button } from "../components/ui/button";
@@ -6,6 +6,8 @@ import { Checkbox, Field } from "../components/ui/field";
 import { whatWentWrong } from "../lib/api";
 import { signIn } from "../lib/session";
 import { say } from "../lib/say";
+
+const DevSignIn = import.meta.env.DEV ? lazy(() => import("./DevSignIn")) : null;
 
 export function SignInPage() {
   const navigate = useNavigate();
@@ -16,8 +18,18 @@ export function SignInPage() {
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    void signInWith(email, password);
+  }
+
+  function signInAs(pickedEmail: string, pickedPassword: string) {
+    setEmail(pickedEmail);
+    setPassword(pickedPassword);
+    void signInWith(pickedEmail, pickedPassword);
+  }
+
+  async function signInWith(email: string, password: string) {
     setProblem("");
     setBusy(true);
 
@@ -103,6 +115,12 @@ export function SignInPage() {
               {busy ? say("sign-in.signing-in") : say("sign-in.sign-in")}
             </Button>
           </form>
+
+          {import.meta.env.DEV && DevSignIn && (
+            <Suspense fallback={null}>
+              <DevSignIn busy={busy} onPick={signInAs} />
+            </Suspense>
+          )}
 
           <p className="mt-6 text-[13px] text-subtle-foreground">
             {say("sign-in.got-an-invitation-email-use-the")}
